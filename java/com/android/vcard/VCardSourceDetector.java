@@ -56,9 +56,12 @@ public class VCardSourceDetector implements VCardInterpreter {
             "X-SD-DESCRIPTION"));
     private static String TYPE_FOMA_CHARSET_SIGN = "X-SD-CHAR_CODE";
 
+    /**
+     * Represents that no estimation is available. Users of this class is able to this
+     * constant when you don't want to let a vCard parser rely on estimation for parse type.
+     */
+    public static final int PARSE_TYPE_UNKNOWN = 0;
 
-    // TODO: Should replace this with types in VCardConfig
-    private static final int PARSE_TYPE_UNKNOWN = 0;
     // For Apple's software, which does not mean this type is effective for all its products.
     // We confirmed they usually use UTF-8, but not sure about vCard type.
     private static final int PARSE_TYPE_APPLE = 1;

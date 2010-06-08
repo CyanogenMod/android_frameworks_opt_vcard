@@ -352,7 +352,6 @@ import java.util.Set;
         }
 
         while (!ended) {
-            // follow VCARD ,it wont reach endProperty
             if (mInterpreter != null) {
                 long start = System.currentTimeMillis();
                 mInterpreter.startProperty();

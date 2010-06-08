@@ -189,9 +189,10 @@ public class VCardEntryConstructor implements VCardInterpreter {
 
     private String handleOneValue(String value,
             String sourceCharset, String targetCharset, String encoding) {
-        if (value == null) {
-            Log.w(LOG_TAG, "Null is given.");
-            value = "";
+        // It is possible when some of multiple values are empty.
+        // e.g. N:;a;;; -> values are "", "a", "", "", and "".
+        if (TextUtils.isEmpty(value)) {
+            return "";
         }
 
         if (encoding != null) {

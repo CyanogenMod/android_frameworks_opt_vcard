@@ -559,9 +559,10 @@ public class VCardUtils {
     //// The methods bellow may be used by unit test.
 
     /**
-     * @hide 
+     * Unquotes given Quoted-Printable value. value must not be null.
      */
-    public static String parseQuotedPrintable(String value, boolean strictLineBreaking,
+    public static String parseQuotedPrintable(
+            final String value, boolean strictLineBreaking,
             String sourceCharset, String targetCharset) {
         // "= " -> " ", "=\t" -> "\t".
         // Previous code had done this replacement. Keep on the safe side.
