@@ -554,7 +554,8 @@ public class VCardImporterTests extends VCardTestsBase {
                 .addExpectedNodeWithOrder("N", "Gump;Forrest;Hoge;Pos;Tao",
                         Arrays.asList("Gump", "Forrest", "Hoge", "Pos", "Tao"))
                 .addExpectedNodeWithOrder("FN", "Joe Due")
-                .addExpectedNodeWithOrder("ORG", "Gump Shrimp Co.;Sales Dept.;Manager;Fish keeper",
+                .addExpectedNodeWithOrder("ORG",
+                        "Gump Shrimp Co.;Sales Dept.;Manager;Fish keeper",
                         Arrays.asList("Gump Shrimp Co.", "Sales Dept.;Manager", "Fish keeper"))
                 .addExpectedNodeWithOrder("ROLE", "Fish Cake Keeper!")
                 .addExpectedNodeWithOrder("TITLE", "Shrimp Man")
@@ -584,7 +585,8 @@ public class VCardImporterTests extends VCardTestsBase {
                 .addExpectedNodeWithOrder("EMAIL", "forrestgump@walladalla.com",
                         new TypeSet("PREF", "INTERNET"))
                 .addExpectedNodeWithOrder("EMAIL", "cell@example.com", new TypeSet("CELL"))
-                .addExpectedNodeWithOrder("NOTE", "The following note is the example from RFC 2045.")
+                .addExpectedNodeWithOrder("NOTE",
+                        "The following note is the example from RFC 2045.")
                 .addExpectedNodeWithOrder("NOTE",
                         "Now's the time for all folk to come to the aid of their country.",
                         null, null, mContentValuesForQP, null, null)
@@ -678,12 +680,25 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Website.TYPE, Website.TYPE_HOMEPAGE);
     }
 
+    public void testInvalidMultipleLineV21() {
+        mVerifier.initForImportTest(V21, R.raw.v21_invalid_multiple_line);
+        ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.GIVEN_NAME, "Omega")
+                .put(StructuredName.DISPLAY_NAME, "Omega");
+        elem.addExpected(Email.CONTENT_ITEM_TYPE)
+                .put(Email.TYPE, Email.TYPE_CUSTOM)
+                .put(Email.LABEL, "INTERNET")
+                .put(Email.ADDRESS, "\"Omega\" <omega@example.com>");
+    }
+
     public void testV30Simple_Parsing() {
         mVerifier.initForImportTest(V30, R.raw.v30_simple);
         mVerifier.addPropertyNodesVerifierElem()
                 .addExpectedNodeWithOrder("VERSION", "3.0")
                 .addExpectedNodeWithOrder("FN", "And Roid")
-                .addExpectedNodeWithOrder("N", "And;Roid;;;", Arrays.asList("And", "Roid", "", "", ""))
+                .addExpectedNodeWithOrder("N", "And;Roid;;;",
+                        Arrays.asList("And", "Roid", "", "", ""))
                 .addExpectedNodeWithOrder("ORG", "Open;Handset; Alliance",
                         Arrays.asList("Open", "Handset", " Alliance"))
                 .addExpectedNodeWithOrder("SORT-STRING", "android")
@@ -752,7 +767,7 @@ public class VCardImporterTests extends VCardTestsBase {
 
     /**
      * Verifies vCard with Japanese can be parsed correctly with
-     * {@link android.pim.vcard.VCardConfig#VCARD_TYPE_V21_GENERIC}.
+     * {@link com.android.vcard.VCardConfig#VCARD_TYPE_V21_GENERIC}.
      */
     public void testV21Japanese1_Type_Generic_Utf8() {
         testV21Japanese1Common(
@@ -761,7 +776,7 @@ public class VCardImporterTests extends VCardTestsBase {
 
     /**
      * Verifies vCard with Japanese can be parsed correctly with
-     * {@link android.pim.vcard.VCardConfig#VCARD_TYPE_V21_JAPANESE}.
+     * {@link com.android.vcard.VCardConfig#VCARD_TYPE_V21_JAPANESE}.
      */
     public void testV21Japanese1_Type_Japanese_Sjis() {
         testV21Japanese1Common(
@@ -770,7 +785,7 @@ public class VCardImporterTests extends VCardTestsBase {
 
     /**
      * Verifies vCard with Japanese can be parsed correctly with
-     * {@link android.pim.vcard.VCardConfig#VCARD_TYPE_V21_JAPANESE}.
+     * {@link com.android.vcard.VCardConfig#VCARD_TYPE_V21_JAPANESE}.
      * since vCard 2.1 specifies the charset of each line if it contains non-Ascii.
      */
     public void testV21Japanese1_Type_Japanese_Utf8() {

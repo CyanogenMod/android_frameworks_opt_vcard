@@ -15,6 +15,7 @@
  */
 package com.android.vcard;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.vcard.exception.VCardAgentNotSupportedException;
@@ -45,17 +46,47 @@ import java.util.Set;
     private static final class CustomBufferedReader extends BufferedReader {
         private long mTime;
 
+        /**
+         * Needed since "next line" may be null due to end of line.
+         */
+        private boolean mNextLineIsValid;
+        private String mNextLine;
+
         public CustomBufferedReader(Reader in) {
             super(in);
         }
 
         @Override
         public String readLine() throws IOException {
+            if (mNextLineIsValid) {
+                final String ret = mNextLine;
+                mNextLine = null;
+                mNextLineIsValid = false;
+                return ret;
+            }
+
             long start = System.currentTimeMillis();
-            String ret = super.readLine();
+            final String line = super.readLine();
             long end = System.currentTimeMillis();
             mTime += end - start;
-            return ret;
+            return line;
+        }
+
+        /**
+         * Read one line, but make this object store it in its queue.
+         */
+        public String peekLine() throws IOException {
+            if (!mNextLineIsValid) {
+                long start = System.currentTimeMillis();
+                final String line = super.readLine();
+                long end = System.currentTimeMillis();
+                mTime += end - start;
+
+                mNextLine = line;
+                mNextLineIsValid = true;
+            }
+
+            return mNextLine;
         }
 
         public long getTotalmillisecond() {
@@ -92,7 +123,7 @@ import java.util.Set;
      * getLine() unless there some reason.
      * </p>
      */
-    protected BufferedReader mReader;
+    protected CustomBufferedReader mReader;
 
     /**
      * <p>
@@ -194,6 +225,10 @@ import java.util.Set;
         return mReader.readLine();
     }
 
+    protected String peekLine() throws IOException {
+        return mReader.peekLine();
+    }
+
     /**
      * @return String with it's length > 0
      * @throws IOException
@@ -266,14 +301,15 @@ import java.util.Set;
                     break;
                 }
             }
-            String[] strArray = line.split(":", 2);
-            int length = strArray.length;
+            final String[] strArray = line.split(":", 2);
+            final int length = strArray.length;
 
-            // Though vCard 2.1/3.0 specification does not allow lower cases,
-            // vCard file emitted by some external vCard expoter have such
+            // Although vCard 2.1/3.0 specification does not allow lower cases,
+            // we found vCard file emitted by some external vCard expoter have such
             // invalid Strings.
             // So we allow it.
-            // e.g. BEGIN:vCard
+            // e.g.
+            // BEGIN:vCard
             if (length == 2 && strArray[0].trim().equalsIgnoreCase("BEGIN")
                     && strArray[1].trim().equalsIgnoreCase("VCARD")) {
                 return true;
@@ -708,6 +744,57 @@ import java.util.Set;
                                 mCurrentEncoding, getVersionString()));
             }
 
+            // Some device uses line folding defined in RFC 2425, which is not allowed
+            // in vCard 2.1 (while needed in vCard 3.0).
+            //
+            // e.g.
+            // BEGIN:VCARD
+            // VERSION:2.1
+            // N:;Omega;;;
+            // EMAIL;INTERNET:"Omega"
+            //   <omega@example.com>
+            // FN:Omega
+            // END:VCARD
+            //
+            // The vCard above assumes that email address should become:
+            // "Omega" <omega@example.com>
+            //
+            // But vCard 2.1 requires Quote-Printable when a line contains line break(s).
+            //
+            // For more information about line folding,
+            // see "5.8.1. Line delimiting and folding" in RFC 2425.
+            //
+            // We take care of this case more formally in vCard 3.0, so we only need to
+            // do this in vCard 2.1.
+            if (getVersion() == VCardConfig.FLAG_V21) {
+                StringBuilder builder = null;
+                while (true) {
+                    final String nextLine = peekLine();
+                    // We don't need to care too much about this exceptional case,
+                    // but we should not wrongly eat up "END:VCARD", since it critically
+                    // breaks this parser's state machine.
+                    // Thus we roughly look over the next line and confirm it is at least not
+                    // "END:VCARD". This extra fee is worth paying. This is exceptional
+                    // anyway.
+                    if (!TextUtils.isEmpty(nextLine) &&
+                            nextLine.charAt(0) == ' ' &&
+                            !"END:VCARD".contains(nextLine.toUpperCase())) {
+                        getLine();  // Drop the next line.
+
+                        if (builder == null) {
+                            builder = new StringBuilder();
+                            builder.append(propertyValue);
+                        }
+                        builder.append(nextLine.substring(1));
+                    } else {
+                        break;
+                    }
+                }
+                if (builder != null) {
+                    propertyValue = builder.toString();
+                }
+            }
+
             final long start = System.currentTimeMillis();
             if (mInterpreter != null) {
                 ArrayList<String> v = new ArrayList<String>();
@@ -873,10 +960,7 @@ import java.util.Set;
 
     private void showPerformanceInfo() {
         Log.d(LOG_TAG, "Total parsing time:  " + mTimeTotal + " ms");
-        if (mReader instanceof CustomBufferedReader) {
-            Log.d(LOG_TAG, "Total readLine time: "
-                    + ((CustomBufferedReader) mReader).getTotalmillisecond() + " ms");
-        }
+        Log.d(LOG_TAG, "Total readLine time: " + mReader.getTotalmillisecond() + " ms");
         Log.d(LOG_TAG, "Time for handling the beggining of the record: " + mTimeReadStartRecord
                 + " ms");
         Log.d(LOG_TAG, "Time for handling the end of the record: " + mTimeReadEndRecord + " ms");
@@ -932,11 +1016,7 @@ import java.util.Set;
         }
 
         final InputStreamReader tmpReader = new InputStreamReader(is, mIntermediateCharset);
-        if (VCardConfig.showPerformanceLog()) {
-            mReader = new CustomBufferedReader(tmpReader);
-        } else {
-            mReader = new BufferedReader(tmpReader);
-        }
+        mReader = new CustomBufferedReader(tmpReader);
 
         mInterpreter = interpreter;
 
