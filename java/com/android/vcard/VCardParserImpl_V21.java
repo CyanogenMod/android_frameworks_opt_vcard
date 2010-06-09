@@ -43,7 +43,7 @@ import java.util.Set;
 /* package */ class VCardParserImpl_V21 {
     private static final String LOG_TAG = "VCardParserImpl_V21";
 
-    private static final class CustomBufferedReader extends BufferedReader {
+    protected static final class CustomBufferedReader extends BufferedReader {
         private long mTime;
 
         /**
