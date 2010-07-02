@@ -27,11 +27,11 @@ import java.util.List;
 public class LineVerifierElem {
     private final TestCase mTestCase;
     private final List<String> mExpectedLineList = new ArrayList<String>();
-    private final boolean mIsV30;
+    private final int mVCardType;
 
     public LineVerifierElem(TestCase testCase, int vcardType) {
         mTestCase = testCase;
-        mIsV30 = VCardConfig.isV30(vcardType);
+        mVCardType = vcardType;
     }
 
     public LineVerifierElem addExpected(final String line) {
@@ -56,21 +56,23 @@ public class LineVerifierElem {
 
             if ("BEGIN:VCARD".equalsIgnoreCase(line)) {
                 if (beginExists) {
-                    mTestCase.fail("Multiple \"BEGIN:VCARD\" line found");
+                    TestCase.fail("Multiple \"BEGIN:VCARD\" line found");
                 } else {
                     beginExists = true;
                     continue;
                 }
             } else if ("END:VCARD".equalsIgnoreCase(line)) {
                 if (endExists) {
-                    mTestCase.fail("Multiple \"END:VCARD\" line found");
+                    TestCase.fail("Multiple \"END:VCARD\" line found");
                 } else {
                     endExists = true;
                     continue;
                 }
-            } else if ((mIsV30 ? "VERSION:3.0" : "VERSION:2.1").equalsIgnoreCase(line)) {
+            } else if ((VCardConfig.isVersion21(mVCardType) ? "VERSION:2.1" :
+                (VCardConfig.isVersion30(mVCardType) ? "VERSION:3.0" :
+                    "VERSION:4.0")).equalsIgnoreCase(line)) {
                 if (versionExists) {
-                    mTestCase.fail("Multiple VERSION line + found");
+                    TestCase.fail("Multiple VERSION line + found");
                 } else {
                     versionExists = true;
                     continue;
@@ -78,18 +80,16 @@ public class LineVerifierElem {
             }
 
             if (!beginExists) {
-                mTestCase.fail("Property other than BEGIN came before BEGIN property: "
-                        + line);
+                TestCase.fail("Property other than BEGIN came before BEGIN property: " + line);
             } else if (endExists) {
-                mTestCase.fail("Property other than END came after END property: "
-                        + line);
+                TestCase.fail("Property other than END came after END property: " + line);
             }
 
             final int index = mExpectedLineList.indexOf(line);
             if (index >= 0) {
                 mExpectedLineList.remove(index);
             } else {
-                mTestCase.fail("Unexpected line: " + line);
+                TestCase.fail("Unexpected line: " + line);
             }
         }
 
@@ -100,7 +100,7 @@ public class LineVerifierElem {
                 buffer.append("\n");
             }
 
-            mTestCase.fail("Expected line(s) not found:" + buffer.toString());
+            TestCase.fail("Expected line(s) not found:" + buffer.toString());
         }
     }
 }

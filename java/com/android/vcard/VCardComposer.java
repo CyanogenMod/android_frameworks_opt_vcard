@@ -323,7 +323,7 @@ public class VCardComposer {
 
         charset = (TextUtils.isEmpty(charset) ? VCardConfig.DEFAULT_EXPORT_CHARSET : charset);
         final boolean shouldAppendCharsetParam = !(
-                VCardConfig.isV30(vcardType) && UTF_8.equalsIgnoreCase(charset));
+                VCardConfig.isVersion30(vcardType) && UTF_8.equalsIgnoreCase(charset));
 
         if (mIsDoCoMo || shouldAppendCharsetParam) {
             if (SHIFT_JIS.equalsIgnoreCase(charset)) {

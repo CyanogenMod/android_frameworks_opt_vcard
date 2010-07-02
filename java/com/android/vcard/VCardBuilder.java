@@ -132,7 +132,7 @@ public class VCardBuilder {
     public VCardBuilder(final int vcardType, String charset) {
         mVCardType = vcardType;
 
-        mIsV30 = VCardConfig.isV30(vcardType);
+        mIsV30 = VCardConfig.isVersion30(vcardType);
         mShouldUseQuotedPrintable = VCardConfig.shouldUseQuotedPrintable(vcardType);
         mIsDoCoMo = VCardConfig.isDoCoMo(vcardType);
         mIsJapaneseMobilePhone = VCardConfig.needsToConvertPhoneticString(vcardType);

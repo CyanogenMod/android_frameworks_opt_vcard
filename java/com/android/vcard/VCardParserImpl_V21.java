@@ -766,7 +766,7 @@ import java.util.Set;
             //
             // We take care of this case more formally in vCard 3.0, so we only need to
             // do this in vCard 2.1.
-            if (getVersion() == VCardConfig.FLAG_V21) {
+            if (getVersion() == VCardConfig.VERSION_21) {
                 StringBuilder builder = null;
                 while (true) {
                     final String nextLine = peekLine();
@@ -909,7 +909,7 @@ import java.util.Set;
 
         if (mInterpreter != null) {
             mInterpreter.propertyValues(VCardUtils.constructListFromValue(propertyValue,
-                    (getVersion() == VCardConfig.FLAG_V30)));
+                    (getVersion() == VCardConfig.VERSION_30)));
         }
     }
 
@@ -942,7 +942,7 @@ import java.util.Set;
      * null otherwise. e.g. In vCard 2.1, "\;" should be unescaped into ";"
      * while "\x" should not be.
      */
-    protected String maybeUnescapeCharacter(final char ch) {
+    protected String maybeEscapeCharacter(final char ch) {
         return unescapeCharacter(ch);
     }
 
@@ -975,14 +975,14 @@ import java.util.Set;
     }
 
     /**
-     * @return {@link VCardConfig#FLAG_V21}
+     * @return {@link VCardConfig#VERSION_21}
      */
     protected int getVersion() {
-        return VCardConfig.FLAG_V21;
+        return VCardConfig.VERSION_21;
     }
 
     /**
-     * @return {@link VCardConfig#FLAG_V30}
+     * @return {@link VCardConfig#VERSION_30}
      */
     protected String getVersionString() {
         return VCardConstants.VERSION_V21;

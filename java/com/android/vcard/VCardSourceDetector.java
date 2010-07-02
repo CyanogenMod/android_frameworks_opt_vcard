@@ -16,6 +16,7 @@
 package com.android.vcard;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -39,6 +40,8 @@ import java.util.Set;
  * </p>
  */
 public class VCardSourceDetector implements VCardInterpreter {
+    private static final String LOG_TAG = "VCardSourceDetector";
+
     private static Set<String> APPLE_SIGNS = new HashSet<String>(Arrays.asList(
             "X-PHONETIC-FIRST-NAME", "X-PHONETIC-MIDDLE-NAME", "X-PHONETIC-LAST-NAME",
             "X-ABADR", "X-ABUID"));
@@ -74,8 +77,11 @@ public class VCardSourceDetector implements VCardInterpreter {
 
     private int mParseType = 0;  // Not sure.
 
+    private boolean mNeedToParseVersion = false;
+    private int mVersion = -1;  // -1 == unknown
+
     // Some mobile phones (like FOMA) tells us the charset of the data.
-    private boolean mNeedParseSpecifiedCharset;
+    private boolean mNeedToParseCharset;
     private String mSpecifiedCharset;
     
     public void start() {
@@ -88,7 +94,8 @@ public class VCardSourceDetector implements VCardInterpreter {
     }    
 
     public void startProperty() {
-        mNeedParseSpecifiedCharset = false;
+        mNeedToParseCharset = false;
+        mNeedToParseVersion = false;
     }
     
     public void endProperty() {
@@ -101,10 +108,13 @@ public class VCardSourceDetector implements VCardInterpreter {
     }
     
     public void propertyName(String name) {
-        if (name.equalsIgnoreCase(TYPE_FOMA_CHARSET_SIGN)) {
+        if (name.equalsIgnoreCase(VCardConstants.PROPERTY_VERSION)) {
+            mNeedToParseVersion = true;
+            return;
+        } else if (name.equalsIgnoreCase(TYPE_FOMA_CHARSET_SIGN)) {
             mParseType = PARSE_TYPE_DOCOMO_TORELATE_NEST;
             // Probably Shift_JIS is used, but we should double confirm.
-            mNeedParseSpecifiedCharset = true;
+            mNeedToParseCharset = true;
             return;
         }
         if (mParseType != PARSE_TYPE_UNKNOWN) {
@@ -128,7 +138,18 @@ public class VCardSourceDetector implements VCardInterpreter {
     }
 
     public void propertyValues(List<String> values) {
-        if (mNeedParseSpecifiedCharset && values.size() > 0) {
+        if (mNeedToParseVersion && values.size() > 0) {
+            final String versionString = values.get(0);
+            if (versionString.equals(VCardConstants.VERSION_V21)) {
+                mVersion = VCardConfig.VERSION_21;
+            } else if (versionString.equals(VCardConstants.VERSION_V30)) {
+                mVersion = VCardConfig.VERSION_30;
+            } else if (versionString.equals(VCardConstants.VERSION_V40)) {
+                mVersion = VCardConfig.VERSION_40;
+            } else {
+                Log.w(LOG_TAG, "Invalid version string: " + versionString);
+            }
+        } else if (mNeedToParseCharset && values.size() > 0) {
             mSpecifiedCharset = values.get(0);
         }
     }
@@ -145,8 +166,17 @@ public class VCardSourceDetector implements VCardInterpreter {
                 return VCardConfig.VCARD_TYPE_V21_JAPANESE_MOBILE;
             case PARSE_TYPE_APPLE:
             case PARSE_TYPE_WINDOWS_MOBILE_V65_JP:
-            default:
-                return VCardConfig.VCARD_TYPE_UNKNOWN;
+            default: {
+                if (mVersion == VCardConfig.VERSION_21) {
+                    return VCardConfig.VCARD_TYPE_V21_GENERIC;
+                } else if (mVersion == VCardConfig.VERSION_30) {
+                    return VCardConfig.VCARD_TYPE_V30_GENERIC;
+                } else if (mVersion == VCardConfig.VERSION_40) {
+                    return VCardConfig.VCARD_TYPE_V40_GENERIC;
+                } else {
+                    return VCardConfig.VCARD_TYPE_UNKNOWN;
+                }
+            }
         }
     }
 

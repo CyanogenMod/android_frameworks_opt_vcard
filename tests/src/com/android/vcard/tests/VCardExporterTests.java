@@ -58,7 +58,7 @@ public class VCardExporterTests extends VCardTestsBase {
     }
 
     private void testStructuredNameBasic(int vcardType) {
-        final boolean isV30 = VCardConfig.isV30(vcardType);
+        final boolean isV21 = VCardConfig.isVersion21(vcardType);
         mVerifier.initForExportTest(vcardType);
         mVerifier.addInputEntry().addContentValues(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.FAMILY_NAME, "AppropriateFamilyName")
@@ -83,7 +83,7 @@ public class VCardExporterTests extends VCardTestsBase {
                 .addExpectedNode("X-PHONETIC-MIDDLE-NAME", "AppropriatePhoneticMiddle")
                 .addExpectedNode("X-PHONETIC-LAST-NAME", "AppropriatePhoneticFamily");
 
-        if (isV30) {
+        if (!isV21) {
             elem.addExpectedNode("SORT-STRING",
                     "AppropriatePhoneticGiven AppropriatePhoneticMiddle "
                     + "AppropriatePhoneticFamily");

@@ -41,7 +41,7 @@ public class VCardJapanizationTests extends VCardTestsBase {
                 .put(StructuredName.PREFIX, "Dr.")
                 .put(StructuredName.SUFFIX, "Ph.D");
         ContentValues contentValues =
-            (VCardConfig.isV30(vcardType) ? null : mContentValuesForQPAndUtf8);
+            (VCardConfig.isVersion21(vcardType) ? mContentValuesForQPAndUtf8 : null);
         mVerifier.addPropertyNodesVerifierElem()
                 .addExpectedNode("FN", "Dr. \u3075\u308B\u3069 B \u3091\u308A\u304B Ph.D",
                         contentValues)
@@ -117,9 +117,9 @@ public class VCardJapanizationTests extends VCardTestsBase {
 
         final ContentValues contentValues =
             ("SHIFT_JIS".equalsIgnoreCase(charset) ?
-                    (VCardConfig.isV30(vcardType) ? mContentValuesForSJis :
-                            mContentValuesForQPAndSJis) :
-                    (VCardConfig.isV30(vcardType) ? null : mContentValuesForQPAndUtf8));
+                    (VCardConfig.isVersion21(vcardType) ? mContentValuesForQPAndSJis :
+                        mContentValuesForSJis) :
+                    (VCardConfig.isVersion21(vcardType) ? mContentValuesForQPAndUtf8 : null));
         PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElemWithEmptyName();
         elem.addExpectedNode("X-PHONETIC-LAST-NAME", "\u3084\u307E\u3060",
                         contentValues)
@@ -128,7 +128,7 @@ public class VCardJapanizationTests extends VCardTestsBase {
                         contentValues)
                 .addExpectedNode("X-PHONETIC-FIRST-NAME", "\u305F\u308D\u3046",
                         contentValues);
-        if (VCardConfig.isV30(vcardType)) {
+        if (!VCardConfig.isVersion21(vcardType)) {
             elem.addExpectedNode("SORT-STRING",
                     "\u3084\u307E\u3060 \u30DF\u30C9\u30EB\u30CD\u30FC\u30E0 \u305F\u308D\u3046",
                     contentValues);
@@ -217,10 +217,10 @@ public class VCardJapanizationTests extends VCardTestsBase {
                 .put(StructuredPostal.LABEL, "\u304A\u3082\u3061\u304B\u3048\u308A");
 
         ContentValues contentValues = ("UTF-8".equalsIgnoreCase(charset) ?
-                (VCardConfig.isV30(vcardType) ? mContentValuesForSJis :
-                    mContentValuesForQPAndSJis) :
-                (VCardConfig.isV30(vcardType) ? mContentValuesForUtf8 :
-                    mContentValuesForQPAndUtf8));
+                (VCardConfig.isVersion21(vcardType) ? mContentValuesForQPAndSJis :
+                    mContentValuesForSJis) :
+                (VCardConfig.isVersion21(vcardType) ? mContentValuesForQPAndUtf8 :
+                    mContentValuesForUtf8));
 
         PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElemWithEmptyName();
         // LABEL must be ignored in vCard 2.1. As for vCard 3.0, the current behavior is

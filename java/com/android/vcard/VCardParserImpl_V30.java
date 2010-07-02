@@ -51,7 +51,7 @@ import java.util.Set;
 
     @Override
     protected int getVersion() {
-        return VCardConfig.FLAG_V30;
+        return VCardConfig.VERSION_30;
     }
 
     @Override
@@ -294,11 +294,11 @@ import java.util.Set;
     }
 
     @Override
-    protected String maybeUnescapeCharacter(final char ch) {
-        return unescapeCharacter(ch);
+    protected String maybeEscapeCharacter(final char ch) {
+        return escapeCharacter(ch);
     }
 
-    public static String unescapeCharacter(final char ch) {
+    public static String escapeCharacter(final char ch) {
         if (ch == 'n' || ch == 'N') {
             return "\n";
         } else {

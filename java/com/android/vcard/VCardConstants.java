@@ -21,6 +21,7 @@ package com.android.vcard;
 public class VCardConstants {
     public static final String VERSION_V21 = "2.1";
     public static final String VERSION_V30 = "3.0";
+    public static final String VERSION_V40 = "4.0";
 
     // The property names valid both in vCard 2.1 and 3.0.
     public static final String PROPERTY_BEGIN = "BEGIN";

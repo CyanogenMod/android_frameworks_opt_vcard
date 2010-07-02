@@ -769,7 +769,7 @@ public class VCardEntry {
                 // But we want it to be separated, so do the separation here.
                 final List<String> phoneticNameList =
                         VCardUtils.constructListFromValue(propValue,
-                                VCardConfig.isV30(mVCardType));
+                                VCardConfig.isVersion30(mVCardType));
                 handlePhoneticNameFromSound(phoneticNameList);
             } else {
                 // Ignore this field since Android cannot understand what it is.
@@ -968,7 +968,7 @@ public class VCardEntry {
         } else if (propName.equals(VCardConstants.PROPERTY_X_ANDROID_CUSTOM)) {
             final List<String> customPropertyList =
                 VCardUtils.constructListFromValue(propValue,
-                        VCardConfig.isV30(mVCardType));
+                        VCardConfig.isVersion30(mVCardType));
             handleAndroidCustomProperty(customPropertyList);
         /*} else if (propName.equals("REV")) {
             // Revision of this VCard entry. I think we can ignore this.

@@ -15,6 +15,8 @@
  */
 package com.android.vcard;
 
+import com.android.vcard.exception.VCardException;
+
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.net.QuotedPrintableCodec;
 
@@ -338,7 +340,7 @@ public class VCardUtils {
             if (ch == '\\' && i < length - 1) {
                 char nextCh = value.charAt(i + 1);
                 final String unescapedString =
-                    (isV30 ? VCardParserImpl_V30.unescapeCharacter(nextCh) :
+                    (isV30 ? VCardParserImpl_V30.escapeCharacter(nextCh) :
                         VCardParserImpl_V21.unescapeCharacter(nextCh));
                 if (unescapedString != null) {
                     builder.append(unescapedString);
@@ -653,6 +655,21 @@ public class VCardUtils {
             return new String(decodedBytes);
         }
     }
+
+    public static final VCardParser getAppropriateParser(int vcardType)
+            throws VCardException {
+        if (VCardConfig.isVersion21(vcardType)) {
+            return new VCardParser_V21();
+        } else if (VCardConfig.isVersion30(vcardType)) {
+            return new VCardParser_V30();
+        } else if (VCardConfig.isVersion40(vcardType)) {
+            return new VCardParser_V40();
+        } else {
+            throw new VCardException("Version is not specified");
+        }
+    }
+
+    // TODO: utilities for vCard 4.0: datetime, timestamp, integer, float, and boolean
 
     private VCardUtils() {
     }

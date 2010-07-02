@@ -17,10 +17,8 @@ package com.android.vcard.tests.test_utils;
 
 import android.test.AndroidTestCase;
 
-import com.android.vcard.VCardConfig;
 import com.android.vcard.VCardParser;
-import com.android.vcard.VCardParser_V21;
-import com.android.vcard.VCardParser_V30;
+import com.android.vcard.VCardUtils;
 import com.android.vcard.exception.VCardException;
 
 import java.io.IOException;
@@ -45,31 +43,26 @@ public class PropertyNodesVerifier extends VNodeBuilder {
         return elem;
     }
 
-    public void verify(int resId, int vCardType)
+    public void verify(int resId, int vcardType)
             throws IOException, VCardException {
-        verify(mAndroidTestCase.getContext().getResources().openRawResource(resId), vCardType);
+        verify(mAndroidTestCase.getContext().getResources().openRawResource(resId), vcardType);
     }
 
-    public void verify(int resId, int vCardType, final VCardParser vCardParser)
+    public void verify(int resId, int vcardType, final VCardParser parser)
             throws IOException, VCardException {
         verify(mAndroidTestCase.getContext().getResources().openRawResource(resId),
-                vCardType, vCardParser);
+                vcardType, parser);
     }
 
-    public void verify(InputStream is, int vCardType) throws IOException, VCardException {
-        final VCardParser vCardParser;
-        if (VCardConfig.isV30(vCardType)) {
-            vCardParser = new VCardParser_V30();
-        } else {
-            vCardParser = new VCardParser_V21();
-        }
-        verify(is, vCardType, vCardParser);
+    public void verify(InputStream is, int vcardType) throws IOException, VCardException {
+        final VCardParser parser = VCardUtils.getAppropriateParser(vcardType);
+        verify(is, vcardType, parser);
     }
 
-    public void verify(InputStream is, int vCardType, final VCardParser vCardParser)
+    public void verify(InputStream is, int vcardType, final VCardParser parser)
             throws IOException, VCardException {
         try {
-            vCardParser.parse(is, this);
+            parser.parse(is, this);
         } finally {
             if (is != null) {
                 try {
@@ -83,8 +76,8 @@ public class PropertyNodesVerifier extends VNodeBuilder {
     @Override
     public void endEntry() {
         super.endEntry();
-        mAndroidTestCase.assertTrue(mIndex < mPropertyNodesVerifierElemList.size());
-        mAndroidTestCase.assertTrue(mIndex < vNodeList.size());
+        AndroidTestCase.assertTrue(mIndex < mPropertyNodesVerifierElemList.size());
+        AndroidTestCase.assertTrue(mIndex < vNodeList.size());
         mPropertyNodesVerifierElemList.get(mIndex).verify(vNodeList.get(mIndex));
         mIndex++;
     }

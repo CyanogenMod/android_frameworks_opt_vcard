@@ -17,13 +17,11 @@ package com.android.vcard.tests.test_utils;
 
 import android.test.AndroidTestCase;
 
-import com.android.vcard.VCardConfig;
 import com.android.vcard.VCardEntry;
 import com.android.vcard.VCardEntryConstructor;
 import com.android.vcard.VCardEntryHandler;
 import com.android.vcard.VCardParser;
-import com.android.vcard.VCardParser_V21;
-import com.android.vcard.VCardParser_V30;
+import com.android.vcard.VCardUtils;
 import com.android.vcard.exception.VCardException;
 
 import java.io.IOException;
@@ -44,29 +42,25 @@ public class ContentValuesVerifier implements VCardEntryHandler {
         return importVerifier;
     }
 
-    public void verify(int resId, int vCardType) throws IOException, VCardException {
-        verify(mTestCase.getContext().getResources().openRawResource(resId), vCardType);
+    public void verify(int resId, int vcardType) throws IOException, VCardException {
+        verify(mTestCase.getContext().getResources().openRawResource(resId), vcardType);
     }
 
-    public void verify(int resId, int vCardType, final VCardParser vCardParser)
+    public void verify(int resId, int vcardType, final VCardParser vCardParser)
             throws IOException, VCardException {
         verify(mTestCase.getContext().getResources().openRawResource(resId),
-                vCardType, vCardParser);
+                vcardType, vCardParser);
     }
 
-    public void verify(InputStream is, int vCardType) throws IOException, VCardException {
-        final VCardParser vCardParser;
-        if (VCardConfig.isV30(vCardType)) {
-            vCardParser = new VCardParser_V30();
-        } else {
-            vCardParser = new VCardParser_V21();
-        }
-        verify(is, vCardType, vCardParser);
+
+    public void verify(InputStream is, int vcardType) throws IOException, VCardException {
+        final VCardParser vCardParser = VCardUtils.getAppropriateParser(vcardType);
+        verify(is, vcardType, vCardParser);
     }
 
-    public void verify(InputStream is, int vCardType, final VCardParser vCardParser)
+    public void verify(InputStream is, int vcardType, final VCardParser vCardParser)
             throws IOException, VCardException {
-        VCardEntryConstructor builder = new VCardEntryConstructor(vCardType, null);
+        VCardEntryConstructor builder = new VCardEntryConstructor(vcardType, null);
         builder.addEntryHandler(this);
         try {
             vCardParser.parse(is, builder);
@@ -87,7 +81,7 @@ public class ContentValuesVerifier implements VCardEntryHandler {
     }
 
     public void onEntryCreated(VCardEntry entry) {
-        mTestCase.assertTrue(mIndex < mContentValuesVerifierElemList.size());
+        AndroidTestCase.assertTrue(mIndex < mContentValuesVerifierElemList.size());
         mContentValuesVerifierElemList.get(mIndex).onEntryCreated(entry);
         mIndex++;
     }

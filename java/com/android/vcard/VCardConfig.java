@@ -68,10 +68,10 @@ public class VCardConfig {
     public static final String DEFAULT_IMPORT_CHARSET = "UTF-8";
     public static final String DEFAULT_EXPORT_CHARSET = "UTF-8";
 
-    public static final int FLAG_V21 = 0;
-    public static final int FLAG_V30 = 1;
-
-    // 0x2 is reserved for the future use ...
+    public static final int VERSION_21 = 0;
+    public static final int VERSION_30 = 1;
+    public static final int VERSION_40 = 2;
+    public static final int VERSION_MASK = 3;
 
     public static final int NAME_ORDER_DEFAULT = 0;
     public static final int NAME_ORDER_EUROPE = 0x4;
@@ -285,7 +285,7 @@ public class VCardConfig {
      * </p>
      */
     public static final int VCARD_TYPE_V21_GENERIC =
-        (FLAG_V21 | NAME_ORDER_DEFAULT | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
+        (VERSION_21 | NAME_ORDER_DEFAULT | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
 
     /* package */ static String VCARD_TYPE_V21_GENERIC_STR = "v21_generic";
     
@@ -298,10 +298,18 @@ public class VCardConfig {
      * </p>
      */
     public static final int VCARD_TYPE_V30_GENERIC =
-        (FLAG_V30 | NAME_ORDER_DEFAULT | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
+        (VERSION_30 | NAME_ORDER_DEFAULT | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
 
     /* package */ static final String VCARD_TYPE_V30_GENERIC_STR = "v30_generic";
-    
+
+    /**
+     * General vCard format with the version 4.0.
+     */
+    public static final int VCARD_TYPE_V40_GENERIC =
+        (VERSION_40 | NAME_ORDER_DEFAULT | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
+
+    /* package */ static final String VCARD_TYPE_V40_GENERIC_STR = "v40_generic";
+
     /**
      * <p>
      * General vCard format for the vCard 2.1 with some Europe convension. Uses Utf-8.
@@ -309,7 +317,7 @@ public class VCardConfig {
      * </p>
      */
     public static final int VCARD_TYPE_V21_EUROPE =
-        (FLAG_V21 | NAME_ORDER_EUROPE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
+        (VERSION_21 | NAME_ORDER_EUROPE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
 
     /* package */ static final String VCARD_TYPE_V21_EUROPE_STR = "v21_europe";
     
@@ -322,7 +330,7 @@ public class VCardConfig {
      * </p>
      */
     public static final int VCARD_TYPE_V30_EUROPE =
-        (FLAG_V30 | NAME_ORDER_EUROPE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
+        (VERSION_30 | NAME_ORDER_EUROPE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
     
     /* package */ static final String VCARD_TYPE_V30_EUROPE_STR = "v30_europe";
 
@@ -335,7 +343,7 @@ public class VCardConfig {
      * </p>
      */
     public static final int VCARD_TYPE_V21_JAPANESE =
-        (FLAG_V21 | NAME_ORDER_JAPANESE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
+        (VERSION_21 | NAME_ORDER_JAPANESE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
 
     /* package */ static final String VCARD_TYPE_V21_JAPANESE_STR = "v21_japanese_utf8";
 
@@ -348,7 +356,7 @@ public class VCardConfig {
      * </p>
      */
     public static final int VCARD_TYPE_V30_JAPANESE =
-        (FLAG_V30 | NAME_ORDER_JAPANESE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
+        (VERSION_30 | NAME_ORDER_JAPANESE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
 
     /* package */ static final String VCARD_TYPE_V30_JAPANESE_STR = "v30_japanese_utf8";
 
@@ -362,7 +370,7 @@ public class VCardConfig {
      * @hide Should not be available world wide.
      */
     public static final int VCARD_TYPE_V21_JAPANESE_MOBILE =
-        (FLAG_V21 | NAME_ORDER_JAPANESE |
+        (VERSION_21 | NAME_ORDER_JAPANESE |
                 FLAG_CONVERT_PHONETIC_NAME_STRINGS | FLAG_REFRAIN_QP_TO_NAME_PROPERTIES);
 
     /* package */ static final String VCARD_TYPE_V21_JAPANESE_MOBILE_STR = "v21_japanese_mobile";
@@ -418,12 +426,20 @@ public class VCardConfig {
         }
     }
 
-    public static boolean isV30(final int vcardType) {
-        return ((vcardType & FLAG_V30) != 0);  
+    public static boolean isVersion21(final int vcardType) {
+        return (vcardType & VERSION_MASK) == VERSION_21;
+    }
+
+    public static boolean isVersion30(final int vcardType) {
+        return (vcardType & VERSION_MASK) == VERSION_30;
+    }
+
+    public static boolean isVersion40(final int vcardType) {
+        return (vcardType & VERSION_MASK) == VERSION_40;
     }
 
     public static boolean shouldUseQuotedPrintable(final int vcardType) {
-        return !isV30(vcardType);
+        return !isVersion30(vcardType);
     }
 
     public static int getNameOrderType(final int vcardType) {
@@ -448,7 +464,7 @@ public class VCardConfig {
     }
 
     public static boolean appendTypeParamName(final int vcardType) {
-        return (isV30(vcardType) || ((vcardType & FLAG_APPEND_TYPE_PARAM) != 0));
+        return (isVersion30(vcardType) || ((vcardType & FLAG_APPEND_TYPE_PARAM) != 0));
     }
 
     /**
