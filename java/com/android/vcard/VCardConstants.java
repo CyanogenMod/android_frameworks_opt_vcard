@@ -39,17 +39,22 @@ public class VCardConstants {
     public static final String PROPERTY_PHOTO = "PHOTO";
     public static final String PROPERTY_LOGO = "LOGO";
     public static final String PROPERTY_URL = "URL";
-    public static final String PROPERTY_BDAY = "BDAY";  // Birthday
+    public static final String PROPERTY_BDAY = "BDAY";  // Birthday (3.0, 4.0)
+    public static final String PROPERTY_BIRTH = "BIRTH";  // Place of birth (4.0)
+    public static final String PROPERTY_ANNIVERSARY = "ANNIVERSARY";  // Date of marriage (4.0)
+    public static final String PROPERTY_NAME = "NAME";  // (3.0, 4,0)
+    public static final String PROPERTY_NICKNAME = "NICKNAME";  // (3.0, 4.0)
+    public static final String PROPERTY_SORT_STRING = "SORT-STRING";  // (3.0, 4.0)
     public static final String PROPERTY_END = "END";
 
-    // Valid property names not supported (not appropriately handled) by our vCard importer now.
+    // Valid property names not supported (not appropriately handled) by our importer.
+    // TODO: Should be removed from the view of memory efficiency?
     public static final String PROPERTY_REV = "REV";
-    public static final String PROPERTY_AGENT = "AGENT";
+    public static final String PROPERTY_AGENT = "AGENT";  // (3.0)
+    public static final String PROPERTY_DDAY = "DDAY";  // Date of death (4.0)
+    public static final String PROPERTY_DEATH = "DEATH";  // Place of death (4.0)
 
     // Available in vCard 3.0. Shoud not use when composing vCard 2.1 file.
-    public static final String PROPERTY_NAME = "NAME";
-    public static final String PROPERTY_NICKNAME = "NICKNAME";
-    public static final String PROPERTY_SORT_STRING = "SORT-STRING";
     
     // De-fact property values expressing phonetic names.
     public static final String PROPERTY_X_PHONETIC_FIRST_NAME = "X-PHONETIC-FIRST-NAME";

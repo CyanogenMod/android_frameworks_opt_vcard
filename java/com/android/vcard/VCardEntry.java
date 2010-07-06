@@ -448,6 +448,7 @@ public class VCardEntry {
     private String mDisplayName;
 
     private String mBirthday;
+    private String mAnniversary;
 
     private List<String> mNoteList;
     private List<PhoneData> mPhoneList;
@@ -959,6 +960,8 @@ public class VCardEntry {
             mWebsiteList.add(propValue);
         } else if (propName.equals(VCardConstants.PROPERTY_BDAY)) {
             mBirthday = propValue;
+        } else if (propName.equals(VCardConstants.PROPERTY_ANNIVERSARY)) {
+            mAnniversary = propValue;
         } else if (propName.equals(VCardConstants.PROPERTY_X_PHONETIC_FIRST_NAME)) {
             mPhoneticGivenName = propValue;
         } else if (propName.equals(VCardConstants.PROPERTY_X_PHONETIC_MIDDLE_NAME)) {
@@ -970,30 +973,7 @@ public class VCardEntry {
                 VCardUtils.constructListFromValue(propValue,
                         VCardConfig.isVersion30(mVCardType));
             handleAndroidCustomProperty(customPropertyList);
-        /*} else if (propName.equals("REV")) {
-            // Revision of this VCard entry. I think we can ignore this.
-        } else if (propName.equals("UID")) {
-        } else if (propName.equals("KEY")) {
-            // Type is X509 or PGP? I don't know how to handle this...
-        } else if (propName.equals("MAILER")) {
-        } else if (propName.equals("TZ")) {
-        } else if (propName.equals("GEO")) {
-        } else if (propName.equals("CLASS")) {
-            // vCard 3.0 only.
-            // e.g. CLASS:CONFIDENTIAL
-        } else if (propName.equals("PROFILE")) {
-            // VCard 3.0 only. Must be "VCARD". I think we can ignore this.
-        } else if (propName.equals("CATEGORIES")) {
-            // VCard 3.0 only.
-            // e.g. CATEGORIES:INTERNET,IETF,INDUSTRY,INFORMATION TECHNOLOGY
-        } else if (propName.equals("SOURCE")) {
-            // VCard 3.0 only.
-        } else if (propName.equals("PRODID")) {
-            // VCard 3.0 only.
-            // To specify the identifier for the product that created
-            // the vCard object.*/
         } else {
-            // Unknown X- words and IANA token.
         }
     }
 
@@ -1222,6 +1202,15 @@ public class VCardEntry {
             builder.withValue(Data.MIMETYPE, Event.CONTENT_ITEM_TYPE);
             builder.withValue(Event.START_DATE, mBirthday);
             builder.withValue(Event.TYPE, Event.TYPE_BIRTHDAY);
+            operationList.add(builder.build());
+        }
+
+        if (!TextUtils.isEmpty(mAnniversary)) {
+            builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
+            builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
+            builder.withValue(Data.MIMETYPE, Event.CONTENT_ITEM_TYPE);
+            builder.withValue(Event.START_DATE, mBirthday);
+            builder.withValue(Event.TYPE, Event.TYPE_ANNIVERSARY);
             operationList.add(builder.build());
         }
 
