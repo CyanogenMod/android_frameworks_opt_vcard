@@ -132,6 +132,15 @@ public class VCardBuilder {
     public VCardBuilder(final int vcardType, String charset) {
         mVCardType = vcardType;
 
+        // We don't allow currrent Android devices to build vCard files with version 4.0
+        // while We allow them to parse/import them, as vCard 4.0 is not yet released
+        // as formal specification.
+        if (VCardConfig.isVersion40(vcardType)) {
+            // We don't use VCardException since this exception should not be a part of
+            // public API.
+            throw new RuntimeException("Must not use vCard 4.0 when building vCard, because " +
+                    "it is not officially released.");
+        }
         mIsV30 = VCardConfig.isVersion30(vcardType);
         mShouldUseQuotedPrintable = VCardConfig.shouldUseQuotedPrintable(vcardType);
         mIsDoCoMo = VCardConfig.isDoCoMo(vcardType);
