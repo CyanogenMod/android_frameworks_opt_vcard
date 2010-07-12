@@ -986,6 +986,9 @@ public class VCardImporterTests extends VCardTestsBase {
         elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.FAMILY_NAME, "Example")
                 .put(StructuredName.DISPLAY_NAME, "Example");
+        elem.addExpected(Event.CONTENT_ITEM_TYPE)
+                .put(Event.TYPE, Event.TYPE_ANNIVERSARY)
+                .put(Event.START_DATE, "20091010");
     }
 
     public void testTolerateInvalidCommentLikeLineV21() {

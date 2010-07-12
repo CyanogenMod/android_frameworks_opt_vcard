@@ -1209,7 +1209,7 @@ public class VCardEntry {
             builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
             builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
             builder.withValue(Data.MIMETYPE, Event.CONTENT_ITEM_TYPE);
-            builder.withValue(Event.START_DATE, mBirthday);
+            builder.withValue(Event.START_DATE, mAnniversary);
             builder.withValue(Event.TYPE, Event.TYPE_ANNIVERSARY);
             operationList.add(builder.build());
         }
