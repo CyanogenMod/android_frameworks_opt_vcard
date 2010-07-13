@@ -95,6 +95,9 @@ public class VCardConstants {
     public static final String PARAM_TYPE_VOICE = "VOICE";
     public static final String PARAM_TYPE_INTERNET = "INTERNET";
 
+    public static final String PARAM_CHARSET = "CHARSET";
+    public static final String PARAM_ENCODING = "ENCODING";
+
     // Abbreviation of "prefered" according to vCard 2.1 specification.
     // We interpret this value as "primary" property during import/export.
     //

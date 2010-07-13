@@ -215,8 +215,10 @@ public class VCardEntryConstructor implements VCardInterpreter {
             return;
         }
 
-        final Collection<String> charsetCollection = mCurrentProperty.getParameters("CHARSET");
-        final Collection<String> encodingCollection = mCurrentProperty.getParameters("ENCODING");
+        final Collection<String> charsetCollection =
+                mCurrentProperty.getParameters(VCardConstants.PARAM_CHARSET);
+        final Collection<String> encodingCollection =
+                mCurrentProperty.getParameters(VCardConstants.PARAM_ENCODING);
         final String encoding =
             ((encodingCollection != null) ? encodingCollection.iterator().next() : null);
         String targetCharset = CharsetUtils.nameForDefaultVendor(

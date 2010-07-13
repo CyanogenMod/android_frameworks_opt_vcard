@@ -518,6 +518,7 @@ import java.util.Set;
                         nameIndex = i + 1;
                         state = STATE_PARAMS;  // Start parameter parsing.
                     }
+                    // TODO: comma support (in vCard 3.0 and 4.0).
                     break;
                 }
                 case STATE_PARAMS: {

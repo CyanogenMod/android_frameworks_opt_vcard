@@ -16,7 +16,6 @@
 package com.android.vcard.tests;
 
 import android.content.ContentValues;
-import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
 import android.provider.ContactsContract.CommonDataKinds.Note;
@@ -26,6 +25,7 @@ import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
+import android.provider.ContactsContract.Data;
 
 import com.android.vcard.VCardConfig;
 import com.android.vcard.tests.test_utils.ContentValuesVerifier;
@@ -1003,7 +1003,7 @@ public class VCardImporterTests extends VCardTestsBase {
     }
 
     public void testPagerV30_Parse() {
-        mVerifier.initForImportTest(V30, R.raw.v30_comma_separated);
+        mVerifier.initForImportTest(V30, R.raw.v30_pager);
         mVerifier.addPropertyNodesVerifierElem()
                 .addExpectedNodeWithOrder("VERSION", "3.0")
                 .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""))
@@ -1012,7 +1012,7 @@ public class VCardImporterTests extends VCardTestsBase {
     }
 
     public void testPagerV30() {
-        mVerifier.initForImportTest(V30, R.raw.v30_comma_separated);
+        mVerifier.initForImportTest(V30, R.raw.v30_pager);
         ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
         elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.FAMILY_NAME, "F")
@@ -1023,4 +1023,20 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Phone.TYPE, Phone.TYPE_PAGER)
                 .put(Phone.NUMBER, "6101231234@pagersample.com");
     }
+
+    /* TODO: implement this.
+    public void testCommaSeparatedV30_Parse() {
+        mVerifier.initForImportTest(V30, R.raw.v30_comma_separated);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("VERSION", "3.0")
+                .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""))
+                .addExpectedNodeWithOrder("TEL", "6101231234@pagersample.com",
+                        new TypeSet("WORK", "MSG", "PAGER"));
+    }
+
+     // ContactsContract does not allow multiple nicknames while vCard 3.0/4.0 do.
+        // Only the first element should be picked.
+        elem.addExpected(Nickname.CONTENT_ITEM_TYPE)
+                .put(Nickname.NAME, "Jim");
+    */
 }
