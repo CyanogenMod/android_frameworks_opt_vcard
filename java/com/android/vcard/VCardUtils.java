@@ -469,6 +469,31 @@ public class VCardUtils {
         return true;
     }
 
+    public static boolean containsOnlyWhiteSpaces(final String...values) {
+        if (values == null) {
+            return true;
+        }
+        return containsOnlyWhiteSpaces(Arrays.asList(values));
+    }
+
+    public static boolean containsOnlyWhiteSpaces(final Collection<String> values) {
+        if (values == null) {
+            return true;
+        }
+        for (final String str : values) {
+            if (TextUtils.isEmpty(str)) {
+                continue;
+            }
+            final int length = str.length();
+            for (int i = 0; i < length; i = str.offsetByCodePoints(i, 1)) {
+                if (!Character.isWhitespace(str.codePointAt(i))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     /**
      * <p>
      * Returns true when the given String is categorized as "word" specified in vCard spec 2.1.
@@ -493,6 +518,47 @@ public class VCardUtils {
             }
         }
         return true;
+    }
+
+    /**
+     * <P>
+     * Returns String available as parameter value in vCard 3.0.
+     * </P>
+     * <P>
+     * RFC 2426 requires vCard composer to quote parameter values when it contains
+     * semi-colon, for example (See RFC 2426 for more information).
+     * This method checks whether the given String can be used without quotes.
+     * </P>
+     * <P>
+     * Note: We remove DQUOTE silently for now.
+     * </P>
+     */
+    public static String toStringAvailableAsV30ParamValue(String value) {
+        if (TextUtils.isEmpty(value)) {
+            value = "";
+        }
+        final int asciiFirst = 0x20;
+        final int asciiLast = 0x7E;  // included
+        final StringBuilder builder = new StringBuilder();
+        final int length = value.length();
+        boolean needQuote = false;
+        for (int i = 0; i < length; i = value.offsetByCodePoints(i, 1)) {
+            final int codePoint = value.codePointAt(i);
+            if (codePoint < asciiFirst || codePoint == '"') {
+                // CTL characters and DQUOTE are never accepted. Remove them.
+                continue;
+            }
+            builder.appendCodePoint(codePoint);
+            if (codePoint == ':' || codePoint == ',' || codePoint == ' ') {
+                needQuote = true;
+            }
+        }
+
+        final String result = builder.toString();
+        return ((result.isEmpty() || VCardUtils.containsOnlyWhiteSpaces(result))
+                ? ""
+                : (needQuote ? ('"' + result + '"')
+                : result));
     }
 
     public static String toHalfWidthString(final String orgString) {

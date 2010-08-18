@@ -102,13 +102,15 @@ public class VCardEntryConstructor implements VCardInterpreter {
     public void addEntryHandler(VCardEntryHandler entryHandler) {
         mEntryHandlers.add(entryHandler);
     }
-    
+
+    @Override
     public void start() {
         for (VCardEntryHandler entryHandler : mEntryHandlers) {
             entryHandler.onStart();
         }
     }
 
+    @Override
     public void end() {
         for (VCardEntryHandler entryHandler : mEntryHandlers) {
             entryHandler.onEnd();
@@ -120,6 +122,7 @@ public class VCardEntryConstructor implements VCardInterpreter {
         mCurrentProperty = new VCardEntry.Property();
     }
 
+    @Override
     public void startEntry() {
         if (mCurrentVCardEntry != null) {
             Log.e(LOG_TAG, "Nested VCard code is not supported now.");
@@ -127,6 +130,7 @@ public class VCardEntryConstructor implements VCardInterpreter {
         mCurrentVCardEntry = new VCardEntry(mVCardType, mAccount);
     }
 
+    @Override
     public void endEntry() {
         mCurrentVCardEntry.consolidateFields();
         for (VCardEntryHandler entryHandler : mEntryHandlers) {
@@ -135,21 +139,26 @@ public class VCardEntryConstructor implements VCardInterpreter {
         mCurrentVCardEntry = null;
     }
 
+    @Override
     public void startProperty() {
         mCurrentProperty.clear();
     }
 
+    @Override
     public void endProperty() {
         mCurrentVCardEntry.addProperty(mCurrentProperty);
     }
     
+    @Override
     public void propertyName(String name) {
         mCurrentProperty.setPropertyName(name);
     }
 
+    @Override
     public void propertyGroup(String group) {
     }
 
+    @Override
     public void propertyParamType(String type) {
         if (mParamType != null) {
             Log.e(LOG_TAG, "propertyParamType() is called more than once " +
@@ -158,10 +167,15 @@ public class VCardEntryConstructor implements VCardInterpreter {
         mParamType = type;
     }
 
+    @Override
     public void propertyParamValue(String value) {
         if (mParamType == null) {
             // From vCard 2.1 specification. vCard 3.0 formally does not allow this case.
             mParamType = "TYPE";
+        }
+        if (!VCardUtils.containsOnlyAlphaDigitHyphen(value)) {
+            value = encodeToSystemCharset(
+                    value, mSourceCharset, VCardConfig.DEFAULT_IMPORT_CHARSET);
         }
         mCurrentProperty.addParameter(mParamType, value);
         mParamType = null;
