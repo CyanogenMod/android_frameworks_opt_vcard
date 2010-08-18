@@ -16,16 +16,15 @@
 package com.android.vcard.tests.test_utils;
 
 import android.provider.ContactsContract.RawContacts;
+import android.test.AndroidTestCase;
 import android.test.mock.MockContentResolver;
 
 import com.android.vcard.VCardComposer;
 
-import junit.framework.TestCase;
-
 /* package */ class ExportTestResolver extends MockContentResolver {
     private final ExportTestProvider mProvider;
-    public ExportTestResolver(TestCase testCase) {
-        mProvider = new ExportTestProvider(testCase);
+    public ExportTestResolver(AndroidTestCase androidTestCase) {
+        mProvider = new ExportTestProvider(androidTestCase);
         addProvider(VCardComposer.VCARD_TEST_AUTHORITY, mProvider);
         addProvider(RawContacts.CONTENT_URI.getAuthority(), mProvider);
     }

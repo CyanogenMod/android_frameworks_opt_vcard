@@ -19,17 +19,16 @@ import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.provider.ContactsContract.RawContacts;
+import android.test.AndroidTestCase;
 import android.test.mock.MockContentResolver;
-
-import junit.framework.TestCase;
 
 import java.util.ArrayList;
 
 /* package */ class ImportTestResolver extends MockContentResolver {
     private final ImportTestProvider mProvider;
 
-    public ImportTestResolver(TestCase testCase) {
-        mProvider = new ImportTestProvider(testCase);
+    public ImportTestResolver(AndroidTestCase androidTestCase) {
+        mProvider = new ImportTestProvider(androidTestCase);
     }
 
     @Override

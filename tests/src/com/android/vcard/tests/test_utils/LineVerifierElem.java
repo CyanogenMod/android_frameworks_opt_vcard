@@ -15,6 +15,7 @@
  */
 package com.android.vcard.tests.test_utils;
 
+import android.test.AndroidTestCase;
 import android.text.TextUtils;
 
 import com.android.vcard.VCardConfig;
@@ -25,12 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LineVerifierElem {
-    private final TestCase mTestCase;
     private final List<String> mExpectedLineList = new ArrayList<String>();
     private final int mVCardType;
 
-    public LineVerifierElem(TestCase testCase, int vcardType) {
-        mTestCase = testCase;
+    public LineVerifierElem(AndroidTestCase androidTestCase, int vcardType) {
         mVCardType = vcardType;
     }
 

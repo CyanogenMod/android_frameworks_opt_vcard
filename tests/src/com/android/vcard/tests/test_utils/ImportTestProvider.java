@@ -19,8 +19,6 @@ import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.net.Uri;
-import android.provider.ContactsContract.Data;
-import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
@@ -34,6 +32,9 @@ import android.provider.ContactsContract.CommonDataKinds.Relation;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
+import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.RawContacts;
+import android.test.AndroidTestCase;
 import android.test.mock.MockContentProvider;
 import android.text.TextUtils;
 import android.util.Log;
@@ -46,10 +47,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 /* package */ class ImportTestProvider extends MockContentProvider {
     private static final Set<String> sKnownMimeTypeSet =
@@ -64,10 +65,7 @@ import java.util.Map.Entry;
 
     final Map<String, Collection<ContentValues>> mMimeTypeToExpectedContentValues;
 
-    private final TestCase mTestCase;
-
-    public ImportTestProvider(TestCase testCase) {
-        mTestCase = testCase;
+    public ImportTestProvider(AndroidTestCase androidTestCase) {
         mMimeTypeToExpectedContentValues =
             new HashMap<String, Collection<ContentValues>>();
         for (String acceptanbleMimeType : sKnownMimeTypeSet) {
@@ -82,7 +80,7 @@ import java.util.Map.Entry;
     public void addExpectedContentValues(ContentValues expectedContentValues) {
         final String mimeType = expectedContentValues.getAsString(Data.MIMETYPE);
         if (!sKnownMimeTypeSet.contains(mimeType)) {
-            mTestCase.fail(String.format(
+            TestCase.fail(String.format(
                     "Unknow MimeType %s in the test code. Test code should be broken.",
                     mimeType));
         }
@@ -96,7 +94,7 @@ import java.util.Map.Entry;
     public ContentProviderResult[] applyBatch(
             ArrayList<ContentProviderOperation> operations) {
         if (operations == null) {
-            mTestCase.fail("There is no operation.");
+            TestCase.fail("There is no operation.");
         }
 
         final int size = operations.size();
@@ -117,12 +115,12 @@ import java.util.Map.Entry;
                     fakeResultArray, i);
             final Uri uri = operation.getUri();
             if (uri.equals(RawContacts.CONTENT_URI)) {
-                mTestCase.assertNull(actualContentValues.get(RawContacts.ACCOUNT_NAME));
-                mTestCase.assertNull(actualContentValues.get(RawContacts.ACCOUNT_TYPE));
+                TestCase.assertNull(actualContentValues.get(RawContacts.ACCOUNT_NAME));
+                TestCase.assertNull(actualContentValues.get(RawContacts.ACCOUNT_TYPE));
             } else if (uri.equals(Data.CONTENT_URI)) {
                 final String mimeType = actualContentValues.getAsString(Data.MIMETYPE);
                 if (!sKnownMimeTypeSet.contains(mimeType)) {
-                    mTestCase.fail(String.format(
+                    TestCase.fail(String.format(
                             "Unknown MimeType %s. Probably added after developing this test",
                             mimeType));
                 }
@@ -154,7 +152,7 @@ import java.util.Map.Entry;
                 final Collection<ContentValues> contentValuesCollection =
                     mMimeTypeToExpectedContentValues.get(mimeType);
                 if (contentValuesCollection.isEmpty()) {
-                    mTestCase.fail("ContentValues for MimeType " + mimeType
+                    TestCase.fail("ContentValues for MimeType " + mimeType
                             + " is not expected at all (" + actualContentValues + ")");
                 }
                 boolean checked = false;
@@ -166,7 +164,7 @@ import java.util.Map.Entry;
                             + convertToEasilyReadableString(actualContentValues));*/
                     if (equalsForContentValues(expectedContentValues,
                             actualContentValues)) {
-                        mTestCase.assertTrue(contentValuesCollection.remove(expectedContentValues));
+                        TestCase.assertTrue(contentValuesCollection.remove(expectedContentValues));
                         checked = true;
                         break;
                     }
@@ -179,10 +177,10 @@ import java.util.Map.Entry;
                     for (ContentValues expectedContentValues : contentValuesCollection) {
                         builder.append(convertToEasilyReadableString(expectedContentValues));
                     }
-                    mTestCase.fail(builder.toString());
+                    TestCase.fail(builder.toString());
                 }
             } else {
-                mTestCase.fail("Unexpected Uri has come: " + uri);
+                TestCase.fail("Unexpected Uri has come: " + uri);
             }
         }  // for (int i = 0; i < size; i++) {
         return fakeResultArray;
@@ -201,7 +199,7 @@ import java.util.Map.Entry;
             final String failMsg =
                 "There is(are) remaining expected ContentValues instance(s): \n"
                     + builder.toString();
-            mTestCase.fail(failMsg);
+            TestCase.fail(failMsg);
         }
     }
 
@@ -221,7 +219,7 @@ import java.util.Map.Entry;
             if (Data.MIMETYPE.equals(key)) {
                 mimeTypeValue = valueString;
             } else {
-                mTestCase.assertNotNull(key);
+                TestCase.assertNotNull(key);
                 sortedMap.put(key, valueString);
             }
         }

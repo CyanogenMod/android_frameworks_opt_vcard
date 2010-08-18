@@ -24,6 +24,7 @@ import android.net.Uri;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
+import android.test.AndroidTestCase;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockCursor;
 
@@ -36,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 
 /* package */ class ExportTestProvider extends MockContentProvider {
-    final private TestCase mTestCase;
     final private ArrayList<ContactEntry> mContactEntryList = new ArrayList<ContactEntry>();
 
     private static class MockEntityIterator implements EntityIterator {
@@ -73,8 +73,7 @@ import java.util.List;
         }
     }
 
-    public ExportTestProvider(TestCase testCase) {
-        mTestCase = testCase;
+    public ExportTestProvider(AndroidTestCase androidTestCase) {
     }
 
     public ContactEntry buildInputEntry() {
@@ -94,14 +93,14 @@ import java.util.List;
      */
     public EntityIterator queryEntities(Uri uri,
             String selection, String[] selectionArgs, String sortOrder) {
-        mTestCase.assertTrue(uri != null);
-        mTestCase.assertTrue(ContentResolver.SCHEME_CONTENT.equals(uri.getScheme()));
+        TestCase.assertTrue(uri != null);
+        TestCase.assertTrue(ContentResolver.SCHEME_CONTENT.equals(uri.getScheme()));
         final String authority = uri.getAuthority();
-        mTestCase.assertTrue(RawContacts.CONTENT_URI.getAuthority().equals(authority));
-        mTestCase.assertTrue((Data.CONTACT_ID + "=?").equals(selection));
-        mTestCase.assertEquals(1, selectionArgs.length);
+        TestCase.assertTrue(RawContacts.CONTENT_URI.getAuthority().equals(authority));
+        TestCase.assertTrue((Data.CONTACT_ID + "=?").equals(selection));
+        TestCase.assertEquals(1, selectionArgs.length);
         final int id = Integer.parseInt(selectionArgs[0]);
-        mTestCase.assertTrue(id >= 0 && id < mContactEntryList.size());
+        TestCase.assertTrue(id >= 0 && id < mContactEntryList.size());
 
         return new MockEntityIterator(mContactEntryList.get(id).getList());
     }
@@ -109,11 +108,11 @@ import java.util.List;
     @Override
     public Cursor query(Uri uri,String[] projection,
             String selection, String[] selectionArgs, String sortOrder) {
-        mTestCase.assertTrue(VCardComposer.CONTACTS_TEST_CONTENT_URI.equals(uri));
+        TestCase.assertTrue(VCardComposer.CONTACTS_TEST_CONTENT_URI.equals(uri));
         // In this test, following arguments are not supported.
-        mTestCase.assertNull(selection);
-        mTestCase.assertNull(selectionArgs);
-        mTestCase.assertNull(sortOrder);
+        TestCase.assertNull(selection);
+        TestCase.assertNull(selectionArgs);
+        TestCase.assertNull(sortOrder);
 
         return new MockCursor() {
             int mCurrentPosition = -1;
@@ -151,14 +150,14 @@ import java.util.List;
 
             @Override
             public int getColumnIndex(String columnName) {
-                mTestCase.assertEquals(Contacts._ID, columnName);
+                TestCase.assertEquals(Contacts._ID, columnName);
                 return 0;
             }
 
             @Override
             public int getInt(int columnIndex) {
-                mTestCase.assertEquals(0, columnIndex);
-                mTestCase.assertTrue(mCurrentPosition >= 0
+                TestCase.assertEquals(0, columnIndex);
+                TestCase.assertTrue(mCurrentPosition >= 0
                         && mCurrentPosition < mContactEntryList.size());
                 return mCurrentPosition;
             }

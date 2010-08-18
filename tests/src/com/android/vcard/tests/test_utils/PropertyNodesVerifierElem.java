@@ -16,6 +16,7 @@
 package com.android.vcard.tests.test_utils;
 
 import android.content.ContentValues;
+import android.test.AndroidTestCase;
 
 import junit.framework.TestCase;
 
@@ -50,12 +51,10 @@ public class PropertyNodesVerifierElem {
     // Intentionally use ArrayList instead of Set, assuming there may be more than one
     // exactly same objects.
     private final ArrayList<PropertyNode> mUnorderedNodeList;
-    private final TestCase mTestCase;
 
-    public PropertyNodesVerifierElem(TestCase testCase) {
+    public PropertyNodesVerifierElem(AndroidTestCase androidTestCase) {
         mOrderedNodeMap = new HashMap<String, List<PropertyNode>>();
         mUnorderedNodeList = new ArrayList<PropertyNode>();
-        mTestCase = testCase;
     }
 
     // WithOrder
@@ -212,7 +211,7 @@ public class PropertyNodesVerifierElem {
                     expectedProps.add(node.propName);
                 }
             }
-            mTestCase.fail("Expected property " + Arrays.toString(expectedProps.toArray())
+            TestCase.fail("Expected property " + Arrays.toString(expectedProps.toArray())
                     + " was not found.");
         }
     }
@@ -249,7 +248,7 @@ public class PropertyNodesVerifierElem {
                             expectedButDifferentValueList);
                 } else {
                     // There's no expected node with same propName.
-                    mTestCase.fail("Unexpected property \"" + propName + "\" exists.");
+                    TestCase.fail("Unexpected property \"" + propName + "\" exists.");
                 }
             }
         } else {
@@ -264,7 +263,7 @@ public class PropertyNodesVerifierElem {
                             expectedButDifferentValueList);
                 } else {
                     // There's no expected node with same propName.
-                    mTestCase.fail("Unexpected property \"" + propName + "\" exists.");
+                    TestCase.fail("Unexpected property \"" + propName + "\" exists.");
                 }
             }
         }
@@ -310,7 +309,7 @@ public class PropertyNodesVerifierElem {
             builder.append(expectedNode.toString());
             builder.append("\n");
         }
-        mTestCase.fail("Property \"" + propName + "\" has wrong value.\n"
+        TestCase.fail("Property \"" + propName + "\" has wrong value.\n"
                 + builder.toString()
                 + "  actual: " + actualNode.toString());
     }
