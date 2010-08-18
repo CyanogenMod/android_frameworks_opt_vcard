@@ -980,4 +980,19 @@ public class VCardExporterTests extends VCardTestsBase {
     public void testPickUpNonEmptyContentValuesV30() {
         testPickUpNonEmptyContentValuesCommon(V30);
     }
+
+    public void testUseMultiByteTypeV30() {
+        mVerifier.initForExportTest(V30);
+        final ContactEntry entry = mVerifier.addInputEntry();
+        entry.addContentValues(Phone.CONTENT_ITEM_TYPE)
+                .put(Phone.TYPE, Phone.TYPE_CUSTOM)
+                .put(Phone.LABEL, "\u96FB\u8A71")
+                .put(Phone.NUMBER, "1");
+        mVerifier.addLineVerifierElem()
+                .addExpected("N:")
+                .addExpected("FN:")
+                .addExpected("TEL;TYPE=\u96FB\u8A71:1");
+        mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                .addExpectedNode("TEL", "1", new TypeSet("\u96FB\u8A71"));
+    }
 }

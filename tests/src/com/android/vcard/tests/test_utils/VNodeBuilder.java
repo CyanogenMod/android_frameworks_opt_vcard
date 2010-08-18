@@ -140,6 +140,12 @@ import java.util.List;
     }
 
     public void propertyParamValue(String value) {
+        if (!VCardUtils.containsOnlyAlphaDigitHyphen(value)) {
+            value = VCardUtils.convertStringCharset(value,
+                    VCardConfig.DEFAULT_INTERMEDIATE_CHARSET,
+                    VCardConfig.DEFAULT_IMPORT_CHARSET);
+        }
+
         if (mCurrentParamType == null ||
                 mCurrentParamType.equalsIgnoreCase("TYPE")) {
             mCurrentPropNode.paramMap_TYPE.add(value);

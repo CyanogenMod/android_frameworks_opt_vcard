@@ -174,31 +174,11 @@ public class VCardEntryConstructor implements VCardInterpreter {
             mParamType = "TYPE";
         }
         if (!VCardUtils.containsOnlyAlphaDigitHyphen(value)) {
-            value = encodeToSystemCharset(
+            value = VCardUtils.convertStringCharset(
                     value, mSourceCharset, VCardConfig.DEFAULT_IMPORT_CHARSET);
         }
         mCurrentProperty.addParameter(mParamType, value);
         mParamType = null;
-    }
-
-    private static String encodeToSystemCharset(String originalString,
-            String sourceCharset, String targetCharset) {
-        if (sourceCharset.equalsIgnoreCase(targetCharset)) {
-            return originalString;
-        }
-        final Charset charset = Charset.forName(sourceCharset);
-        final ByteBuffer byteBuffer = charset.encode(originalString);
-        // byteBuffer.array() "may" return byte array which is larger than
-        // byteBuffer.remaining(). Here, we keep on the safe side.
-        final byte[] bytes = new byte[byteBuffer.remaining()];
-        byteBuffer.get(bytes);
-        try {
-            String ret = new String(bytes, targetCharset);
-            return ret;
-        } catch (UnsupportedEncodingException e) {
-            Log.e(LOG_TAG, "Failed to encode: charset=" + targetCharset);
-            return null;
-        }
     }
 
     private String handleOneValue(String value,
@@ -221,7 +201,7 @@ public class VCardEntryConstructor implements VCardInterpreter {
         }
 
         // Just translate the charset of a given String from inputCharset to a system one. 
-        return encodeToSystemCharset(value, sourceCharset, targetCharset);
+        return VCardUtils.convertStringCharset(value, sourceCharset, targetCharset);
     }
     
     public void propertyValues(List<String> values) {

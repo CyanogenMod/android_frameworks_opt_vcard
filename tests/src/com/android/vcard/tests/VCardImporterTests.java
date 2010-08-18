@@ -32,6 +32,8 @@ import com.android.vcard.tests.test_utils.ContentValuesVerifier;
 import com.android.vcard.tests.test_utils.ContentValuesVerifierElem;
 import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem.TypeSet;
 
+import junit.framework.TestCase;
+
 import java.util.Arrays;
 
 public class VCardImporterTests extends VCardTestsBase {
@@ -1046,19 +1048,13 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Phone.NUMBER, "1");
     }
 
-    /* TODO: implement this.
-    public void testCommaSeparatedV30_Parse() {
+    public void testCommaSeparatedParamsV30_Parse() {
         mVerifier.initForImportTest(V30, R.raw.v30_comma_separated);
         mVerifier.addPropertyNodesVerifierElem()
                 .addExpectedNodeWithOrder("VERSION", "3.0")
-                .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""))
-                .addExpectedNodeWithOrder("TEL", "6101231234@pagersample.com",
-                        new TypeSet("WORK", "MSG", "PAGER"));
+                .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""),
+                        new TypeSet("PREF", "HOME"))
+                .addExpectedNodeWithOrder("TEL", "1",
+                        new TypeSet("COMMA,SEPARATED", "PREF"));
     }
-
-     // ContactsContract does not allow multiple nicknames while vCard 3.0/4.0 do.
-        // Only the first element should be picked.
-        elem.addExpected(Nickname.CONTENT_ITEM_TYPE)
-                .put(Nickname.NAME, "Jim");
-    */
 }

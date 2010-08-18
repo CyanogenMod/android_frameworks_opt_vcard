@@ -30,6 +30,8 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -732,6 +734,25 @@ public class VCardUtils {
             return new VCardParser_V40();
         } else {
             throw new VCardException("Version is not specified");
+        }
+    }
+
+    public static final String convertStringCharset(
+            String originalString, String sourceCharset, String targetCharset) {
+        if (sourceCharset.equalsIgnoreCase(targetCharset)) {
+            return originalString;
+        }
+        final Charset charset = Charset.forName(sourceCharset);
+        final ByteBuffer byteBuffer = charset.encode(originalString);
+        // byteBuffer.array() "may" return byte array which is larger than
+        // byteBuffer.remaining(). Here, we keep on the safe side.
+        final byte[] bytes = new byte[byteBuffer.remaining()];
+        byteBuffer.get(bytes);
+        try {
+            return new String(bytes, targetCharset);
+        } catch (UnsupportedEncodingException e) {
+            Log.e(LOG_TAG, "Failed to encode: charset=" + targetCharset);
+            return null;
         }
     }
 
