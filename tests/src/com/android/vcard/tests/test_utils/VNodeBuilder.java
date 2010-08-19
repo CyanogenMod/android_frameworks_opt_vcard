@@ -40,7 +40,7 @@ import java.util.List;
  * This is called VNode, not VCardNode, since it was used for expressing vCalendar (iCal).
  * </p>
  */
-/* package */ class VNodeBuilder implements VCardInterpreter {
+public class VNodeBuilder implements VCardInterpreter {
     static private String LOG_TAG = "VNodeBuilder"; 
     
     public List<VNode> vNodeList = new ArrayList<VNode>();

@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/* package */ class ExportTestProvider extends MockContentProvider {
+public class ExportTestProvider extends MockContentProvider {
     final private ArrayList<ContactEntry> mContactEntryList = new ArrayList<ContactEntry>();
 
     private static class MockEntityIterator implements EntityIterator {

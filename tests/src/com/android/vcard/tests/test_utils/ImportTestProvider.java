@@ -52,7 +52,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-/* package */ class ImportTestProvider extends MockContentProvider {
+public class ImportTestProvider extends MockContentProvider {
     private static final Set<String> sKnownMimeTypeSet =
         new HashSet<String>(Arrays.asList(StructuredName.CONTENT_ITEM_TYPE,
                 Nickname.CONTENT_ITEM_TYPE, Phone.CONTENT_ITEM_TYPE,

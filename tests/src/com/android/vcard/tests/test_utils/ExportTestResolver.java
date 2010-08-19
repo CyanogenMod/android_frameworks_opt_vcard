@@ -21,7 +21,7 @@ import android.test.mock.MockContentResolver;
 
 import com.android.vcard.VCardComposer;
 
-/* package */ class ExportTestResolver extends MockContentResolver {
+public class ExportTestResolver extends MockContentResolver {
     private final ExportTestProvider mProvider;
     public ExportTestResolver(AndroidTestCase androidTestCase) {
         mProvider = new ExportTestProvider(androidTestCase);

@@ -25,7 +25,7 @@ import com.android.vcard.tests.test_utils.VCardVerifier;
  * BaseClass for vCard unit tests with utility classes.
  * Please do not add each unit test here.
  */
-/* package */ class VCardTestsBase extends AndroidTestCase {
+public class VCardTestsBase extends AndroidTestCase {
     public static final int V21 = VCardConfig.VCARD_TYPE_V21_GENERIC;
     public static final int V30 = VCardConfig.VCARD_TYPE_V30_GENERIC;
 

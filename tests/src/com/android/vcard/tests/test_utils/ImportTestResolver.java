@@ -24,7 +24,7 @@ import android.test.mock.MockContentResolver;
 
 import java.util.ArrayList;
 
-/* package */ class ImportTestResolver extends MockContentResolver {
+public class ImportTestResolver extends MockContentResolver {
     private final ImportTestProvider mProvider;
 
     public ImportTestResolver(AndroidTestCase androidTestCase) {
