@@ -141,6 +141,11 @@ public class VCardConstants {
     public static final String PARAM_ADR_TYPE_DOM = "DOM";
     public static final String PARAM_ADR_TYPE_INTL = "INTL";
 
+    public static final String PARAM_LANGUAGE = "LANGUAGE";
+
+    // SORT-AS parameter introduced in vCard 4.0 (as of rev.13)
+    public static final String PARAM_SORT_AS = "SORT-AS";
+
     // TYPE parameters not officially valid but used in some vCard exporter.
     // Do not use in composer side.
     public static final String PARAM_EXTRA_TYPE_COMPANY = "COMPANY";

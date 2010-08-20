@@ -33,6 +33,7 @@ public class ContentValuesBuilder {
         return this;
     }
 
+    /*
     public ContentValuesBuilder put(String key, Byte value) {
         mContentValues.put(key, value);
         return this;
@@ -41,13 +42,14 @@ public class ContentValuesBuilder {
     public ContentValuesBuilder put(String key, Short value) {
         mContentValues.put(key, value);
         return this;
-    }
+    }*/
 
     public ContentValuesBuilder put(String key, Integer value) {
         mContentValues.put(key, value);
         return this;
     }
 
+    /*
     public ContentValuesBuilder put(String key, Long value) {
         mContentValues.put(key, value);
         return this;
@@ -66,7 +68,7 @@ public class ContentValuesBuilder {
     public ContentValuesBuilder put(String key, Boolean value) {
         mContentValues.put(key, value);
         return this;
-    }
+    }*/
 
     public ContentValuesBuilder put(String key, byte[] value) {
         mContentValues.put(key, value);

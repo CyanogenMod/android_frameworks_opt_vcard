@@ -41,7 +41,7 @@ public class VCardParser_V40 implements VCardParser {
                     "LABEL", "TEL", "EMAIL", "IMPP", "LANG", "TZ",
                     "GEO", "TITLE", "ROLE", "LOGO", "ORG", "MEMBER",
                     "RELATED", "CATEGORIES", "NOTE", "PRODID",
-                    "REV", "SORT-STRING", "SOUND", "UID", "CLIENTPIDMAP",
+                    "REV", "SOUND", "UID", "CLIENTPIDMAP",
                     "URL", "VERSION", "CLASS", "KEY", "FBURL", "CALENDRURI",
                     "CALURI")));
 

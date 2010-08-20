@@ -29,9 +29,9 @@ public class ContentValuesVerifier implements VCardEntryHandler {
     private int mIndex;
 
     public ContentValuesVerifierElem addElem(AndroidTestCase androidTestCase) {
-        ContentValuesVerifierElem importVerifier = new ContentValuesVerifierElem(androidTestCase);
-        mContentValuesVerifierElemList.add(importVerifier);
-        return importVerifier;
+        ContentValuesVerifierElem elem = new ContentValuesVerifierElem(androidTestCase);
+        mContentValuesVerifierElemList.add(elem);
+        return elem;
     }
 
     public void onStart() {

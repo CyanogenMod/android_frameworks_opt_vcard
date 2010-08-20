@@ -235,15 +235,13 @@ public class VCardVerifier {
     private void verifyWithInputStream(InputStream is) throws IOException {
         final VCardInterpreter interpreter;
         if (mContentValuesVerifier != null) {
-            final VNodeBuilder vnodeBuilder = mPropertyNodesVerifier;
-            final VCardEntryConstructor vcardDataBuilder =
-                    new VCardEntryConstructor(mVCardType);
-            vcardDataBuilder.addEntryHandler(mContentValuesVerifier);
+            final VCardEntryConstructor constructor = new VCardEntryConstructor(mVCardType);
+            constructor.addEntryHandler(mContentValuesVerifier);
             if (mPropertyNodesVerifier != null) {
                 interpreter = new VCardInterpreterCollection(Arrays.asList(
-                        mPropertyNodesVerifier, vcardDataBuilder));
+                        mPropertyNodesVerifier, constructor));
             } else {
-                interpreter = vnodeBuilder;
+                interpreter = constructor;
             }
         } else {
             if (mPropertyNodesVerifier != null) {

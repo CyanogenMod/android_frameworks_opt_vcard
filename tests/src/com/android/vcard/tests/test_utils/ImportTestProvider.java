@@ -37,7 +37,6 @@ import android.provider.ContactsContract.RawContacts;
 import android.test.AndroidTestCase;
 import android.test.mock.MockContentProvider;
 import android.text.TextUtils;
-import android.util.Log;
 
 import junit.framework.TestCase;
 
@@ -171,9 +170,11 @@ public class ImportTestProvider extends MockContentProvider {
                 }
                 if (!checked) {
                     final StringBuilder builder = new StringBuilder();
+                    builder.append("\n");
                     builder.append("Unexpected: ");
                     builder.append(convertToEasilyReadableString(actualContentValues));
-                    builder.append("\nExpected: ");
+                    builder.append("\n");
+                    builder.append("Expected  : ");
                     for (ContentValues expectedContentValues : contentValuesCollection) {
                         builder.append(convertToEasilyReadableString(expectedContentValues));
                     }
@@ -240,7 +241,7 @@ public class ImportTestProvider extends MockContentProvider {
     }
 
     private static boolean equalsForContentValues(
-            ContentValues expected, ContentValues actual) {
+            final ContentValues expected, final ContentValues actual) {
         if (expected == actual) {
             return true;
         } else if (expected == null || actual == null || expected.size() != actual.size()) {
@@ -253,17 +254,18 @@ public class ImportTestProvider extends MockContentProvider {
             if (!actual.containsKey(key)) {
                 return false;
             }
+            // Type mismatch usuall happens as importer doesn't care the type of each value.
+            // For example, variable type might be Integer when importing the type of TEL,
+            // while variable type would be String when importing the type of RELATION.
+            final Object actualValue = actual.get(key);
             if (value instanceof byte[]) {
-                Object actualValue = actual.get(key);
                 if (!Arrays.equals((byte[])value, (byte[])actualValue)) {
                     byte[] e = (byte[])value;
                     byte[] a = (byte[])actualValue;
-                    Log.d("@@@", "expected (len: " + e.length + "): " + Arrays.toString(e));
-                    Log.d("@@@", "actual (len: " + a.length + "): " + Arrays.toString(a));
                     return false;
                 }
-            } else if (!value.equals(actual.get(key))) {
-                Log.d("@@@", "different.");
+            } else if (!value.equals(actualValue) &&
+                    !value.toString().equals(actualValue.toString())) {
                 return false;
             }
         }

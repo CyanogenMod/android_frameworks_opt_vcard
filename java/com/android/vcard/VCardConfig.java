@@ -304,6 +304,7 @@ public class VCardConfig {
 
     /**
      * General vCard format with the version 4.0.
+     * @hide vCard 4.0 is not published yet.
      */
     public static final int VCARD_TYPE_V40_GENERIC =
         (VERSION_40 | NAME_ORDER_DEFAULT | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);

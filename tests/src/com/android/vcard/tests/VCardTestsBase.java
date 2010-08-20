@@ -28,6 +28,7 @@ import com.android.vcard.tests.test_utils.VCardVerifier;
 public class VCardTestsBase extends AndroidTestCase {
     public static final int V21 = VCardConfig.VCARD_TYPE_V21_GENERIC;
     public static final int V30 = VCardConfig.VCARD_TYPE_V30_GENERIC;
+    public static final int V40 = VCardConfig.VCARD_TYPE_V40_GENERIC;
 
     // Do not modify these during tests.
     protected final ContentValues mContentValuesForQP;

@@ -77,6 +77,14 @@ import java.util.Set;
         return builder.toString();
     }
 
+    public static String unescapeCharacter(final char ch) {
+        if (ch == 'n' || ch == 'N') {
+            return "\n";
+        } else {
+            return String.valueOf(ch);
+        }
+    }
+
     @Override
     protected Set<String> getKnownPropertyNameSet() {
         return VCardParser_V40.sKnownPropertyNameSet;

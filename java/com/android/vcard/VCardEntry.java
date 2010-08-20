@@ -249,17 +249,20 @@ public class VCardEntry {
         public String companyName;
         public String departmentName;
         public String titleName;
+        public final String phoneticName;  // We won't have this in "TITLE" property.
         public boolean isPrimary;
 
         public OrganizationData(int type,
-                String companyName,
-                String departmentName,
-                String titleName,
-                boolean isPrimary) {
+                final String companyName,
+                final String departmentName,
+                final String titleName,
+                final String phoneticName,
+                final boolean isPrimary) {
             this.type = type;
             this.companyName = companyName;
             this.departmentName = departmentName;
             this.titleName = titleName;
+            this.phoneticName = phoneticName;
             this.isPrimary = isPrimary;
         }
 
@@ -428,6 +431,14 @@ public class VCardEntry {
         }
     }
 
+    // TODO(dmiyakawa): vCard 4.0 logically has multiple formatted names and we need to
+    // select the most preferable one using PREF parameter.
+    //
+    // e.g. (based on rev.13)
+    // FN;PREF=1:John M. Doe
+    // FN;PREF=2:John Doe
+    // FN;PREF=3;John
+
     private String mFamilyName;
     private String mGivenName;
     private String mMiddleName;
@@ -523,21 +534,43 @@ public class VCardEntry {
     }
 
     /**
-     * Should be called via {@link #handleOrgValue(int, List, boolean)} or
+     * Should be called via {@link #handleOrgValue(int, List, Map, boolean) or
      * {@link #handleTitleValue(String)}.
      */
     private void addNewOrganization(int type, final String companyName,
             final String departmentName,
-            final String titleName, boolean isPrimary) {
+            final String titleName,
+            final String phoneticName,
+            final boolean isPrimary) {
         if (mOrganizationList == null) {
             mOrganizationList = new ArrayList<OrganizationData>();
         }
         mOrganizationList.add(new OrganizationData(type, companyName,
-                departmentName, titleName, isPrimary));
+                departmentName, titleName, phoneticName, isPrimary));
     }
 
     private static final List<String> sEmptyList =
             Collections.unmodifiableList(new ArrayList<String>(0));
+
+    private String buildSinglePhoneticNameFromSortAsParam(Map<String, Collection<String>> paramMap) {
+        final Collection<String> sortAsCollection = paramMap.get(VCardConstants.PARAM_SORT_AS);
+        if (sortAsCollection != null && sortAsCollection.size() != 0) {
+            if (sortAsCollection.size() > 1) {
+                Log.w(LOG_TAG, "Incorrect multiple SORT_AS parameters detected: " +
+                        Arrays.toString(sortAsCollection.toArray()));
+            }
+            final List<String> sortNames =
+                    VCardUtils.constructListFromValue(sortAsCollection.iterator().next(),
+                            mVCardType);
+            final StringBuilder builder = new StringBuilder();
+            for (final String elem : sortNames) {
+                builder.append(elem);
+            }
+            return builder.toString();
+        } else {
+            return null;
+        }
+    }
 
     /**
      * Set "ORG" related values to the appropriate data. If there's more than one
@@ -546,7 +579,9 @@ public class VCardEntry {
      * {@link OrganizationData} object, a new {@link OrganizationData} is created,
      * whose title is set to null.
      */
-    private void handleOrgValue(final int type, List<String> orgList, boolean isPrimary) {
+    private void handleOrgValue(final int type, List<String> orgList,
+            Map<String, Collection<String>> paramMap, boolean isPrimary) {
+        final String phoneticName = buildSinglePhoneticNameFromSortAsParam(paramMap);
         if (orgList == null) {
             orgList = sEmptyList;
         }
@@ -581,7 +616,7 @@ public class VCardEntry {
         if (mOrganizationList == null) {
             // Create new first organization entry, with "null" title which may be
             // added via handleTitleValue().
-            addNewOrganization(type, companyName, departmentName, null, isPrimary);
+            addNewOrganization(type, companyName, departmentName, null, phoneticName, isPrimary);
             return;
         }
         for (OrganizationData organizationData : mOrganizationList) {
@@ -599,7 +634,7 @@ public class VCardEntry {
         }
         // No OrganizatioData is available. Create another one, with "null" title, which may be
         // added via handleTitleValue().
-        addNewOrganization(type, companyName, departmentName, null, isPrimary);
+        addNewOrganization(type, companyName, departmentName, null, phoneticName, isPrimary);
     }
 
     /**
@@ -613,7 +648,7 @@ public class VCardEntry {
         if (mOrganizationList == null) {
             // Create new first organization entry, with "null" other info, which may be
             // added via handleOrgValue().
-            addNewOrganization(DEFAULT_ORGANIZATION_TYPE, null, null, title, false);
+            addNewOrganization(DEFAULT_ORGANIZATION_TYPE, null, null, title, null, false);
             return;
         }
         for (OrganizationData organizationData : mOrganizationList) {
@@ -624,7 +659,7 @@ public class VCardEntry {
         }
         // No Organization is available. Create another one, with "null" other info, which may be
         // added via handleOrgValue().
-        addNewOrganization(DEFAULT_ORGANIZATION_TYPE, null, null, title, false);
+        addNewOrganization(DEFAULT_ORGANIZATION_TYPE, null, null, title, null, false);
     }
 
     private void addIm(int protocol, String customProtocol, int type,
@@ -650,11 +685,54 @@ public class VCardEntry {
         mPhotoList.add(photoData);
     }
 
+    /**
+     * Tries to extract paramMap, constructs SORT-AS parameter values, and store them in
+     * appropriate phonetic name variables.
+     *
+     * This method does not care the vCard version. Even when we have SORT-AS parameters in
+     * invalid versions (i.e. 2.1 and 3.0), we scilently accept them so that we won't drop
+     * meaningful information. If we had this parameter in the N field of vCard 3.0, and
+     * the contact data also have SORT-STRING, we will prefer SORT-STRING, since it is
+     * regitimate property to be understood.
+     */
+    private void tryHandleSortAsName(final Map<String, Collection<String>> paramMap) {
+        if (VCardConfig.isVersion30(mVCardType) &&
+                !(TextUtils.isEmpty(mPhoneticFamilyName) &&
+                        TextUtils.isEmpty(mPhoneticMiddleName) &&
+                        TextUtils.isEmpty(mPhoneticGivenName))) {
+            return;
+        }
+
+        final Collection<String> sortAsCollection = paramMap.get(VCardConstants.PARAM_SORT_AS);
+        if (sortAsCollection != null && sortAsCollection.size() != 0) {
+            if (sortAsCollection.size() > 1) {
+                Log.w(LOG_TAG, "Incorrect multiple SORT_AS parameters detected: " +
+                        Arrays.toString(sortAsCollection.toArray()));
+            }
+            final List<String> sortNames =
+                    VCardUtils.constructListFromValue(sortAsCollection.iterator().next(),
+                            mVCardType);
+            int size = sortNames.size();
+            if (size > 3) {
+                size = 3;
+            }
+            switch (size) {
+            case 3: mPhoneticMiddleName = sortNames.get(2); //$FALL-THROUGH$
+            case 2: mPhoneticGivenName = sortNames.get(1); //$FALL-THROUGH$
+            default: mPhoneticFamilyName = sortNames.get(0); break;
+            }
+        }
+    }
+
     @SuppressWarnings("fallthrough")
-    private void handleNProperty(List<String> elems) {
+    private void handleNProperty(final List<String> paramValues,
+            Map<String, Collection<String>> paramMap) {
+        // in vCard 4.0, SORT-AS parameter is available.
+        tryHandleSortAsName(paramMap);
+
         // Family, Given, Middle, Prefix, Suffix. (1 - 5)
         int size;
-        if (elems == null || (size = elems.size()) < 1) {
+        if (paramValues == null || (size = paramValues.size()) < 1) {
             return;
         }
         if (size > 5) {
@@ -662,12 +740,12 @@ public class VCardEntry {
         }
 
         switch (size) {
-            // fallthrough
-            case 5: mSuffix = elems.get(4);
-            case 4: mPrefix = elems.get(3);
-            case 3: mMiddleName = elems.get(2);
-            case 2: mGivenName = elems.get(1);
-            default: mFamilyName = elems.get(0);
+        // Fall-through.
+        case 5: mSuffix = paramValues.get(4);
+        case 4: mPrefix = paramValues.get(3);
+        case 3: mMiddleName = paramValues.get(2);
+        case 2: mGivenName = paramValues.get(1);
+        default: mFamilyName = paramValues.get(0);
         }
     }
 
@@ -754,7 +832,7 @@ public class VCardEntry {
             // actually exist in the real vCard data, does not exist.
             mFormattedName = propValue;
         } else if (propName.equals(VCardConstants.PROPERTY_N)) {
-            handleNProperty(propValueList);
+            handleNProperty(propValueList, paramMap);
         } else if (propName.equals(VCardConstants.PROPERTY_SORT_STRING)) {
             mPhoneticFullName = propValue;
         } else if (propName.equals(VCardConstants.PROPERTY_NICKNAME) ||
@@ -769,8 +847,7 @@ public class VCardEntry {
                 // which is correct behavior from the view of vCard 2.1.
                 // But we want it to be separated, so do the separation here.
                 final List<String> phoneticNameList =
-                        VCardUtils.constructListFromValue(propValue,
-                                VCardConfig.isVersion30(mVCardType));
+                        VCardUtils.constructListFromValue(propValue, mVCardType);
                 handlePhoneticNameFromSound(phoneticNameList);
             } else {
                 // Ignore this field since Android cannot understand what it is.
@@ -871,7 +948,7 @@ public class VCardEntry {
                     }
                 }
             }
-            handleOrgValue(type, propValueList, isPrimary);
+            handleOrgValue(type, propValueList, paramMap, isPrimary);
         } else if (propName.equals(VCardConstants.PROPERTY_TITLE)) {
             handleTitleValue(propValue);
         } else if (propName.equals(VCardConstants.PROPERTY_ROLE)) {
@@ -970,8 +1047,7 @@ public class VCardEntry {
             mPhoneticFamilyName = propValue;
         } else if (propName.equals(VCardConstants.PROPERTY_X_ANDROID_CUSTOM)) {
             final List<String> customPropertyList =
-                VCardUtils.constructListFromValue(propValue,
-                        VCardConfig.isVersion30(mVCardType));
+                VCardUtils.constructListFromValue(propValue, mVCardType);
             handleAndroidCustomProperty(customPropertyList);
         } else {
         }
@@ -1109,6 +1185,9 @@ public class VCardEntry {
                 }
                 if (organizationData.titleName != null) {
                     builder.withValue(Organization.TITLE, organizationData.titleName);
+                }
+                if (organizationData.phoneticName != null) {
+                    builder.withValue(Organization.PHONETIC_NAME, organizationData.phoneticName);
                 }
                 if (organizationData.isPrimary) {
                     builder.withValue(Organization.IS_PRIMARY, 1);

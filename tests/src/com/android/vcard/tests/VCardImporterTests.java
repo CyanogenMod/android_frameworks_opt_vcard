@@ -1037,12 +1037,41 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Phone.NUMBER, "1");
     }
 
-    public void testCommaSeparatedParamsV30_Parse() {
-        mVerifier.initForImportTest(V30, R.raw.v30_comma_separated);
+    public void testSortAsV40_Parse() {
+        mVerifier.initForImportTest(V40, R.raw.v40_sort_as);
+
+        final ContentValues contentValuesForSortAsN = new ContentValues();
+        contentValuesForSortAsN.put("SORT-AS",
+                "\u3042\u3093\u3069\u3046;\u308D\u3044\u3069");
+        final ContentValues contentValuesForSortAsOrg = new ContentValues();
+        contentValuesForSortAsOrg.put("SORT-AS",
+                "\u3050\u30FC\u3050\u308B;\u3051\u3093\u3055\u304F\u3076\u3082\u3093");
+
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""),
-                        new TypeSet("PREF", "HOME"))
-                .addExpectedNodeWithOrder("TEL", "1",
-                        new TypeSet("COMMA,SEPARATED:INSIDE.DQUOTE", "PREF"));
+                .addExpectedNodeWithOrder("FN", "\u5B89\u85E4\u0020\u30ED\u30A4\u30C9")
+                .addExpectedNodeWithOrder("N",
+                        Arrays.asList("\u5B89\u85E4", "\u30ED\u30A4\u30C9", "", "", ""),
+                        contentValuesForSortAsN)
+                .addExpectedNodeWithOrder("ORG",
+                        Arrays.asList("\u30B0\u30FC\u30B0\u30EB", "\u691C\u7D22\u90E8\u9580"),
+                        contentValuesForSortAsOrg, new TypeSet("WORK"));
+    }
+
+    public void testSortAsV40() {
+        mVerifier.initForImportTest(V40, R.raw.v40_sort_as);
+        final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "\u5B89\u85E4")
+                .put(StructuredName.GIVEN_NAME, "\u30ED\u30A4\u30C9")
+                .put(StructuredName.DISPLAY_NAME, "\u5B89\u85E4\u0020\u30ED\u30A4\u30C9")
+                .put(StructuredName.PHONETIC_FAMILY_NAME, "\u3042\u3093\u3069\u3046")
+                .put(StructuredName.PHONETIC_GIVEN_NAME,
+                        "\u308D\u3044\u3069");
+        elem.addExpected(Organization.CONTENT_ITEM_TYPE)
+                .put(Organization.TYPE, Organization.TYPE_WORK)
+                .put(Organization.COMPANY, "\u30B0\u30FC\u30B0\u30EB")
+                .put(Organization.DEPARTMENT, "\u691C\u7D22\u90E8\u9580")
+                .put(Organization.PHONETIC_NAME,
+                        "\u3050\u30FC\u3050\u308B\u3051\u3093\u3055\u304F\u3076\u3082\u3093");
     }
 }

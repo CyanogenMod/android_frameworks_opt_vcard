@@ -332,18 +332,33 @@ public class VCardUtils {
         return builder.toString();
     }
 
+    /**
+     * Splits the given value into pieces using the delimiter ';' inside it.
+     *
+     * Escaped characters in those values are automatically unescaped into original form.
+     */
     public static List<String> constructListFromValue(final String value,
-            final boolean isV30) {
+            final int vcardType) {
         final List<String> list = new ArrayList<String>();
         StringBuilder builder = new StringBuilder();
-        int length = value.length();
+        final int length = value.length();
         for (int i = 0; i < length; i++) {
             char ch = value.charAt(i);
             if (ch == '\\' && i < length - 1) {
                 char nextCh = value.charAt(i + 1);
-                final String unescapedString =
-                    (isV30 ? VCardParserImpl_V30.escapeCharacter(nextCh) :
-                        VCardParserImpl_V21.unescapeCharacter(nextCh));
+                final String unescapedString;
+                if (VCardConfig.isVersion40(vcardType)) {
+                    unescapedString = VCardParserImpl_V40.unescapeCharacter(nextCh);
+                } else if (VCardConfig.isVersion30(vcardType)) {
+                    unescapedString = VCardParserImpl_V30.unescapeCharacter(nextCh);
+                } else {
+                    if (!VCardConfig.isVersion21(vcardType)) {
+                        // Unknown vCard type
+                        Log.w(LOG_TAG, "Unknown vCard type");
+                    }
+                    unescapedString = VCardParserImpl_V21.unescapeCharacter(nextCh);
+                }
+
                 if (unescapedString != null) {
                     builder.append(unescapedString);
                     i++;
