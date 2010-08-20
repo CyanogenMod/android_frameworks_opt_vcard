@@ -25,7 +25,7 @@ import java.util.List;
  */
 public final class VCardInterpreterCollection implements VCardInterpreter {
     private final Collection<VCardInterpreter> mInterpreterCollection;
-    
+
     public VCardInterpreterCollection(Collection<VCardInterpreter> interpreterCollection) {
         mInterpreterCollection = interpreterCollection;
     }

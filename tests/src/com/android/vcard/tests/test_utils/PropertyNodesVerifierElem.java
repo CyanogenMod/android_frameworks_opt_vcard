@@ -118,7 +118,7 @@ public class PropertyNodesVerifierElem {
         if (propValue == null && propValueList != null) {
             propValue = concatinateListWithSemiColon(propValueList);
         }
-        PropertyNode propertyNode = new PropertyNode(propName,
+        final PropertyNode propertyNode = new PropertyNode(propName,
                 propValue, propValueList, propValue_bytes,
                 paramMap, paramMap_TYPE, propGroupSet);
         List<PropertyNode> expectedNodeList = mOrderedNodeMap.get(propName);
@@ -197,8 +197,9 @@ public class PropertyNodesVerifierElem {
         for (PropertyNode actualNode : vnode.propList) {
             verifyNode(actualNode.propName, actualNode);
         }
+
         if (!mOrderedNodeMap.isEmpty() || !mUnorderedNodeList.isEmpty()) {
-            List<String> expectedProps = new ArrayList<String>();
+            final List<String> expectedProps = new ArrayList<String>();
             for (List<PropertyNode> nodes : mOrderedNodeMap.values()) {
                 for (PropertyNode node : nodes) {
                     if (!expectedProps.contains(node.propName)) {
@@ -217,12 +218,13 @@ public class PropertyNodesVerifierElem {
     }
 
     private void verifyNode(final String propName, final PropertyNode actualNode) {
-        List<PropertyNode> expectedNodeList = mOrderedNodeMap.get(propName);
+        final List<PropertyNode> expectedNodeList = mOrderedNodeMap.get(propName);
         final int size = (expectedNodeList != null ? expectedNodeList.size() : 0);
         if (size > 0) {
             for (int i = 0; i < size; i++) {
-                PropertyNode expectedNode = expectedNodeList.get(i);
-                List<PropertyNode> expectedButDifferentValueList = new ArrayList<PropertyNode>();
+                final PropertyNode expectedNode = expectedNodeList.get(i);
+                final List<PropertyNode> expectedButDifferentValueList =
+                        new ArrayList<PropertyNode>();
                 if (expectedNode.propName.equals(propName)) {
                     if (expectedNode.equals(actualNode)) {
                         expectedNodeList.remove(i);

@@ -33,6 +33,8 @@ import com.android.vcard.VCardParser;
 import com.android.vcard.VCardUtils;
 import com.android.vcard.exception.VCardException;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,14 +72,14 @@ public class VCardVerifier {
             return true;
         }
         public boolean onEntryCreated(String vcard) {
-            verifyOneVCard(vcard);
+            verifyOneVCardForExport(vcard);
             return true;
         }
         public void onTerminate() {
         }
     }
 
-    private final AndroidTestCase mTestCase;
+    private final AndroidTestCase mAndroidTestCase;
     private final VCardVerifierInternal mVCardVerifierInternal;
     private int mVCardType;
     private boolean mIsDoCoMo;
@@ -96,8 +98,8 @@ public class VCardVerifier {
     private String mCharset;
 
     // Called by VCardTestsBase
-    public VCardVerifier(AndroidTestCase testCase) {
-        mTestCase = testCase;
+    public VCardVerifier(AndroidTestCase androidTestCase) {
+        mAndroidTestCase = androidTestCase;
         mVCardVerifierInternal = new VCardVerifierInternal();
         mExportTestResolver = null;
         mInputStream = null;
@@ -125,7 +127,7 @@ public class VCardVerifier {
         if (mInitialized) {
             AndroidTestCase.fail("Already initialized");
         }
-        mExportTestResolver = new ExportTestResolver(mTestCase);
+        mExportTestResolver = new ExportTestResolver(mAndroidTestCase);
         mVCardType = vcardType;
         mIsDoCoMo = VCardConfig.isDoCoMo(vcardType);
         mInitialized = true;
@@ -137,7 +139,7 @@ public class VCardVerifier {
     }
 
     private void setInputResourceId(int resId) {
-        InputStream inputStream = mTestCase.getContext().getResources().openRawResource(resId);
+        InputStream inputStream = mAndroidTestCase.getContext().getResources().openRawResource(resId);
         if (inputStream == null) {
             AndroidTestCase.fail("Wrong resId: " + resId);
         }
@@ -163,15 +165,18 @@ public class VCardVerifier {
         return mExportTestResolver.addInputContactEntry();
     }
 
-    public PropertyNodesVerifierElem addPropertyNodesVerifierElem() {
+    public PropertyNodesVerifierElem addPropertyNodesVerifierElemWithoutVersion() {
         if (!mInitialized) {
             AndroidTestCase.fail("Not initialized");
         }
         if (mPropertyNodesVerifier == null) {
-            mPropertyNodesVerifier = new PropertyNodesVerifier(mTestCase);
+            mPropertyNodesVerifier = new PropertyNodesVerifier(mAndroidTestCase);
         }
-        PropertyNodesVerifierElem elem =
-                mPropertyNodesVerifier.addPropertyNodesVerifierElem();
+        return mPropertyNodesVerifier.addPropertyNodesVerifierElem();
+    }
+    
+    public PropertyNodesVerifierElem addPropertyNodesVerifierElem() {
+        final PropertyNodesVerifierElem elem = addPropertyNodesVerifierElemWithoutVersion();
         final String versionString;
         if (VCardConfig.isVersion21(mVCardType)) {
             versionString = "2.1";
@@ -205,7 +210,7 @@ public class VCardVerifier {
             AndroidTestCase.fail("Not initialized");
         }
         if (mLineVerifier == null) {
-            mLineVerifier = new LineVerifier(mTestCase, mVCardType);
+            mLineVerifier = new LineVerifier(mAndroidTestCase, mVCardType);
         }
         return mLineVerifier.addLineVerifierElem();
     }
@@ -218,43 +223,55 @@ public class VCardVerifier {
             mContentValuesVerifier = new ContentValuesVerifier();
         }
 
-        return mContentValuesVerifier.addElem(mTestCase);
+        return mContentValuesVerifier.addElem(mAndroidTestCase);
     }
 
-    private void verifyOneVCard(final String vcard) {
-        Log.d(LOG_TAG, vcard);
-        final VCardInterpreter builder;
+    /**
+     * Sets up sub-verifiers correctly and try parse given vCard as InputStream.
+     * Errors around InputStream must be handled outside this method.
+     *
+     * Used both from {@link #verifyForImportTest()} and from {@link #verifyForExportTest()}.
+     */
+    private void verifyWithInputStream(InputStream is) throws IOException {
+        final VCardInterpreter interpreter;
         if (mContentValuesVerifier != null) {
             final VNodeBuilder vnodeBuilder = mPropertyNodesVerifier;
             final VCardEntryConstructor vcardDataBuilder =
                     new VCardEntryConstructor(mVCardType);
             vcardDataBuilder.addEntryHandler(mContentValuesVerifier);
             if (mPropertyNodesVerifier != null) {
-                builder = new VCardInterpreterCollection(Arrays.asList(
+                interpreter = new VCardInterpreterCollection(Arrays.asList(
                         mPropertyNodesVerifier, vcardDataBuilder));
             } else {
-                builder = vnodeBuilder;
+                interpreter = vnodeBuilder;
             }
         } else {
             if (mPropertyNodesVerifier != null) {
-                builder = mPropertyNodesVerifier;
+                interpreter = mPropertyNodesVerifier;
             } else {
-                return;
+                interpreter = null;
             }
         }
 
-        InputStream is = null;
         try {
             // Note: we must not specify charset toward vCard parsers. This code checks whether
             // those parsers are able to encode given binary without any extra information for
             // charset.
             final VCardParser parser = VCardUtils.getAppropriateParser(mVCardType);
-            is = new ByteArrayInputStream(vcard.getBytes(mCharset));
-            parser.parse(is, builder);
-        } catch (IOException e) {
-            AndroidTestCase.fail("Unexpected IOException: " + e.getMessage());
+            parser.parse(is, interpreter);
         } catch (VCardException e) {
             AndroidTestCase.fail("Unexpected VCardException: " + e.getMessage());
+        }
+    }
+
+    private void verifyOneVCardForExport(final String vcard) {
+        Log.d(LOG_TAG, vcard);
+        InputStream is = null;
+        try {
+            is = new ByteArrayInputStream(vcard.getBytes(mCharset));
+            verifyWithInputStream(is);
+        } catch (IOException e) {
+            AndroidTestCase.fail("Unexpected IOException: " + e.getMessage());
         } finally {
             if (is != null) {
                 try {
@@ -268,33 +285,41 @@ public class VCardVerifier {
 
     public void verify() {
         if (!mInitialized) {
-            AndroidTestCase.fail("Not initialized.");
+            TestCase.fail("Not initialized.");
         }
         if (mVerified) {
-            AndroidTestCase.fail("verify() was called twice.");
+            TestCase.fail("verify() was called twice.");
         }
+
         if (mInputStream != null) {
-            try {
-                verifyForImportTest();
-            } catch (IOException e) {
-                AndroidTestCase.fail("IOException was thrown: " + e.getMessage());
-            } catch (VCardException e) {
-                AndroidTestCase.fail("VCardException was thrown: " + e.getMessage());
+            if (mExportTestResolver != null){
+                TestCase.fail("There are two input sources.");
             }
+            verifyForImportTest();
         } else if (mExportTestResolver != null){
             verifyForExportTest();
         } else {
-            AndroidTestCase.fail("No input is determined");
+            TestCase.fail("No input is determined");
         }
         mVerified = true;
     }
 
-    private void verifyForImportTest() throws IOException, VCardException {
+    private void verifyForImportTest() {
         if (mLineVerifier != null) {
             AndroidTestCase.fail("Not supported now.");
         }
-        if (mContentValuesVerifier != null) {
-            mContentValuesVerifier.verify(mInputStream, mVCardType);
+
+        try {
+            verifyWithInputStream(mInputStream);
+        } catch (IOException e) {
+            AndroidTestCase.fail("IOException was thrown: " + e.getMessage());
+        } finally {
+            if (mInputStream != null) {
+                try {
+                    mInputStream.close();
+                } catch (IOException e) {
+                }
+            }
         }
     }
 

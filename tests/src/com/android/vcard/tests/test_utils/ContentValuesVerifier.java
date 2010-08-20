@@ -18,60 +18,20 @@ package com.android.vcard.tests.test_utils;
 import android.test.AndroidTestCase;
 
 import com.android.vcard.VCardEntry;
-import com.android.vcard.VCardEntryConstructor;
 import com.android.vcard.VCardEntryHandler;
-import com.android.vcard.VCardParser;
-import com.android.vcard.VCardUtils;
-import com.android.vcard.exception.VCardException;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ContentValuesVerifier implements VCardEntryHandler {
-    private AndroidTestCase mTestCase;
     private List<ContentValuesVerifierElem> mContentValuesVerifierElemList =
         new ArrayList<ContentValuesVerifierElem>();
     private int mIndex;
 
     public ContentValuesVerifierElem addElem(AndroidTestCase androidTestCase) {
-        mTestCase = androidTestCase;
         ContentValuesVerifierElem importVerifier = new ContentValuesVerifierElem(androidTestCase);
         mContentValuesVerifierElemList.add(importVerifier);
         return importVerifier;
-    }
-
-    public void verify(int resId, int vcardType) throws IOException, VCardException {
-        verify(mTestCase.getContext().getResources().openRawResource(resId), vcardType);
-    }
-
-    public void verify(int resId, int vcardType, final VCardParser vCardParser)
-            throws IOException, VCardException {
-        verify(mTestCase.getContext().getResources().openRawResource(resId),
-                vcardType, vCardParser);
-    }
-
-
-    public void verify(InputStream is, int vcardType) throws IOException, VCardException {
-        final VCardParser vCardParser = VCardUtils.getAppropriateParser(vcardType);
-        verify(is, vcardType, vCardParser);
-    }
-
-    public void verify(InputStream is, int vcardType, final VCardParser vCardParser)
-            throws IOException, VCardException {
-        VCardEntryConstructor builder = new VCardEntryConstructor(vcardType, null);
-        builder.addEntryHandler(this);
-        try {
-            vCardParser.parse(is, builder);
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                }
-            }
-        }
     }
 
     public void onStart() {

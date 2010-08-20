@@ -194,17 +194,79 @@ import java.util.Set;
      *  param-name    = iana-token / x-name
      *  param-value   = ptext / quoted-string
      *  quoted-string = DQUOTE QSAFE-CHAR DQUOTE
+     *  QSAFE-CHAR    = WSP / %x21 / %x23-7E / NON-ASCII
+     *                ; Any character except CTLs, DQUOTE
+     *
+     *  QSAFE-CHAR must not contain DQUOTE, including escaped one (\").
      */
     @Override
-    protected void handleType(final String ptypevalues) {
-        String[] ptypeArray = ptypevalues.split(",");
-        mInterpreter.propertyParamType("TYPE");
-        for (String value : ptypeArray) {
-            int length = value.length();
-            if (length >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
-                mInterpreter.propertyParamValue(value.substring(1, value.length() - 1));
-            } else {
-                mInterpreter.propertyParamValue(value);
+    protected void handleType(final String paramvalues) {
+        if (mInterpreter != null) {
+            mInterpreter.propertyParamType("TYPE");
+
+            // "comma,separated:inside.dquote",pref
+            //   -->
+            // - comma,separated:inside.dquote
+            // - pref
+            //
+            // Note: Though there's a code, we don't need to take much care of
+            // wrongly-added quotes like the example above, as they induce
+            // parse errors at the top level (when splitting a line into parts).
+            StringBuilder builder = null;  // Delay initialization.
+            boolean insideDquote = false;
+            final int length = paramvalues.length();
+            for (int i = 0; i < length; i = paramvalues.offsetByCodePoints(i, 1)) {
+                final int codePoint = paramvalues.codePointAt(i);
+                if (codePoint == '"') {
+                    if (insideDquote) {
+                        // End of Dquote.
+                        mInterpreter.propertyParamValue(builder.toString());
+                        builder = null;
+                        insideDquote = false;
+                    } else {
+                        if (builder != null) {
+                            if (builder.length() > 0) {
+                                // e.g.
+                                // pref"quoted"
+                                Log.w(LOG_TAG, "Unexpected Dquote inside property.");
+                            } else {
+                                // e.g.
+                                // pref,"quoted"
+                                // "quoted",pref
+                                mInterpreter.propertyParamValue(builder.toString());
+                            }
+                        }
+                        insideDquote = true;
+                    }
+                } else if (codePoint == ',' && !insideDquote) {
+                    if (builder == null) {
+                        Log.w(LOG_TAG, "Comma is used before actual string comes. (" +
+                                paramvalues + ")");
+                    } else {
+                        mInterpreter.propertyParamValue(builder.toString());
+                        builder = null;
+                    }
+                } else {
+                    // To stop creating empty StringBuffer at the end of parameter,
+                    // we delay creating this object until this point.
+                    if (builder == null) {
+                        builder = new StringBuilder();
+                    }
+                    builder.appendCodePoint(codePoint);
+                }
+            }
+            if (insideDquote) {
+                // e.g.
+                // "non-quote-at-end
+                Log.d(LOG_TAG, "Dangling Dquote.");
+            }
+            if (builder != null) {
+                if (builder.length() == 0) {
+                    Log.w(LOG_TAG, "Unintended behavior. We must not see empty StringBuilder " +
+                            "at the end of parameter value parsing.");
+                } else {
+                    mInterpreter.propertyParamValue(builder.toString());
+                }
             }
         }
     }

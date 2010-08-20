@@ -43,8 +43,7 @@ public class PropertyNodesVerifier extends VNodeBuilder {
         return elem;
     }
 
-    public void verify(int resId, int vcardType)
-            throws IOException, VCardException {
+    public void verify(int resId, int vcardType) throws IOException, VCardException {
         verify(mAndroidTestCase.getContext().getResources().openRawResource(resId), vcardType);
     }
 

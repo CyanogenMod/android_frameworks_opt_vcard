@@ -408,7 +408,7 @@ public class VCardImporterTests extends VCardTestsBase {
 
     public void testV21SimpleCase1_Parsing() {
         mVerifier.initForImportTest(V21, R.raw.v21_simple_1);
-        mVerifier.addPropertyNodesVerifierElem()
+        mVerifier.addPropertyNodesVerifierElemWithoutVersion()  // no "VERSION:2.1" line.
                 .addExpectedNodeWithOrder("N", "Ando;Roid;", Arrays.asList("Ando", "Roid", ""));
     }
 
@@ -457,7 +457,6 @@ public class VCardImporterTests extends VCardTestsBase {
     public void testV21BackslashCase_Parsing() {
         mVerifier.initForImportTest(V21, R.raw.v21_backslash);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "2.1")
                 .addExpectedNodeWithOrder("N", ";A;B\\;C\\;;D;:E;\\\\;",
                         Arrays.asList("", "A;B\\", "C\\;", "D", ":E", "\\\\", ""))
                 .addExpectedNodeWithOrder("FN", "A;B\\C\\;D:E\\\\");
@@ -552,7 +551,6 @@ public class VCardImporterTests extends VCardTestsBase {
     public void testV21ComplicatedCase_Parsing() {
         mVerifier.initForImportTest(V21, R.raw.v21_complicated);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "2.1")
                 .addExpectedNodeWithOrder("N", "Gump;Forrest;Hoge;Pos;Tao",
                         Arrays.asList("Gump", "Forrest", "Hoge", "Pos", "Tao"))
                 .addExpectedNodeWithOrder("FN", "Joe Due")
@@ -697,7 +695,6 @@ public class VCardImporterTests extends VCardTestsBase {
     public void testV30Simple_Parsing() {
         mVerifier.initForImportTest(V30, R.raw.v30_simple);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "3.0")
                 .addExpectedNodeWithOrder("FN", "And Roid")
                 .addExpectedNodeWithOrder("N", "And;Roid;;;",
                         Arrays.asList("And", "Roid", "", "", ""))
@@ -737,7 +734,6 @@ public class VCardImporterTests extends VCardTestsBase {
         // Do not need to handle it as multiple values.
         mVerifier.initForImportTest(VCardConfig.VCARD_TYPE_V21_JAPANESE, R.raw.v21_japanese_1);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "2.1", null, null, null, null, null)
                 .addExpectedNodeWithOrder("N", "\u5B89\u85E4\u30ED\u30A4\u30C9;;;;",
                         Arrays.asList("\u5B89\u85E4\u30ED\u30A4\u30C9", "", "", "", ""),
                         null, mContentValuesForSJis, null, null)
@@ -798,7 +794,6 @@ public class VCardImporterTests extends VCardTestsBase {
     public void testV21Japanese2_Parsing() {
         mVerifier.initForImportTest(VCardConfig.VCARD_TYPE_V21_JAPANESE, R.raw.v21_japanese_2);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "2.1")
                 .addExpectedNodeWithOrder("N", "\u5B89\u85E4;\u30ED\u30A4\u30C9\u0031;;;",
                         Arrays.asList("\u5B89\u85E4", "\u30ED\u30A4\u30C9\u0031",
                                 "", "", ""),
@@ -856,7 +851,6 @@ public class VCardImporterTests extends VCardTestsBase {
     public void testV21MultipleEntryCase_Parse() {
         mVerifier.initForImportTest(VCardConfig.VCARD_TYPE_V21_JAPANESE, R.raw.v21_multiple_entry);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "2.1")
                 .addExpectedNodeWithOrder("N", "\u5B89\u85E4\u30ED\u30A4\u30C9\u0033;;;;",
                         Arrays.asList("\u5B89\u85E4\u30ED\u30A4\u30C9\u0033", "", "", "", ""),
                         null, mContentValuesForSJis, null, null)
@@ -869,7 +863,6 @@ public class VCardImporterTests extends VCardTestsBase {
                 .addExpectedNodeWithOrder("TEL", "11", new TypeSet("X-NEC-SCHOOL"))
                 .addExpectedNodeWithOrder("TEL", "12", new TypeSet("FAX", "HOME"));
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "2.1")
                 .addExpectedNodeWithOrder("N", "\u5B89\u85E4\u30ED\u30A4\u30C9\u0034;;;;",
                         Arrays.asList("\u5B89\u85E4\u30ED\u30A4\u30C9\u0034", "", "", "", ""),
                         null, mContentValuesForSJis, null, null)
@@ -882,7 +875,6 @@ public class VCardImporterTests extends VCardTestsBase {
                 .addExpectedNodeWithOrder("TEL", "15", new TypeSet("X-NEC-FAMILY"))
                 .addExpectedNodeWithOrder("TEL", "16", new TypeSet("X-NEC-GIRL"));
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "2.1")
                 .addExpectedNodeWithOrder("N", "\u5B89\u85E4\u30ED\u30A4\u30C9\u0035;;;;",
                         Arrays.asList("\u5B89\u85E4\u30ED\u30A4\u30C9\u0035", "", "", "", ""),
                         null, mContentValuesForSJis, null, null)
@@ -971,7 +963,6 @@ public class VCardImporterTests extends VCardTestsBase {
         ContentValues contentValuesForValue = new ContentValues();
         contentValuesForValue.put("VALUE", "DATE");
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "2.1")
                 .addExpectedNodeWithOrder("N", Arrays.asList("Example", "", "", "", ""))
                 .addExpectedNodeWithOrder("FN", "Example")
                 .addExpectedNodeWithOrder("ANNIVERSARY", "20091010", contentValuesForValue)
@@ -1007,7 +998,6 @@ public class VCardImporterTests extends VCardTestsBase {
     public void testPagerV30_Parse() {
         mVerifier.initForImportTest(V30, R.raw.v30_pager);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "3.0")
                 .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""))
                 .addExpectedNodeWithOrder("TEL", "6101231234@pagersample.com",
                         new TypeSet("WORK", "MSG", "PAGER"));
@@ -1029,7 +1019,6 @@ public class VCardImporterTests extends VCardTestsBase {
     public void testMultiBytePropV30_Parse() {
         mVerifier.initForImportTest(V30, R.raw.v30_multibyte_param);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "3.0")
                 .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""))
                 .addExpectedNodeWithOrder("TEL", "1", new TypeSet("\u8D39"));
     }
@@ -1051,10 +1040,9 @@ public class VCardImporterTests extends VCardTestsBase {
     public void testCommaSeparatedParamsV30_Parse() {
         mVerifier.initForImportTest(V30, R.raw.v30_comma_separated);
         mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("VERSION", "3.0")
                 .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""),
                         new TypeSet("PREF", "HOME"))
                 .addExpectedNodeWithOrder("TEL", "1",
-                        new TypeSet("COMMA,SEPARATED", "PREF"));
+                        new TypeSet("COMMA,SEPARATED:INSIDE.DQUOTE", "PREF"));
     }
 }
