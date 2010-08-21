@@ -27,6 +27,7 @@ import com.android.vcard.tests.test_utils.ContactEntry;
 import com.android.vcard.tests.test_utils.ContentValuesBuilder;
 import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem;
 import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem.TypeSet;
+import com.android.vcard.tests.test_utils.VCardTestsBase;
 
 import java.util.Arrays;
 

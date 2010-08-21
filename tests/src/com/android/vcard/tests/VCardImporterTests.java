@@ -31,8 +31,7 @@ import com.android.vcard.VCardConfig;
 import com.android.vcard.tests.test_utils.ContentValuesVerifier;
 import com.android.vcard.tests.test_utils.ContentValuesVerifierElem;
 import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem.TypeSet;
-
-import junit.framework.TestCase;
+import com.android.vcard.tests.test_utils.VCardTestsBase;
 
 import java.util.Arrays;
 

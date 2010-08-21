@@ -22,9 +22,11 @@
         <uses-library android:name="android.test.runner" />
     </application>
 
-    <!-- Run tests with "runtest common" -->
-    <instrumentation android:name="android.test.InstrumentationTestRunner"
+    <instrumentation android:name=".VCardTestRunner"
             android:targetPackage="com.android.vcard.tests"
-            android:label="Android vCard Library Tests" />
+            android:label="TestRunner running all Android vCard Library Tests" />
 
+    <instrumentation android:name="com.android.InstrumentationTestRunner"
+            android:targetPackage="com.android.vcard.tests"
+            android:label="TestRunner letting users run each test including new one" />
 </manifest>
