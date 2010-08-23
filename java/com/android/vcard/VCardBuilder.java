@@ -15,6 +15,8 @@
  */
 package com.android.vcard;
 
+import com.android.vcard.exception.VCardException;
+
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
@@ -94,14 +96,14 @@ public class VCardBuilder {
             "ENCODING=" + VCardConstants.PARAM_ENCODING_QP;
     private static final String VCARD_PARAM_ENCODING_BASE64_V21 =
             "ENCODING=" + VCardConstants.PARAM_ENCODING_BASE64;
-    private static final String VCARD_PARAM_ENCODING_BASE64_V30 =
+    private static final String VCARD_PARAM_ENCODING_BASE64_AS_B =
             "ENCODING=" + VCardConstants.PARAM_ENCODING_B;
 
     private static final String SHIFT_JIS = "SHIFT_JIS";
 
     private final int mVCardType;
 
-    private final boolean mIsV30;
+    private final boolean mIsV30OrV40;
     private final boolean mIsJapaneseMobilePhone;
     private final boolean mOnlyOneNoteFieldIsAvailable;
     private final boolean mIsDoCoMo;
@@ -128,20 +130,16 @@ public class VCardBuilder {
     /**
      * @param vcardType
      * @param charset If null, we use default charset for export.
+     * @hide
      */
     public VCardBuilder(final int vcardType, String charset) {
         mVCardType = vcardType;
 
-        // We don't allow currrent Android devices to build vCard files with version 4.0
-        // while We allow them to parse/import them, as vCard 4.0 is not yet released
-        // as formal specification.
-        if (VCardConfig.isVersion40(vcardType)) {
-            // We don't use VCardException since this exception should not be a part of
-            // public API.
-            throw new RuntimeException("Must not use vCard 4.0 when building vCard, because " +
-                    "it is not officially released.");
-        }
-        mIsV30 = VCardConfig.isVersion30(vcardType);
+        Log.w(LOG_TAG,
+                "Should not use vCard 4.0 when building vCard. " +
+                "It is not officially published yet.");
+
+        mIsV30OrV40 = VCardConfig.isVersion30(vcardType) || VCardConfig.isVersion40(vcardType);
         mShouldUseQuotedPrintable = VCardConfig.shouldUseQuotedPrintable(vcardType);
         mIsDoCoMo = VCardConfig.isDoCoMo(vcardType);
         mIsJapaneseMobilePhone = VCardConfig.needsToConvertPhoneticString(vcardType);
@@ -156,7 +154,8 @@ public class VCardBuilder {
         // vCard 3.0 does not allow it but we found some devices use it to determine
         // the exact charset.
         // We currently append it only when charset other than UTF_8 is used.
-        mShouldAppendCharsetParam = !(mIsV30 && "UTF-8".equalsIgnoreCase(charset));
+        mShouldAppendCharsetParam =
+                !(VCardConfig.isVersion30(vcardType) && "UTF-8".equalsIgnoreCase(charset));
 
         if (VCardConfig.isDoCoMo(vcardType)) {
             if (!SHIFT_JIS.equalsIgnoreCase(charset)) {
@@ -224,9 +223,14 @@ public class VCardBuilder {
         mBuilder = new StringBuilder();
         mEndAppended = false;
         appendLine(VCardConstants.PROPERTY_BEGIN, VCARD_DATA_VCARD);
-        if (mIsV30) {
+        if (VCardConfig.isVersion40(mVCardType)) {
+            appendLine(VCardConstants.PROPERTY_VERSION, VCardConstants.VERSION_V40);
+        } else if (VCardConfig.isVersion30(mVCardType)) {
             appendLine(VCardConstants.PROPERTY_VERSION, VCardConstants.VERSION_V30);
         } else {
+            if (!VCardConfig.isVersion21(mVCardType)) {
+                Log.w(LOG_TAG, "Unknown vCard version detected.");
+            }
             appendLine(VCardConstants.PROPERTY_VERSION, VCardConstants.VERSION_V21);
         }
     }
@@ -299,12 +303,14 @@ public class VCardBuilder {
      */
     public VCardBuilder appendNameProperties(final List<ContentValues> contentValuesList) {
         if (contentValuesList == null || contentValuesList.isEmpty()) {
-            if (mIsDoCoMo) {
-                appendLine(VCardConstants.PROPERTY_N, "");
-            } else if (mIsV30) {
+            if (mIsV30OrV40) {
                 // vCard 3.0 requires "N" and "FN" properties.
+                // vCard 4.0 does NOT require N, but we take care of possible backward
+                // compatibility issues.
                 appendLine(VCardConstants.PROPERTY_N, "");
                 appendLine(VCardConstants.PROPERTY_FN, "");
+            } else if (mIsDoCoMo) {
+                appendLine(VCardConstants.PROPERTY_N, "");
             }
             return this;
         }
@@ -454,8 +460,7 @@ public class VCardBuilder {
             mBuilder.append(VCARD_DATA_SEPARATOR);
             mBuilder.append(encodedDisplayName);
             mBuilder.append(VCARD_END_OF_LINE);
-        } else if (mIsV30) {
-            // vCard 3.0 specification requires these fields.
+        } else if (mIsV30OrV40) {
             appendLine(VCardConstants.PROPERTY_N, "");
             appendLine(VCardConstants.PROPERTY_FN, "");
         } else if (mIsDoCoMo) {
@@ -506,12 +511,19 @@ public class VCardBuilder {
         }
 
         // Try to emit the field(s) related to phonetic name.
-        if (mIsV30) {
-            final String sortString = VCardUtils
-                    .constructNameFromElements(mVCardType,
+        if (mIsV30OrV40) {
+            final String sortString =
+                    VCardUtils.constructNameFromElements(mVCardType,
                             phoneticFamilyName, phoneticMiddleName, phoneticGivenName);
             mBuilder.append(VCardConstants.PROPERTY_SORT_STRING);
-            if (shouldAppendCharsetParam(sortString)) {
+            if (VCardConfig.isVersion30(mVCardType) && shouldAppendCharsetParam(sortString)) {
+                // vCard 3.0 does not force us to use UTF-8 and actually we see some
+                // programs which emit this value. It is incorrect from the view of
+                // specification, but actually necessary for parsing vCard with non-UTF-8
+                // charsets, expecting other parsers not get confused with this value.
+                //
+                // vCard 4.0 (rev13) now forces UTF-8. Without any strong reason, we don't allow
+                // this exception in the new version.
                 mBuilder.append(VCARD_PARAM_SEPARATOR);
                 mBuilder.append(mVCardCharsetParameter);
             }
@@ -667,7 +679,7 @@ public class VCardBuilder {
 
     public VCardBuilder appendNickNames(final List<ContentValues> contentValuesList) {
         final boolean useAndroidProperty;
-        if (mIsV30) {
+        if (mIsV30OrV40) {   // These specifications have NICKNAME property.
             useAndroidProperty = false;
         } else if (mUsesAndroidProperty) {
             useAndroidProperty = true;
@@ -1535,7 +1547,7 @@ public class VCardBuilder {
                     parameterList.add(VCardConstants.PARAM_TYPE_VOICE);
                 } else if (VCardUtils.isMobilePhoneLabel(label)) {
                     parameterList.add(VCardConstants.PARAM_TYPE_CELL);
-                } else if (mIsV30) {
+                } else if (mIsV30OrV40) {
                     // This label is appropriately encoded in appendTypeParameters.
                     parameterList.add(label);
                 } else {
@@ -1598,8 +1610,8 @@ public class VCardBuilder {
         StringBuilder tmpBuilder = new StringBuilder();
         tmpBuilder.append(VCardConstants.PROPERTY_PHOTO);
         tmpBuilder.append(VCARD_PARAM_SEPARATOR);
-        if (mIsV30) {
-            tmpBuilder.append(VCARD_PARAM_ENCODING_BASE64_V30);
+        if (mIsV30OrV40) {
+            tmpBuilder.append(VCARD_PARAM_ENCODING_BASE64_AS_B);
         } else {
             tmpBuilder.append(VCARD_PARAM_ENCODING_BASE64_V21);
         }
@@ -1861,7 +1873,8 @@ public class VCardBuilder {
         // device is DoCoMo's (just for safety).
         //
         // Note: In vCard 3.0, Type strings also can be like this: "TYPE=HOME,PREF"
-        if ((mIsV30 || mAppendTypeParamName) && !mIsDoCoMo) {
+        if (VCardConfig.isVersion40(mVCardType) ||
+                ((VCardConfig.isVersion30(mVCardType) || mAppendTypeParamName) && !mIsDoCoMo)) {
             builder.append(VCardConstants.PARAM_TYPE).append(VCARD_PARAM_EQUAL);
         }
         builder.append(type);
@@ -1971,7 +1984,7 @@ public class VCardBuilder {
                     break;
                 }
                 case '\\': {
-                    if (mIsV30) {
+                    if (mIsV30OrV40) {
                         tmpBuilder.append("\\\\");
                         break;
                     } else {
@@ -1989,7 +2002,7 @@ public class VCardBuilder {
                     break;
                 }
                 case ',': {
-                    if (mIsV30) {
+                    if (mIsV30OrV40) {
                         tmpBuilder.append("\\,");
                     } else {
                         tmpBuilder.append(ch);

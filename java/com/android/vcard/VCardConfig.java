@@ -68,6 +68,9 @@ public class VCardConfig {
     public static final String DEFAULT_IMPORT_CHARSET = "UTF-8";
     public static final String DEFAULT_EXPORT_CHARSET = "UTF-8";
 
+    /**
+     * Do not use statically like "version == VERSION_V21"
+     */
     public static final int VERSION_21 = 0;
     public static final int VERSION_30 = 1;
     public static final int VERSION_40 = 2;

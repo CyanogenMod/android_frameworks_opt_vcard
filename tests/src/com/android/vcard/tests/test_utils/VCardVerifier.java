@@ -358,7 +358,7 @@ public class VCardVerifier {
                             composer.createOneEntry(mockGetEntityIteratorMethod));
                 } catch (Exception e) {
                     e.printStackTrace();
-                    AndroidTestCase.fail();
+                    AndroidTestCase.fail(e.toString());
                 }
             }
         } finally {

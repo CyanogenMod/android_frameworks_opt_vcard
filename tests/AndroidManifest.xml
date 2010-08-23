@@ -26,7 +26,7 @@
             android:targetPackage="com.android.vcard.tests"
             android:label="TestRunner running all Android vCard Library Tests" />
 
-    <instrumentation android:name="com.android.InstrumentationTestRunner"
+    <instrumentation android:name="android.test.InstrumentationTestRunner"
             android:targetPackage="com.android.vcard.tests"
             android:label="TestRunner letting users run each test including new one" />
 </manifest>

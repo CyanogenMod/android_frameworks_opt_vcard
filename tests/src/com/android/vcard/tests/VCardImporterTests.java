@@ -1036,6 +1036,15 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Phone.NUMBER, "1");
     }
 
+    public void testCommaSeparatedParamsV30_Parse() {
+        mVerifier.initForImportTest(V30, R.raw.v30_comma_separated);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("N", Arrays.asList("F", "G", "M", "", ""),
+                        new TypeSet("PREF", "HOME"))
+                .addExpectedNodeWithOrder("TEL", "1",
+                        new TypeSet("COMMA,SEPARATED:INSIDE.DQUOTE", "PREF"));
+    }
+
     public void testSortAsV40_Parse() {
         mVerifier.initForImportTest(V40, R.raw.v40_sort_as);
 
