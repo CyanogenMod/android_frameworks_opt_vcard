@@ -297,13 +297,120 @@ public class VCardBuilder {
     }
 
     /**
+     * To avoid unnecessary complication in logic, we use this method to construct N, FN
+     * properties for vCard 4.0.
+     */
+    private VCardBuilder appendNamePropertiesV40(final List<ContentValues> contentValuesList) {
+        if (mIsDoCoMo || mNeedsToConvertPhoneticString) {
+            // Ignore all flags that look stale from the view of vCard 4.0 to
+            // simplify construction algorithm. Actually we don't have any vCard file
+            // available from real world yet, so we may need to re-enable some of these
+            // in the future.
+            Log.w(LOG_TAG, "Invalid flag is used in vCard 4.0 construction. Ignored.");
+        }
+
+        if (contentValuesList == null || contentValuesList.isEmpty()) {
+            appendLine(VCardConstants.PROPERTY_FN, "");
+            return this;
+        }
+
+        // We have difficulty here. How can we appropriately handle StructuredName with
+        // missing parts necessary for displaying while it has suppremental information.
+        //
+        // e.g. How to handle non-empty phonetic names with empty structured names?
+
+        final ContentValues contentValues = getPrimaryContentValue(contentValuesList);
+        String familyName = contentValues.getAsString(StructuredName.FAMILY_NAME);
+        final String middleName = contentValues.getAsString(StructuredName.MIDDLE_NAME);
+        final String givenName = contentValues.getAsString(StructuredName.GIVEN_NAME);
+        final String prefix = contentValues.getAsString(StructuredName.PREFIX);
+        final String suffix = contentValues.getAsString(StructuredName.SUFFIX);
+        final String formattedName = contentValues.getAsString(StructuredName.DISPLAY_NAME);
+        if (TextUtils.isEmpty(familyName)
+                && TextUtils.isEmpty(givenName)
+                && TextUtils.isEmpty(middleName)
+                && TextUtils.isEmpty(prefix)
+                && TextUtils.isEmpty(suffix)) {
+            if (TextUtils.isEmpty(formattedName)) {
+                appendLine(VCardConstants.PROPERTY_FN, "");
+                return this;
+            }
+            familyName = formattedName;
+        }
+
+        final String phoneticFamilyName =
+                contentValues.getAsString(StructuredName.PHONETIC_FAMILY_NAME);
+        final String phoneticMiddleName =
+                contentValues.getAsString(StructuredName.PHONETIC_MIDDLE_NAME);
+        final String phoneticGivenName =
+                contentValues.getAsString(StructuredName.PHONETIC_GIVEN_NAME);
+        final String escapedFamily = escapeCharacters(familyName);
+        final String escapedGiven = escapeCharacters(givenName);
+        final String escapedMiddle = escapeCharacters(middleName);
+        final String escapedPrefix = escapeCharacters(prefix);
+        final String escapedSuffix = escapeCharacters(suffix);
+
+        mBuilder.append(VCardConstants.PROPERTY_N);
+
+        if (!(TextUtils.isEmpty(phoneticFamilyName) &&
+                        TextUtils.isEmpty(phoneticMiddleName) &&
+                        TextUtils.isEmpty(phoneticGivenName))) {
+            mBuilder.append(VCARD_PARAM_SEPARATOR);
+            final String sortAs = escapeCharacters(phoneticFamilyName)
+                    + ';' + escapeCharacters(phoneticGivenName)
+                    + ';' + escapeCharacters(phoneticMiddleName);
+            mBuilder.append("SORT-AS=").append(
+                    VCardUtils.toStringAsV40ParamValue(sortAs));
+        }
+
+        mBuilder.append(VCARD_DATA_SEPARATOR);
+        mBuilder.append(escapedFamily);
+        mBuilder.append(VCARD_ITEM_SEPARATOR);
+        mBuilder.append(escapedGiven);
+        mBuilder.append(VCARD_ITEM_SEPARATOR);
+        mBuilder.append(escapedMiddle);
+        mBuilder.append(VCARD_ITEM_SEPARATOR);
+        mBuilder.append(escapedPrefix);
+        mBuilder.append(VCARD_ITEM_SEPARATOR);
+        mBuilder.append(escapedSuffix);
+        mBuilder.append(VCARD_END_OF_LINE);
+
+        if (TextUtils.isEmpty(formattedName)) {
+            // Note:
+            // DISPLAY_NAME doesn't exist while some other elements do, which is usually
+            // weird in Android, as DISPLAY_NAME should (usually) be constructed
+            // from the others using locale information and its code points.
+            Log.w(LOG_TAG, "DISPLAY_NAME is empty.");
+
+            final String escaped = escapeCharacters(VCardUtils.constructNameFromElements(
+                    VCardConfig.getNameOrderType(mVCardType),
+                    familyName, middleName, givenName, prefix, suffix));
+            appendLine(VCardConstants.PROPERTY_FN, escaped);
+        } else {
+            final String escapedFormatted = escapeCharacters(formattedName);
+            mBuilder.append(VCardConstants.PROPERTY_FN);
+            mBuilder.append(VCARD_DATA_SEPARATOR);
+            mBuilder.append(escapedFormatted);
+            mBuilder.append(VCARD_END_OF_LINE);
+        }
+
+        // We may need X- properties for phonetic names.
+        appendPhoneticNameFields(contentValues);
+        return this;
+    }
+
+    /**
      * For safety, we'll emit just one value around StructuredName, as external importers
      * may get confused with multiple "N", "FN", etc. properties, though it is valid in
      * vCard spec.
      */
     public VCardBuilder appendNameProperties(final List<ContentValues> contentValuesList) {
+        if (VCardConfig.isVersion40(mVCardType)) {
+            return appendNamePropertiesV40(contentValuesList);
+        }
+
         if (contentValuesList == null || contentValuesList.isEmpty()) {
-            if (mIsV30OrV40) {
+            if (VCardConfig.isVersion30(mVCardType)) {
                 // vCard 3.0 requires "N" and "FN" properties.
                 // vCard 4.0 does NOT require N, but we take care of possible backward
                 // compatibility issues.
@@ -432,6 +539,7 @@ public class VCardBuilder {
                             encodeQuotedPrintable(displayName) :
                                 escapeCharacters(displayName);
 
+            // N
             mBuilder.append(VCardConstants.PROPERTY_N);
             if (shouldAppendCharsetParam(displayName)) {
                 mBuilder.append(VCARD_PARAM_SEPARATOR);
@@ -448,6 +556,8 @@ public class VCardBuilder {
             mBuilder.append(VCARD_ITEM_SEPARATOR);
             mBuilder.append(VCARD_ITEM_SEPARATOR);
             mBuilder.append(VCARD_END_OF_LINE);
+
+            // FN
             mBuilder.append(VCardConstants.PROPERTY_FN);
 
             // Note: "CHARSET" param is not allowed in vCard 3.0, but we may add it
@@ -460,7 +570,7 @@ public class VCardBuilder {
             mBuilder.append(VCARD_DATA_SEPARATOR);
             mBuilder.append(encodedDisplayName);
             mBuilder.append(VCARD_END_OF_LINE);
-        } else if (mIsV30OrV40) {
+        } else if (VCardConfig.isVersion30(mVCardType)) {
             appendLine(VCardConstants.PROPERTY_N, "");
             appendLine(VCardConstants.PROPERTY_FN, "");
         } else if (mIsDoCoMo) {
@@ -471,6 +581,9 @@ public class VCardBuilder {
         return this;
     }
 
+    /**
+     * Emits SOUND;IRMC, SORT-STRING, and de-fact values for phonetic names like X-PHONETIC-FAMILY.
+     */
     private void appendPhoneticNameFields(final ContentValues contentValues) {
         final String phoneticFamilyName;
         final String phoneticMiddleName;
@@ -510,8 +623,9 @@ public class VCardBuilder {
             return;
         }
 
-        // Try to emit the field(s) related to phonetic name.
-        if (mIsV30OrV40) {
+        if (VCardConfig.isVersion40(mVCardType)) {
+            // We don't want SORT-STRING anyway.
+        } else if (VCardConfig.isVersion30(mVCardType)) {
             final String sortString =
                     VCardUtils.constructNameFromElements(mVCardType,
                             phoneticFamilyName, phoneticMiddleName, phoneticGivenName);
@@ -521,9 +635,6 @@ public class VCardBuilder {
                 // programs which emit this value. It is incorrect from the view of
                 // specification, but actually necessary for parsing vCard with non-UTF-8
                 // charsets, expecting other parsers not get confused with this value.
-                //
-                // vCard 4.0 (rev13) now forces UTF-8. Without any strong reason, we don't allow
-                // this exception in the new version.
                 mBuilder.append(VCARD_PARAM_SEPARATOR);
                 mBuilder.append(mVCardCharsetParameter);
             }
@@ -604,6 +715,7 @@ public class VCardBuilder {
             mBuilder.append(VCARD_END_OF_LINE);
         }
 
+        Log.d("@@@", "hoge");
         if (mUsesDefactProperty) {
             if (!TextUtils.isEmpty(phoneticGivenName)) {
                 final boolean reallyUseQuotedPrintable =
@@ -1830,7 +1942,7 @@ public class VCardBuilder {
         boolean first = true;
         for (final String typeValue : types) {
             if (VCardConfig.isVersion30(mVCardType)) {
-                final String encoded = VCardUtils.toStringAvailableAsV30ParamValue(typeValue);
+                final String encoded = VCardUtils.toStringAsV30ParamValue(typeValue);
                 if (TextUtils.isEmpty(encoded)) {
                     continue;
                 }

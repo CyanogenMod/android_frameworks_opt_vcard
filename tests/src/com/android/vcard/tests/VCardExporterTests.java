@@ -59,7 +59,6 @@ public class VCardExporterTests extends VCardTestsBase {
     }
 
     private void testStructuredNameBasic(int vcardType) {
-        final boolean isV21 = VCardConfig.isVersion21(vcardType);
         mVerifier.initForExportTest(vcardType);
         mVerifier.addInputEntry().addContentValues(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.FAMILY_NAME, "AppropriateFamilyName")
@@ -67,28 +66,15 @@ public class VCardExporterTests extends VCardTestsBase {
                 .put(StructuredName.MIDDLE_NAME, "AppropriateMiddleName")
                 .put(StructuredName.PREFIX, "AppropriatePrefix")
                 .put(StructuredName.SUFFIX, "AppropriateSuffix")
-                .put(StructuredName.PHONETIC_FAMILY_NAME, "AppropriatePhoneticFamily")
-                .put(StructuredName.PHONETIC_GIVEN_NAME, "AppropriatePhoneticGiven")
-                .put(StructuredName.PHONETIC_MIDDLE_NAME, "AppropriatePhoneticMiddle");
+                .put(StructuredName.DISPLAY_NAME, "DISPLAY NAME");
 
-        PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElem()
+        mVerifier.addPropertyNodesVerifierElem()
                 .addExpectedNodeWithOrder("N",
                         "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName;"
                         + "AppropriatePrefix;AppropriateSuffix",
                         Arrays.asList("AppropriateFamilyName", "AppropriateGivenName",
                                 "AppropriateMiddleName", "AppropriatePrefix", "AppropriateSuffix"))
-                .addExpectedNodeWithOrder("FN",
-                        "AppropriatePrefix AppropriateGivenName "
-                        + "AppropriateMiddleName AppropriateFamilyName AppropriateSuffix")
-                .addExpectedNode("X-PHONETIC-FIRST-NAME", "AppropriatePhoneticGiven")
-                .addExpectedNode("X-PHONETIC-MIDDLE-NAME", "AppropriatePhoneticMiddle")
-                .addExpectedNode("X-PHONETIC-LAST-NAME", "AppropriatePhoneticFamily");
-
-        if (!isV21) {
-            elem.addExpectedNode("SORT-STRING",
-                    "AppropriatePhoneticGiven AppropriatePhoneticMiddle "
-                    + "AppropriatePhoneticFamily");
-        }
+                .addExpectedNodeWithOrder("FN", "DISPLAY NAME");
     }
 
     public void testStructuredNameBasicV21() {
@@ -99,6 +85,10 @@ public class VCardExporterTests extends VCardTestsBase {
         testStructuredNameBasic(V30);
     }
 
+    public void testStructuredNameBasicV40() {
+        testStructuredNameBasic(V40);
+    }
+
     /**
      * Test that only "primary" StructuredName is emitted, so that our vCard file
      * will not confuse the external importer, assuming there may be some importer
@@ -106,18 +96,15 @@ public class VCardExporterTests extends VCardTestsBase {
      * Note that more than one "N", "FN", etc. properties are acceptable in vCard spec.
      */
     private void testStructuredNameUsePrimaryCommon(int vcardType) {
-        final boolean isV30 = (vcardType == V30);
         mVerifier.initForExportTest(vcardType);
-        ContactEntry entry = mVerifier.addInputEntry();
+        final ContactEntry entry = mVerifier.addInputEntry();
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.FAMILY_NAME, "DoNotEmitFamilyName1")
                 .put(StructuredName.GIVEN_NAME, "DoNotEmitGivenName1")
                 .put(StructuredName.MIDDLE_NAME, "DoNotEmitMiddleName1")
                 .put(StructuredName.PREFIX, "DoNotEmitPrefix1")
                 .put(StructuredName.SUFFIX, "DoNotEmitSuffix1")
-                .put(StructuredName.PHONETIC_FAMILY_NAME, "DoNotEmitPhoneticFamily1")
-                .put(StructuredName.PHONETIC_GIVEN_NAME, "DoNotEmitPhoneticGiven1")
-                .put(StructuredName.PHONETIC_MIDDLE_NAME, "DoNotEmitPhoneticMiddle1");
+                .put(StructuredName.DISPLAY_NAME, "DoNotEmitDisplayName1");
 
         // With "IS_PRIMARY=1". This is what we should use.
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
@@ -126,41 +113,30 @@ public class VCardExporterTests extends VCardTestsBase {
                 .put(StructuredName.MIDDLE_NAME, "AppropriateMiddleName")
                 .put(StructuredName.PREFIX, "AppropriatePrefix")
                 .put(StructuredName.SUFFIX, "AppropriateSuffix")
-                .put(StructuredName.PHONETIC_FAMILY_NAME, "AppropriatePhoneticFamily")
-                .put(StructuredName.PHONETIC_GIVEN_NAME, "AppropriatePhoneticGiven")
-                .put(StructuredName.PHONETIC_MIDDLE_NAME, "AppropriatePhoneticMiddle")
+                .put(StructuredName.DISPLAY_NAME, "AppropriateDisplayName")
                 .put(StructuredName.IS_PRIMARY, 1);
 
         // With "IS_PRIMARY=1", but we should ignore this time, since this is second, not first.
+        // vCard 2.1 does not specify anything about the number of N properties. We choose not
+        // emitting this property.
+        // vCard 3.0 does (There must be one N property)
+        // vCard 4.0 (rev13) does (cardinality (0, 1)).
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.FAMILY_NAME, "DoNotEmitFamilyName2")
                 .put(StructuredName.GIVEN_NAME, "DoNotEmitGivenName2")
                 .put(StructuredName.MIDDLE_NAME, "DoNotEmitMiddleName2")
                 .put(StructuredName.PREFIX, "DoNotEmitPrefix2")
                 .put(StructuredName.SUFFIX, "DoNotEmitSuffix2")
-                .put(StructuredName.PHONETIC_FAMILY_NAME, "DoNotEmitPhoneticFamily2")
-                .put(StructuredName.PHONETIC_GIVEN_NAME, "DoNotEmitPhoneticGiven2")
-                .put(StructuredName.PHONETIC_MIDDLE_NAME, "DoNotEmitPhoneticMiddle2")
+                .put(StructuredName.DISPLAY_NAME, "DoNotEmitDisplayName2")
                 .put(StructuredName.IS_PRIMARY, 1);
 
-        PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElem()
+       mVerifier.addPropertyNodesVerifierElem()
                 .addExpectedNodeWithOrder("N",
                         "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName;"
                         + "AppropriatePrefix;AppropriateSuffix",
                         Arrays.asList("AppropriateFamilyName", "AppropriateGivenName",
                                 "AppropriateMiddleName", "AppropriatePrefix", "AppropriateSuffix"))
-                .addExpectedNodeWithOrder("FN",
-                        "AppropriatePrefix AppropriateGivenName "
-                        + "AppropriateMiddleName AppropriateFamilyName AppropriateSuffix")
-                .addExpectedNode("X-PHONETIC-FIRST-NAME", "AppropriatePhoneticGiven")
-                .addExpectedNode("X-PHONETIC-MIDDLE-NAME", "AppropriatePhoneticMiddle")
-                .addExpectedNode("X-PHONETIC-LAST-NAME", "AppropriatePhoneticFamily");
-
-        if (isV30) {
-            elem.addExpectedNode("SORT-STRING",
-                    "AppropriatePhoneticGiven AppropriatePhoneticMiddle "
-                    + "AppropriatePhoneticFamily");
-        }
+                .addExpectedNodeWithOrder("FN", "AppropriateDisplayName");
     }
 
     public void testStructuredNameUsePrimaryV21() {
@@ -171,20 +147,152 @@ public class VCardExporterTests extends VCardTestsBase {
         testStructuredNameUsePrimaryCommon(V30);
     }
 
-    /* TODO: uncomment
-        public void testStructuredNameUsePrimaryV40() {
+    public void testStructuredNameUsePrimaryV40() {
         testStructuredNameUsePrimaryCommon(V40);
     }
-     */
 
     /**
      * Tests that only "super primary" StructuredName is emitted.
      * See also the comment in {@link #testStructuredNameUsePrimaryCommon(int)}.
      */
     private void testStructuredNameUseSuperPrimaryCommon(int vcardType) {
-        final boolean isV30 = (vcardType == V30);
         mVerifier.initForExportTest(vcardType);
-        ContactEntry entry = mVerifier.addInputEntry();
+        final ContactEntry entry = mVerifier.addInputEntry();
+        entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "DoNotEmitFamilyName1")
+                .put(StructuredName.GIVEN_NAME, "DoNotEmitGivenName1")
+                .put(StructuredName.MIDDLE_NAME, "DoNotEmitMiddleName1")
+                .put(StructuredName.PREFIX, "DoNotEmitPrefix1")
+                .put(StructuredName.SUFFIX, "DoNotEmitSuffix1")
+                .put(StructuredName.DISPLAY_NAME, "DoNotEmitDisplay1");
+
+        // With "IS_PRIMARY=1", but we should ignore this time.
+        entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "DoNotEmitFamilyName2")
+                .put(StructuredName.GIVEN_NAME, "DoNotEmitGivenName2")
+                .put(StructuredName.MIDDLE_NAME, "DoNotEmitMiddleName2")
+                .put(StructuredName.PREFIX, "DoNotEmitPrefix2")
+                .put(StructuredName.SUFFIX, "DoNotEmitSuffix2")
+                .put(StructuredName.DISPLAY_NAME, "DoNotEmitDisplay2")
+                .put(StructuredName.IS_PRIMARY, 1);
+
+        // With "IS_SUPER_PRIMARY=1". This is what we should use.
+        entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "AppropriateFamilyName")
+                .put(StructuredName.GIVEN_NAME, "AppropriateGivenName")
+                .put(StructuredName.MIDDLE_NAME, "AppropriateMiddleName")
+                .put(StructuredName.PREFIX, "AppropriatePrefix")
+                .put(StructuredName.SUFFIX, "AppropriateSuffix")
+                .put(StructuredName.DISPLAY_NAME, "AppropriateDisplayName")
+                .put(StructuredName.IS_SUPER_PRIMARY, 1);
+
+        entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "DoNotEmitFamilyName3")
+                .put(StructuredName.GIVEN_NAME, "DoNotEmitGivenName3")
+                .put(StructuredName.MIDDLE_NAME, "DoNotEmitMiddleName3")
+                .put(StructuredName.PREFIX, "DoNotEmitPrefix3")
+                .put(StructuredName.SUFFIX, "DoNotEmitSuffix3")
+                .put(StructuredName.DISPLAY_NAME, "DoNotEmitDisplay3")
+                .put(StructuredName.IS_PRIMARY, 1);
+
+        final PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElem();
+        elem.addExpectedNodeWithOrder("N",
+                "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName;"
+                + "AppropriatePrefix;AppropriateSuffix",
+                Arrays.asList("AppropriateFamilyName", "AppropriateGivenName",
+                        "AppropriateMiddleName", "AppropriatePrefix", "AppropriateSuffix"));
+
+        elem.addExpectedNodeWithOrder("FN", "AppropriateDisplayName");
+    }
+
+    public void testStructuredNameUseSuperPrimaryV21() {
+        testStructuredNameUseSuperPrimaryCommon(V21);
+    }
+
+    public void testStructuredNameUseSuperPrimaryV30() {
+        testStructuredNameUseSuperPrimaryCommon(V30);
+    }
+
+    public void testStructuredNameUseSuperPrimaryV40() {
+        testStructuredNameUseSuperPrimaryCommon(V40);
+    }
+
+    /**
+     * Tests phonetic names field are handled correctly.
+     *
+     * vCard 2.1 does not have any field corresponding to them.
+     * vCard 3.0 has SORT-STRING property, which does not support multiple values inside it.
+     * vCard 4.0 (rev13) has SORT-AS parameter, which has three values (family, given, middle)
+     * inside it.
+     */
+    private void testStructuredNamePhoneticNameCommon(int vcardType) {
+        mVerifier.initForExportTest(vcardType);
+        final ContactEntry entry = mVerifier.addInputEntry();
+        entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "AppropriateFamilyName")
+                .put(StructuredName.GIVEN_NAME, "AppropriateGivenName")
+                .put(StructuredName.MIDDLE_NAME, "AppropriateMiddleName")
+                .put(StructuredName.PREFIX, "AppropriatePrefix")
+                .put(StructuredName.SUFFIX, "AppropriateSuffix")
+                .put(StructuredName.DISPLAY_NAME, "AppropriateDisplayName")
+                .put(StructuredName.PHONETIC_FAMILY_NAME, "AppropriatePhoneticFamily")
+                .put(StructuredName.PHONETIC_GIVEN_NAME, "AppropriatePhoneticGiven")
+                .put(StructuredName.PHONETIC_MIDDLE_NAME, "AppropriatePhoneticMiddle");
+
+        final PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElem();
+        if (VCardConfig.isVersion40(vcardType)) {
+            final ContentValues contentValues = new ContentValues();
+            contentValues.put("SORT-AS",
+                    "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName");
+            // vCard 4.0 (rev13) now uses SORT-AS parameter, which is not compatible with
+            // either 2.1 nor 3.0.
+            elem.addExpectedNodeWithOrder("N",
+                    "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName;"
+                    + "AppropriatePrefix;AppropriateSuffix",
+                    Arrays.asList("AppropriateFamilyName", "AppropriateGivenName",
+                            "AppropriateMiddleName", "AppropriatePrefix", "AppropriateSuffix"),
+                    contentValues);
+        } else {
+            elem.addExpectedNodeWithOrder("N",
+                    "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName;"
+                    + "AppropriatePrefix;AppropriateSuffix",
+                    Arrays.asList("AppropriateFamilyName", "AppropriateGivenName",
+                            "AppropriateMiddleName", "AppropriatePrefix", "AppropriateSuffix"));
+            if (VCardConfig.isVersion30(vcardType)) {
+                elem.addExpectedNode("SORT-STRING",
+                        "AppropriatePhoneticGiven AppropriatePhoneticMiddle"
+                        + " AppropriatePhoneticFamily");
+            }
+        }
+
+        elem.addExpectedNodeWithOrder("FN", "AppropriateDisplayName")
+            .addExpectedNode("X-PHONETIC-FIRST-NAME", "AppropriatePhoneticGiven")
+            .addExpectedNode("X-PHONETIC-MIDDLE-NAME", "AppropriatePhoneticMiddle")
+            .addExpectedNode("X-PHONETIC-LAST-NAME", "AppropriatePhoneticFamily");
+    }
+
+    public void testStructuredNamePhoneticNameV21() {
+        testStructuredNamePhoneticNameCommon(V21);
+    }
+
+    public void testStructuredNamePhoneticNameV30() {
+        testStructuredNamePhoneticNameCommon(V30);
+    }
+
+    public void testStructuredNamePhoneticNameV40() {
+        testStructuredNamePhoneticNameCommon(V40);
+    }
+
+    // TODO: need to add test cases confirming escaping, empty values, etc.
+
+    /**
+     * Confirms all the other sides of the handling is correctly interpreted at one time.
+     *
+     * A kind of regression test for StructuredName handling.
+     */
+    private void testStructuredNameComplicatedCommon(int vcardType) {
+        mVerifier.initForExportTest(vcardType);
+        final ContactEntry entry = mVerifier.addInputEntry();
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.FAMILY_NAME, "DoNotEmitFamilyName1")
                 .put(StructuredName.GIVEN_NAME, "DoNotEmitGivenName1")
@@ -230,32 +338,50 @@ public class VCardExporterTests extends VCardTestsBase {
                 .put(StructuredName.PHONETIC_MIDDLE_NAME, "DoNotEmitPhoneticMiddle3")
                 .put(StructuredName.IS_PRIMARY, 1);
 
-        PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElem()
-                .addExpectedNodeWithOrder("N",
-                        "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName;"
-                        + "AppropriatePrefix;AppropriateSuffix",
-                        Arrays.asList("AppropriateFamilyName", "AppropriateGivenName",
-                                "AppropriateMiddleName", "AppropriatePrefix", "AppropriateSuffix"))
-                .addExpectedNodeWithOrder("FN",
-                        "AppropriatePrefix AppropriateGivenName "
-                        + "AppropriateMiddleName AppropriateFamilyName AppropriateSuffix")
-                .addExpectedNode("X-PHONETIC-FIRST-NAME", "AppropriatePhoneticGiven")
-                .addExpectedNode("X-PHONETIC-MIDDLE-NAME", "AppropriatePhoneticMiddle")
-                .addExpectedNode("X-PHONETIC-LAST-NAME", "AppropriatePhoneticFamily");
-
-        if (isV30) {
-            elem.addExpectedNode("SORT-STRING",
-                    "AppropriatePhoneticGiven AppropriatePhoneticMiddle"
-                    + " AppropriatePhoneticFamily");
+        final PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElem();
+        if (VCardConfig.isVersion40(vcardType)) {
+            final ContentValues contentValues = new ContentValues();
+            contentValues.put("SORT-AS",
+                    "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName");
+            // vCard 4.0 (rev13) now uses SORT-AS parameter, which is not compatible with
+            // either 2.1 nor 3.0.
+            elem.addExpectedNodeWithOrder("N",
+                    "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName;"
+                    + "AppropriatePrefix;AppropriateSuffix",
+                    Arrays.asList("AppropriateFamilyName", "AppropriateGivenName",
+                            "AppropriateMiddleName", "AppropriatePrefix", "AppropriateSuffix"),
+                    contentValues);
+        } else {
+            elem.addExpectedNodeWithOrder("N",
+                    "AppropriateFamilyName;AppropriateGivenName;AppropriateMiddleName;"
+                    + "AppropriatePrefix;AppropriateSuffix",
+                    Arrays.asList("AppropriateFamilyName", "AppropriateGivenName",
+                            "AppropriateMiddleName", "AppropriatePrefix", "AppropriateSuffix"));
+            if (VCardConfig.isVersion30(vcardType)) {
+                elem.addExpectedNode("SORT-STRING",
+                        "AppropriatePhoneticGiven AppropriatePhoneticMiddle"
+                        + " AppropriatePhoneticFamily");
+            }
         }
+
+        elem.addExpectedNodeWithOrder("FN",
+                "AppropriatePrefix AppropriateGivenName "
+                + "AppropriateMiddleName AppropriateFamilyName AppropriateSuffix")
+            .addExpectedNode("X-PHONETIC-FIRST-NAME", "AppropriatePhoneticGiven")
+            .addExpectedNode("X-PHONETIC-MIDDLE-NAME", "AppropriatePhoneticMiddle")
+            .addExpectedNode("X-PHONETIC-LAST-NAME", "AppropriatePhoneticFamily");
     }
 
-    public void testStructuredNameUseSuperPrimaryV21() {
-        testStructuredNameUseSuperPrimaryCommon(V21);
+    public void testStructuredNameComplicatedV21() {
+        testStructuredNameComplicatedCommon(V21);
     }
 
-    public void testStructuredNameUseSuperPrimaryV30() {
-        testStructuredNameUseSuperPrimaryCommon(V30);
+    public void testStructuredNameComplicatedV30() {
+        testStructuredNameComplicatedCommon(V30);
+    }
+
+    public void testStructuredNameComplicatedV40() {
+        testStructuredNameComplicatedCommon(V40);
     }
 
     /*public void testStructuredNameUseSuperPrimaryV40() {
@@ -841,7 +967,7 @@ public class VCardExporterTests extends VCardTestsBase {
         testImPrefHandlingCommon(V30);
     }
 
-    public void testImPrefHandlingV4n0() {
+    public void testImPrefHandlingV40() {
         testImPrefHandlingCommon(V40);
     }
 
@@ -1057,18 +1183,22 @@ public class VCardExporterTests extends VCardTestsBase {
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.IS_PRIMARY, 1);  // Empty name. Should be ignored.
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
-                .put(StructuredName.FAMILY_NAME, "family1");  // Not primary. Should be ignored.
+                .put(StructuredName.FAMILY_NAME, "family1")  // Not primary. Should be ignored.
+                .put(StructuredName.DISPLAY_NAME, "display");
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.IS_PRIMARY, 1)
-                .put(StructuredName.FAMILY_NAME, "family2");  // This entry is what we want.
+                .put(StructuredName.FAMILY_NAME, "family2")  // This entry is what we want.
+                .put(StructuredName.DISPLAY_NAME, "display");
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.IS_PRIMARY, 1)
-                .put(StructuredName.FAMILY_NAME, "family3");
+                .put(StructuredName.FAMILY_NAME, "family3")
+                .put(StructuredName.DISPLAY_NAME, "display");
         entry.addContentValues(StructuredName.CONTENT_ITEM_TYPE)
-                .put(StructuredName.FAMILY_NAME, "family4");
+                .put(StructuredName.FAMILY_NAME, "family4")
+                .put(StructuredName.DISPLAY_NAME, "display");
         mVerifier.addPropertyNodesVerifierElem()
                 .addExpectedNode("N", Arrays.asList("family2", "", "", "", ""))
-                .addExpectedNode("FN", "family2");
+                .addExpectedNode("FN", "display");
     }
 
     public void testPickUpNonEmptyContentValuesV21() {

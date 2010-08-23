@@ -537,6 +537,14 @@ public class VCardUtils {
         return true;
     }
 
+    private static final int[] sEscapeIndicatorsV30 = new int[]{
+        ':', ';', ',', ' '
+    };
+
+    private static final int[] sEscapeIndicatorsV40 = new int[]{
+        ';', ':'
+    };
+
     /**
      * <P>
      * Returns String available as parameter value in vCard 3.0.
@@ -547,10 +555,18 @@ public class VCardUtils {
      * This method checks whether the given String can be used without quotes.
      * </P>
      * <P>
-     * Note: We remove DQUOTE silently for now.
+     * Note: We remove DQUOTE inside the given value silently for now.
      * </P>
      */
-    public static String toStringAvailableAsV30ParamValue(String value) {
+    public static String toStringAsV30ParamValue(String value) {
+        return toStringAsParamValue(value, sEscapeIndicatorsV30);
+    }
+
+    public static String toStringAsV40ParamValue(String value) {
+        return toStringAsParamValue(value, sEscapeIndicatorsV40);
+    }
+
+    private static String toStringAsParamValue(String value, final int[] escapeIndicators) {
         if (TextUtils.isEmpty(value)) {
             value = "";
         }
@@ -566,8 +582,11 @@ public class VCardUtils {
                 continue;
             }
             builder.appendCodePoint(codePoint);
-            if (codePoint == ':' || codePoint == ',' || codePoint == ' ') {
-                needQuote = true;
+            for (int indicator : escapeIndicators) {
+                if (codePoint == indicator) {
+                    needQuote = true;
+                    break;
+                }
             }
         }
 

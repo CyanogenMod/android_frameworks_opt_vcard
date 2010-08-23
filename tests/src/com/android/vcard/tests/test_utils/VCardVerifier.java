@@ -196,9 +196,12 @@ public class VCardVerifier {
         if (!mInitialized) {
             AndroidTestCase.fail("Not initialized");
         }
-        PropertyNodesVerifierElem elem = addPropertyNodesVerifierElem();
-        if (!VCardConfig.isVersion21(mVCardType)) {
-            elem.addExpectedNodeWithOrder("N", "").addExpectedNodeWithOrder("FN", "");
+        final PropertyNodesVerifierElem elem = addPropertyNodesVerifierElem();
+        if (VCardConfig.isVersion40(mVCardType)) {
+            elem.addExpectedNodeWithOrder("FN", "");
+        } else if (VCardConfig.isVersion30(mVCardType)) {
+            elem.addExpectedNodeWithOrder("N", "");
+            elem.addExpectedNodeWithOrder("FN", "");
         } else if (mIsDoCoMo) {
             elem.addExpectedNodeWithOrder("N", "");
         }

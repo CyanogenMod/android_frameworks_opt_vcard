@@ -119,6 +119,12 @@ public class PropertyNodesVerifierElem {
     }
 
     public PropertyNodesVerifierElem addExpectedNodeWithOrder(String propName, String propValue,
+            List<String> propValueList, ContentValues paramMap) {
+        return addExpectedNodeWithOrder(propName, propValue, propValueList, null, paramMap,
+                null, null);
+    }
+
+    public PropertyNodesVerifierElem addExpectedNodeWithOrder(String propName, String propValue,
             List<String> propValueList, byte[] propValue_bytes,
             ContentValues paramMap, TypeSet paramMap_TYPE, GroupSet propGroupSet) {
         if (propValue == null && propValueList != null) {
