@@ -18,6 +18,8 @@ package com.android.vcard.tests;
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
+import android.provider.ContactsContract.CommonDataKinds.Im;
+import android.provider.ContactsContract.CommonDataKinds.Nickname;
 import android.provider.ContactsContract.CommonDataKinds.Note;
 import android.provider.ContactsContract.CommonDataKinds.Organization;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
@@ -1081,5 +1083,26 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Organization.DEPARTMENT, "\u691C\u7D22\u90E8\u9580")
                 .put(Organization.PHONETIC_NAME,
                         "\u3050\u30FC\u3050\u308B\u3051\u3093\u3055\u304F\u3076\u3082\u3093");
+    }
+
+    public void testIMV21_Parse() {
+        mVerifier.initForImportTest(V21, R.raw.v21_im);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("X-ANDROID-CUSTOM",
+                        Arrays.asList("vnd.android.cursor.item/nickname", "Nick", "1",
+                                "", "", "", "", "", "", "", "", "", "", "", "", ""))  // 13
+                .addExpectedNodeWithOrder("X-GOOGLE-TALK", "hhh@gmail.com");
+    }
+
+    public void testIMV21() {
+        mVerifier.initForImportTest(V21, R.raw.v21_im);
+        final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected(Nickname.CONTENT_ITEM_TYPE)
+                .put(Nickname.NAME, "Nick")
+                .put(Nickname.TYPE, "1");
+        elem.addExpected(Im.CONTENT_ITEM_TYPE)
+                .put(Im.PROTOCOL, Im.PROTOCOL_GOOGLE_TALK)
+                .put(Im.TYPE, Im.TYPE_HOME)
+                .put(Im.DATA, "hhh@gmail.com");
     }
 }

@@ -384,11 +384,6 @@ public class VCardExporterTests extends VCardTestsBase {
         testStructuredNameComplicatedCommon(V40);
     }
 
-    /*public void testStructuredNameUseSuperPrimaryV40() {
-        // TODO: add appropriate SORT-AS
-        // testStructuredNameUseSuperPrimaryCommon(V40);
-    }*/
-
     public void testNickNameV30() {
         mVerifier.initForExportTest(V30);
         mVerifier.addInputEntry().addContentValues(Nickname.CONTENT_ITEM_TYPE)

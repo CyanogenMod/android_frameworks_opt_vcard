@@ -61,8 +61,8 @@ public class VCardConstants {
     public static final String PROPERTY_X_PHONETIC_MIDDLE_NAME = "X-PHONETIC-MIDDLE-NAME";
     public static final String PROPERTY_X_PHONETIC_LAST_NAME = "X-PHONETIC-LAST-NAME";
 
-    // Properties both ContactsStruct in Eclair and de-fact vCard extensions
-    // shown in http://en.wikipedia.org/wiki/VCard support are defined here.
+    // Properties both ContactsStruct and de-fact vCard extensions
+    // Shown in http://en.wikipedia.org/wiki/VCard support are defined here.
     public static final String PROPERTY_X_AIM = "X-AIM";
     public static final String PROPERTY_X_MSN = "X-MSN";
     public static final String PROPERTY_X_YAHOO = "X-YAHOO";
@@ -164,7 +164,8 @@ public class VCardConstants {
     // SORT-STRING invCard 3.0.
     /* package */ static final String PARAM_TYPE_X_IRMC_N = "X-IRMC-N";
 
-    /* package */ static final int MAX_DATA_COLUMN = 15;
+    // Used in unit test.
+    public static final int MAX_DATA_COLUMN = 15;
 
     /* package */ static final int MAX_CHARACTER_NUMS_QP = 76;
     static final int MAX_CHARACTER_NUMS_BASE64_V30 = 75;
