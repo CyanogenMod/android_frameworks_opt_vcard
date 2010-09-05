@@ -45,6 +45,7 @@ public class VCardConstants {
     public static final String PROPERTY_NAME = "NAME";  // (3.0, 4,0)
     public static final String PROPERTY_NICKNAME = "NICKNAME";  // (3.0, 4.0)
     public static final String PROPERTY_SORT_STRING = "SORT-STRING";  // (3.0, 4.0)
+    public static final String PROPERTY_IMPP = "IMPP";  // RFC 4770 (for 3.0 only)
     public static final String PROPERTY_END = "END";
 
     // Valid property names not supported (not appropriately handled) by our importer.

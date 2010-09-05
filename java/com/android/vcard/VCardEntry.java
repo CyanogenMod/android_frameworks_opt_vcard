@@ -23,9 +23,6 @@ import android.content.OperationApplicationException;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.provider.ContactsContract;
-import android.provider.ContactsContract.Contacts;
-import android.provider.ContactsContract.Data;
-import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
@@ -35,9 +32,13 @@ import android.provider.ContactsContract.CommonDataKinds.Note;
 import android.provider.ContactsContract.CommonDataKinds.Organization;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
+import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.RawContacts;
 import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 import android.util.Log;
@@ -469,6 +470,7 @@ public class VCardEntry {
     private List<ImData> mImList;
     private List<PhotoData> mPhotoList;
     private List<String> mWebsiteList;
+    private List<String> mSipList;
     private List<List<String>> mAndroidCustomPropertyList;
 
     private final int mVCardType;
@@ -1045,6 +1047,14 @@ public class VCardEntry {
             mPhoneticMiddleName = propValue;
         } else if (propName.equals(VCardConstants.PROPERTY_X_PHONETIC_LAST_NAME)) {
             mPhoneticFamilyName = propValue;
+        } else if (propName.equals(VCardConstants.PROPERTY_IMPP)) {
+            // See also RFC 4770 (for vCard 3.0)
+            if (propValue.startsWith("sip:") && propValue.length() > 4) {
+                if (mSipList == null) {
+                    mSipList = new ArrayList<String>();
+                }
+                mSipList.add(propValue.substring(4));
+            }
         } else if (propName.equals(VCardConstants.PROPERTY_X_ANDROID_CUSTOM)) {
             final List<String> customPropertyList =
                 VCardUtils.constructListFromValue(propValue, mVCardType);
@@ -1293,6 +1303,15 @@ public class VCardEntry {
             builder.withValue(Event.START_DATE, mAnniversary);
             builder.withValue(Event.TYPE, Event.TYPE_ANNIVERSARY);
             operationList.add(builder.build());
+        }
+
+        if (mSipList != null && !mSipList.isEmpty()) {
+            for (String sipAddress : mSipList) {
+                builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
+                builder.withValue(Data.MIMETYPE, SipAddress.CONTENT_ITEM_TYPE);
+                builder.withValue(SipAddress.SIP_ADDRESS, sipAddress);
+                operationList.add(builder.build());
+            }
         }
 
         if (mAndroidCustomPropertyList != null) {

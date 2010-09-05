@@ -29,6 +29,7 @@ import android.provider.ContactsContract.CommonDataKinds.Organization;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.CommonDataKinds.Relation;
+import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
@@ -60,7 +61,7 @@ public class ImportTestProvider extends MockContentProvider {
                 Event.CONTENT_ITEM_TYPE, Photo.CONTENT_ITEM_TYPE,
                 Note.CONTENT_ITEM_TYPE, Website.CONTENT_ITEM_TYPE,
                 Relation.CONTENT_ITEM_TYPE, Event.CONTENT_ITEM_TYPE,
-                GroupMembership.CONTENT_ITEM_TYPE));
+                GroupMembership.CONTENT_ITEM_TYPE, SipAddress.CONTENT_ITEM_TYPE));
 
     final Map<String, Collection<ContentValues>> mMimeTypeToExpectedContentValues;
 
@@ -120,8 +121,10 @@ public class ImportTestProvider extends MockContentProvider {
                 final String mimeType = actualContentValues.getAsString(Data.MIMETYPE);
                 if (!sKnownMimeTypeSet.contains(mimeType)) {
                     TestCase.fail(String.format(
-                            "Unknown MimeType %s. Probably added after developing this test",
-                            mimeType));
+                            "Unknown MimeType %s. " +
+                            "(Maybe the MimeType is added after developing this test suite." +
+                            "Please look into %s if you strongly believe the type is regitimate)",
+                            ImportTestProvider.class.getSimpleName(), mimeType));
                 }
                 // Remove data meaningless in this unit tests.
                 // Specifically, Data.DATA1 - DATA7 are set to null or empty String

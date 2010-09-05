@@ -15,6 +15,12 @@
  */
 package com.android.vcard.tests;
 
+import com.android.vcard.VCardConfig;
+import com.android.vcard.tests.test_utils.ContentValuesVerifier;
+import com.android.vcard.tests.test_utils.ContentValuesVerifierElem;
+import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem.TypeSet;
+import com.android.vcard.tests.test_utils.VCardTestsBase;
+
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
@@ -24,16 +30,11 @@ import android.provider.ContactsContract.CommonDataKinds.Note;
 import android.provider.ContactsContract.CommonDataKinds.Organization;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
+import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
 import android.provider.ContactsContract.Data;
-
-import com.android.vcard.VCardConfig;
-import com.android.vcard.tests.test_utils.ContentValuesVerifier;
-import com.android.vcard.tests.test_utils.ContentValuesVerifierElem;
-import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem.TypeSet;
-import com.android.vcard.tests.test_utils.VCardTestsBase;
 
 import java.util.Arrays;
 
@@ -1104,5 +1105,23 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Im.PROTOCOL, Im.PROTOCOL_GOOGLE_TALK)
                 .put(Im.TYPE, Im.TYPE_HOME)
                 .put(Im.DATA, "hhh@gmail.com");
+    }
+
+    public void testSipV30_Parse() {
+        mVerifier.initForImportTest(V30, R.raw.v30_sip);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("FN", "Android")
+                .addExpectedNodeWithOrder("IMPP", "sip:android@android.example.com",
+                        new TypeSet("personal"));
+    }
+
+    public void testSipV30() {
+        mVerifier.initForImportTest(V30, R.raw.v30_sip);
+        final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.DISPLAY_NAME, "Android");
+        // Type is ignored silently.
+        elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.SIP_ADDRESS, "android@android.example.com");
     }
 }
