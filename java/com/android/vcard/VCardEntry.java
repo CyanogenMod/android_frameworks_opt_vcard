@@ -1055,6 +1055,14 @@ public class VCardEntry {
                 }
                 mSipList.add(propValue.substring(4));
             }
+        } else if (propName.equals(VCardConstants.PROPERTY_X_SIP)) {
+            if (!TextUtils.isEmpty(propValue)) {
+                // Defact.
+                if (mSipList == null) {
+                    mSipList = new ArrayList<String>();
+                }
+                mSipList.add(propValue);
+            }
         } else if (propName.equals(VCardConstants.PROPERTY_X_ANDROID_CUSTOM)) {
             final List<String> customPropertyList =
                 VCardUtils.constructListFromValue(propValue, mVCardType);

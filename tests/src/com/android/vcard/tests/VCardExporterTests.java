@@ -1224,6 +1224,17 @@ public class VCardExporterTests extends VCardTestsBase {
                 .addExpectedNode("TEL", "1", new TypeSet("\u96FB\u8A71"));
     }
 
+    public void testSipAddressV21() {
+        mVerifier.initForExportTest(V21);
+        final ContactEntry entry = mVerifier.addInputEntry();
+        entry.addContentValues(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.SIP_ADDRESS, "gold");
+        mVerifier.addLineVerifierElem()
+                .addExpected("X-SIP:gold");
+        mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                .addExpectedNode("X-SIP", "gold");
+    }
+
     public void testSipAddressV30() {
         mVerifier.initForExportTest(V30);
         final ContactEntry entry = mVerifier.addInputEntry();

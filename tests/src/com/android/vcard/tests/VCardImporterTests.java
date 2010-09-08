@@ -1124,4 +1124,21 @@ public class VCardImporterTests extends VCardTestsBase {
         elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
                 .put(SipAddress.SIP_ADDRESS, "android@android.example.com");
     }
+
+    public void testSipV21_Parse() {
+        mVerifier.initForImportTest(V21, R.raw.v21_sip);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("FN", "Android")
+                .addExpectedNodeWithOrder("X-SIP", "888");
+    }
+
+    public void testSipV21() {
+        mVerifier.initForImportTest(V21, R.raw.v21_sip);
+        final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.DISPLAY_NAME, "Android");
+        // Type is ignored silently.
+        elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.SIP_ADDRESS, "888");
+    }
 }
