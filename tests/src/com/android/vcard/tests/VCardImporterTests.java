@@ -1129,7 +1129,8 @@ public class VCardImporterTests extends VCardTestsBase {
         mVerifier.initForImportTest(V21, R.raw.v21_sip);
         mVerifier.addPropertyNodesVerifierElem()
                 .addExpectedNodeWithOrder("FN", "Android")
-                .addExpectedNodeWithOrder("X-SIP", "888");
+                .addExpectedNodeWithOrder("X-SIP", "888")
+                .addExpectedNodeWithOrder("X-SIP", "sip:90-180-360");
     }
 
     public void testSipV21() {
@@ -1137,8 +1138,10 @@ public class VCardImporterTests extends VCardTestsBase {
         final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
         elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.DISPLAY_NAME, "Android");
-        // Type is ignored silently.
         elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
                 .put(SipAddress.SIP_ADDRESS, "888");
+        // "sip:" should be removed.
+        elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.SIP_ADDRESS, "90-180-360");
     }
 }

@@ -1057,11 +1057,17 @@ public class VCardEntry {
             }
         } else if (propName.equals(VCardConstants.PROPERTY_X_SIP)) {
             if (!TextUtils.isEmpty(propValue)) {
-                // Defact.
                 if (mSipList == null) {
                     mSipList = new ArrayList<String>();
                 }
-                mSipList.add(propValue);
+
+                final String sipAddress;
+                if (propValue.startsWith("sip:") && propValue.length() > 4) {
+                    sipAddress = propValue.substring(4);
+                } else {
+                    sipAddress = propValue;
+                }
+                mSipList.add(sipAddress);
             }
         } else if (propName.equals(VCardConstants.PROPERTY_X_ANDROID_CUSTOM)) {
             final List<String> customPropertyList =
