@@ -16,6 +16,12 @@
 
 package com.android.vcard.tests;
 
+import com.android.vcard.VCardConfig;
+import com.android.vcard.tests.test_utils.ContactEntry;
+import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem;
+import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem.TypeSet;
+import com.android.vcard.tests.test_utils.VCardTestsBase;
+
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
@@ -26,15 +32,10 @@ import android.provider.ContactsContract.CommonDataKinds.Organization;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.CommonDataKinds.Relation;
+import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
-
-import com.android.vcard.VCardConfig;
-import com.android.vcard.tests.test_utils.ContactEntry;
-import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem;
-import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem.TypeSet;
-import com.android.vcard.tests.test_utils.VCardTestsBase;
 
 import java.util.Arrays;
 
@@ -1221,5 +1222,30 @@ public class VCardExporterTests extends VCardTestsBase {
                 .addExpected("TEL;TYPE=\u96FB\u8A71:1");
         mVerifier.addPropertyNodesVerifierElemWithEmptyName()
                 .addExpectedNode("TEL", "1", new TypeSet("\u96FB\u8A71"));
+    }
+
+    public void testSipAddressV30() {
+        mVerifier.initForExportTest(V30);
+        final ContactEntry entry = mVerifier.addInputEntry();
+        entry.addContentValues(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.SIP_ADDRESS, "android@example.com");
+        mVerifier.addLineVerifierElem()
+                .addExpected("N:")
+                .addExpected("FN:")
+                .addExpected("IMPP:sip:android@example.com");
+        mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                .addExpectedNode("IMPP", "sip:android@example.com");
+    }
+
+    public void testSipAddressV40() {
+        mVerifier.initForExportTest(V40);
+        final ContactEntry entry = mVerifier.addInputEntry();
+        entry.addContentValues(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.SIP_ADDRESS, "android@example.com");
+        mVerifier.addLineVerifierElem()
+                .addExpected("FN:")
+                .addExpected("IMPP:sip:android@example.com");
+        mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                .addExpectedNode("IMPP", "sip:android@example.com");
     }
 }

@@ -15,19 +15,17 @@
  */
 package com.android.vcard;
 
+import com.android.vcard.exception.VCardException;
+
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Entity;
-import android.content.EntityIterator;
 import android.content.Entity.NamedContentValues;
+import android.content.EntityIterator;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
-import android.provider.ContactsContract.Contacts;
-import android.provider.ContactsContract.Data;
-import android.provider.ContactsContract.RawContacts;
-import android.provider.ContactsContract.RawContactsEntity;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
 import android.provider.ContactsContract.CommonDataKinds.Im;
@@ -37,14 +35,17 @@ import android.provider.ContactsContract.CommonDataKinds.Organization;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.CommonDataKinds.Relation;
+import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.RawContacts;
+import android.provider.ContactsContract.RawContactsEntity;
 import android.text.TextUtils;
 import android.util.CharsetUtils;
 import android.util.Log;
-
-import com.android.vcard.exception.VCardException;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -340,17 +341,17 @@ public class VCardComposer {
                     try {
                         charset = CharsetUtils.charsetForVendor(SHIFT_JIS).name();
                     } catch (UnsupportedCharsetException e) {
-                        Log.e(LOG_TAG,
+                        /* Log.e(LOG_TAG,
                                 "Career-specific SHIFT_JIS was not found. "
-                                + "Use SHIFT_JIS as is.");
+                                + "Use SHIFT_JIS as is."); */
                         charset = SHIFT_JIS;
                     }
                 }
                 mCharset = charset;
             } else {
-                Log.w(LOG_TAG,
+                /* Log.w(LOG_TAG,
                         "The charset \"" + charset + "\" is used while "
-                        + SHIFT_JIS + " is needed to be used.");
+                        + SHIFT_JIS + " is needed to be used."); */
                 if (TextUtils.isEmpty(charset)) {
                     mCharset = SHIFT_JIS;
                 } else {
@@ -613,6 +614,7 @@ public class VCardComposer {
                     .appendNotes(contentValuesListMap.get(Note.CONTENT_ITEM_TYPE))
                     .appendEvents(contentValuesListMap.get(Event.CONTENT_ITEM_TYPE))
                     .appendIms(contentValuesListMap.get(Im.CONTENT_ITEM_TYPE))
+                    .appendSipAddresses(contentValuesListMap.get(SipAddress.CONTENT_ITEM_TYPE))
                     .appendRelation(contentValuesListMap.get(Relation.CONTENT_ITEM_TYPE));
             return builder.toString();
         }

@@ -45,7 +45,8 @@ public class VCardParser_V30 implements VCardParser {
                     "VERSION", "TEL", "EMAIL", "TZ", "GEO", "NOTE", "URL",
                     "BDAY", "ROLE", "REV", "UID", "KEY", "MAILER", // 2.1
                     "NAME", "PROFILE", "SOURCE", "NICKNAME", "CLASS",
-                    "SORT-STRING", "CATEGORIES", "PRODID"))); // 3.0
+                    "SORT-STRING", "CATEGORIES", "PRODID",  // 3.0
+                    "IMPP"))); // RFC 4770
 
     /**
      * <p>

@@ -15,8 +15,6 @@
  */
 package com.android.vcard;
 
-import com.android.vcard.exception.VCardException;
-
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
@@ -27,6 +25,7 @@ import android.provider.ContactsContract.CommonDataKinds.Organization;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.CommonDataKinds.Relation;
+import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
@@ -135,9 +134,10 @@ public class VCardBuilder {
     public VCardBuilder(final int vcardType, String charset) {
         mVCardType = vcardType;
 
-        Log.w(LOG_TAG,
-                "Should not use vCard 4.0 when building vCard. " +
-                "It is not officially published yet.");
+        if (VCardConfig.isVersion40(vcardType)) {
+            Log.w(LOG_TAG, "Should not use vCard 4.0 when building vCard. " +
+                    "It is not officially published yet.");
+        }
 
         mIsV30OrV40 = VCardConfig.isVersion30(vcardType) || VCardConfig.isVersion40(vcardType);
         mShouldUseQuotedPrintable = VCardConfig.shouldUseQuotedPrintable(vcardType);
@@ -159,9 +159,9 @@ public class VCardBuilder {
 
         if (VCardConfig.isDoCoMo(vcardType)) {
             if (!SHIFT_JIS.equalsIgnoreCase(charset)) {
-                Log.w(LOG_TAG,
+                /* Log.w(LOG_TAG,
                         "The charset \"" + charset + "\" is used while "
-                        + SHIFT_JIS + " is needed to be used.");
+                        + SHIFT_JIS + " is needed to be used."); */
                 if (TextUtils.isEmpty(charset)) {
                     mCharset = SHIFT_JIS;
                 } else {
@@ -715,7 +715,6 @@ public class VCardBuilder {
             mBuilder.append(VCARD_END_OF_LINE);
         }
 
-        Log.d("@@@", "hoge");
         if (mUsesDefactProperty) {
             if (!TextUtils.isEmpty(phoneticGivenName)) {
                 final boolean reallyUseQuotedPrintable =
@@ -1755,6 +1754,53 @@ public class VCardBuilder {
         mBuilder.append(VCARD_END_OF_LINE);
     }
 
+    /**
+     * SIP (Session Initiation Protocol) is first supported in RFC 4770 as part of IMPP
+     * support. vCard 2.1 and old vCard 3.0 may not able to parse it, or expect X-SIP
+     * instead of "IMPP;sip:...".
+     *
+     * We honor RFC 4770 and don't allow vCard 3.0 to emit X-SIP at all.
+     *
+     * vCard 4.0 is aware of RFC 4770, so just using IMPP would be fine.
+     */
+    public VCardBuilder appendSipAddresses(final List<ContentValues> contentValuesList) {
+        final boolean useXProperty;
+        if (mIsV30OrV40) {
+            useXProperty = false;
+        } else if (mUsesDefactProperty){
+            useXProperty = true;
+        } else {
+            return this;
+        }
+
+        if (contentValuesList != null) {
+            for (ContentValues contentValues : contentValuesList) {
+                String sipAddress = contentValues.getAsString(SipAddress.SIP_ADDRESS);
+                if (TextUtils.isEmpty(sipAddress)) {
+                    continue;
+                }
+                if (useXProperty) {
+                    // X-SIP does not contain "sip:" prefix.
+                    if (sipAddress.startsWith("sip:")) {
+                        if (sipAddress.length() == 4) {
+                            continue;
+                        }
+                        sipAddress = sipAddress.substring(4);
+                    }
+                    // No type is available yet.
+                    appendLineWithCharsetAndQPDetection(VCardConstants.PROPERTY_X_SIP, sipAddress);
+                } else {
+                    // IMPP is not just for SIP but the other protcols like XMPP.
+                    if (!sipAddress.startsWith("sip:")) {
+                        sipAddress = "sip:" + sipAddress;
+                    }
+                    appendLineWithCharsetAndQPDetection(VCardConstants.PROPERTY_IMPP, sipAddress);
+                }
+            }
+        }
+        return this;
+    }
+
     public void appendAndroidSpecificProperty(
             final String mimeType, ContentValues contentValues) {
         if (!sAllowedAndroidPropertySet.contains(mimeType)) {
@@ -1941,18 +1987,14 @@ public class VCardBuilder {
         // which would be recommended way in vcard 3.0 though not valid in vCard 2.1.
         boolean first = true;
         for (final String typeValue : types) {
-            if (VCardConfig.isVersion30(mVCardType)) {
-                final String encoded = VCardUtils.toStringAsV30ParamValue(typeValue);
+            if (VCardConfig.isVersion30(mVCardType) || VCardConfig.isVersion40(mVCardType)) {
+                final String encoded = (VCardConfig.isVersion40(mVCardType) ?
+                        VCardUtils.toStringAsV40ParamValue(typeValue) :
+                        VCardUtils.toStringAsV30ParamValue(typeValue));
                 if (TextUtils.isEmpty(encoded)) {
                     continue;
                 }
 
-                // Note: vCard 3.0 specifies the different type of acceptable type Strings, but
-                //       we don't emit that kind of vCard 3.0 specific type since there should be
-                //       high probabilyty in which external importers cannot understand them.
-                //
-                // e.g. TYPE="\u578B\u306B\u3087" (vCard 3.0 allows non-Ascii characters if they
-                //      are quoted.)
                 if (first) {
                     first = false;
                 } else {

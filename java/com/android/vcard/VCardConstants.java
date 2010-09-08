@@ -45,8 +45,11 @@ public class VCardConstants {
     public static final String PROPERTY_NAME = "NAME";  // (3.0, 4,0)
     public static final String PROPERTY_NICKNAME = "NICKNAME";  // (3.0, 4.0)
     public static final String PROPERTY_SORT_STRING = "SORT-STRING";  // (3.0, 4.0)
-    public static final String PROPERTY_IMPP = "IMPP";  // RFC 4770 (for 3.0 only)
+    public static final String PROPERTY_IMPP = "IMPP";  // RFC 4770 (vCard 3.0) and vCard 4.0
     public static final String PROPERTY_END = "END";
+
+    // defact SIP property which had been used till RFC 4770.
+    public static final String PROPERTY_X_SIP = "X-SIP";
 
     // Valid property names not supported (not appropriately handled) by our importer.
     // TODO: Should be removed from the view of memory efficiency?
