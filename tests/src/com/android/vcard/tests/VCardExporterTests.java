@@ -408,8 +408,13 @@ public class VCardExporterTests extends VCardTestsBase {
         mVerifier.addInputEntry().addContentValues(Phone.CONTENT_ITEM_TYPE)
                 .put(Phone.NUMBER, "1")
                 .put(Phone.TYPE, Phone.TYPE_HOME);
-        mVerifier.addPropertyNodesVerifierElemWithEmptyName()
-                .addExpectedNode("TEL", "1", new TypeSet("HOME"));
+        if (VCardConfig.isVersion40(vcardType)) {
+            mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                    .addExpectedNode("TEL", "tel:1", new TypeSet("HOME"));
+        } else {
+            mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                    .addExpectedNode("TEL", "1", new TypeSet("HOME"));
+        }
     }
 
     public void testPhoneBasicV21() {
@@ -489,23 +494,44 @@ public class VCardExporterTests extends VCardTestsBase {
                 .put(Phone.NUMBER, "160")
                 .put(Phone.TYPE, Phone.TYPE_MMS);
 
-        mVerifier.addPropertyNodesVerifierElemWithEmptyName()
-                .addExpectedNode("TEL", "10", new TypeSet("HOME"))
-                .addExpectedNode("TEL", "20", new TypeSet("WORK"))
-                .addExpectedNode("TEL", "30", new TypeSet("HOME", "FAX"))
-                .addExpectedNode("TEL", "40", new TypeSet("WORK", "FAX"))
-                .addExpectedNode("TEL", "50", new TypeSet("CELL"))
-                .addExpectedNode("TEL", "60", new TypeSet("PAGER"))
-                .addExpectedNode("TEL", "70", new TypeSet("VOICE"))
-                .addExpectedNode("TEL", "80", new TypeSet("CAR"))
-                .addExpectedNode("TEL", "90", new TypeSet("WORK", "PREF"))
-                .addExpectedNode("TEL", "100", new TypeSet("ISDN"))
-                .addExpectedNode("TEL", "110", new TypeSet("PREF"))
-                .addExpectedNode("TEL", "120", new TypeSet("FAX"))
-                .addExpectedNode("TEL", "130", new TypeSet("TLX"))
-                .addExpectedNode("TEL", "140", new TypeSet("WORK", "CELL"))
-                .addExpectedNode("TEL", "150", new TypeSet("WORK", "PAGER"))
-                .addExpectedNode("TEL", "160", new TypeSet("MSG"));
+        if (VCardConfig.isVersion40(vcardType)) {
+            // Currently pager type has special logic...
+            mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                    .addExpectedNode("TEL", "tel:10", new TypeSet("HOME"))
+                    .addExpectedNode("TEL", "tel:20", new TypeSet("WORK"))
+                    .addExpectedNode("TEL", "tel:30", new TypeSet("HOME", "FAX"))
+                    .addExpectedNode("TEL", "tel:40", new TypeSet("WORK", "FAX"))
+                    .addExpectedNode("TEL", "tel:50", new TypeSet("CELL"))
+                    .addExpectedNode("TEL", "60", new TypeSet("PAGER"))
+                    .addExpectedNode("TEL", "tel:70", new TypeSet("VOICE"))
+                    .addExpectedNode("TEL", "tel:80", new TypeSet("CAR"))
+                    .addExpectedNode("TEL", "tel:90", new TypeSet("WORK", "PREF"))
+                    .addExpectedNode("TEL", "tel:100", new TypeSet("ISDN"))
+                    .addExpectedNode("TEL", "tel:110", new TypeSet("PREF"))
+                    .addExpectedNode("TEL", "tel:120", new TypeSet("FAX"))
+                    .addExpectedNode("TEL", "tel:130", new TypeSet("TLX"))
+                    .addExpectedNode("TEL", "tel:140", new TypeSet("WORK", "CELL"))
+                    .addExpectedNode("TEL", "tel:150", new TypeSet("WORK", "PAGER"))
+                    .addExpectedNode("TEL", "tel:160", new TypeSet("MSG"));
+        } else {
+            mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                    .addExpectedNode("TEL", "10", new TypeSet("HOME"))
+                    .addExpectedNode("TEL", "20", new TypeSet("WORK"))
+                    .addExpectedNode("TEL", "30", new TypeSet("HOME", "FAX"))
+                    .addExpectedNode("TEL", "40", new TypeSet("WORK", "FAX"))
+                    .addExpectedNode("TEL", "50", new TypeSet("CELL"))
+                    .addExpectedNode("TEL", "60", new TypeSet("PAGER"))
+                    .addExpectedNode("TEL", "70", new TypeSet("VOICE"))
+                    .addExpectedNode("TEL", "80", new TypeSet("CAR"))
+                    .addExpectedNode("TEL", "90", new TypeSet("WORK", "PREF"))
+                    .addExpectedNode("TEL", "100", new TypeSet("ISDN"))
+                    .addExpectedNode("TEL", "110", new TypeSet("PREF"))
+                    .addExpectedNode("TEL", "120", new TypeSet("FAX"))
+                    .addExpectedNode("TEL", "130", new TypeSet("TLX"))
+                    .addExpectedNode("TEL", "140", new TypeSet("WORK", "CELL"))
+                    .addExpectedNode("TEL", "150", new TypeSet("WORK", "PAGER"))
+                    .addExpectedNode("TEL", "160", new TypeSet("MSG"));
+        }
     }
 
     public void testPhoneVariousTypeSupportV21() {
@@ -541,11 +567,19 @@ public class VCardExporterTests extends VCardTestsBase {
                 .put(Phone.NUMBER, "4")
                 .put(Phone.TYPE, Phone.TYPE_FAX_WORK);
 
-        mVerifier.addPropertyNodesVerifierElemWithEmptyName()
-                .addExpectedNode("TEL", "4", new TypeSet("WORK", "FAX"))
-                .addExpectedNode("TEL", "3", new TypeSet("HOME", "FAX", "PREF"))
-                .addExpectedNode("TEL", "2", new TypeSet("WORK", "PREF"))
-                .addExpectedNode("TEL", "1", new TypeSet("HOME"));
+        if (VCardConfig.isVersion40(vcardType)) {
+            mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                    .addExpectedNode("TEL", "tel:4", new TypeSet("WORK", "FAX"))
+                    .addExpectedNode("TEL", "tel:3", new TypeSet("HOME", "FAX", "PREF"))
+                    .addExpectedNode("TEL", "tel:2", new TypeSet("WORK", "PREF"))
+                    .addExpectedNode("TEL", "tel:1", new TypeSet("HOME"));
+        } else {
+            mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                    .addExpectedNode("TEL", "4", new TypeSet("WORK", "FAX"))
+                    .addExpectedNode("TEL", "3", new TypeSet("HOME", "FAX", "PREF"))
+                    .addExpectedNode("TEL", "2", new TypeSet("WORK", "PREF"))
+                    .addExpectedNode("TEL", "1", new TypeSet("HOME"));
+        }
     }
 
     public void testPhonePrefHandlingV21() {
@@ -595,7 +629,17 @@ public class VCardExporterTests extends VCardTestsBase {
                 .put(Phone.TYPE, Phone.TYPE_CUSTOM)
                 .put(Phone.LABEL, "invalid");
         PropertyNodesVerifierElem elem = mVerifier.addPropertyNodesVerifierElemWithEmptyName();
-        if (VCardConfig.isVersion30(vcardType) || VCardConfig.isVersion40(vcardType)) {
+        if (VCardConfig.isVersion40(vcardType)) {
+            // vCard 4.0 (rev.13) does not allow bare number but URI.
+            elem.addExpectedNode("TEL", "tel:1", new TypeSet("Modem"))
+                    .addExpectedNode("TEL", "tel:2", new TypeSet("MSG"))
+                    .addExpectedNode("TEL", "tel:3", new TypeSet("BBS"))
+                    .addExpectedNode("TEL", "tel:4", new TypeSet("VIDEO"))
+                    .addExpectedNode("TEL", "tel:5", new TypeSet("VOICE"))
+                    .addExpectedNode("TEL", "tel:6", new TypeSet("CELL"))
+                    .addExpectedNode("TEL", "tel:7", new TypeSet("CELL"))
+                    .addExpectedNode("TEL", "tel:8", new TypeSet("invalid"));
+        } else if (VCardConfig.isVersion30(vcardType)) {
             // vCard 3.0 accepts "invalid". Also stop using toUpper()
             elem.addExpectedNode("TEL", "1", new TypeSet("Modem"))
                     .addExpectedNode("TEL", "2", new TypeSet("MSG"))

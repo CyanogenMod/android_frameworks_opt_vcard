@@ -833,6 +833,7 @@ public class VCardBuilder {
                 }
 
                 // PAGER number needs unformatted "phone number".
+                // TODO: It would be better to have this logic as optional. 
                 final int type = (typeAsObject != null ? typeAsObject : DEFAULT_PHONE_TYPE);
                 if (type == Phone.TYPE_PAGER ||
                         VCardConfig.refrainPhoneNumberFormatting(mVCardType)) {
@@ -849,13 +850,25 @@ public class VCardBuilder {
                     phoneLineExists = true;
                     for (String actualPhoneNumber : phoneNumberList) {
                         if (!phoneSet.contains(actualPhoneNumber)) {
-                            final int format = VCardUtils.getPhoneNumberFormat(mVCardType);
-                            final String formattedPhoneNumber =
-                                    PhoneNumberUtils.formatNumber(actualPhoneNumber, format);
+                            final int phoneFormat = VCardUtils.getPhoneNumberFormat(mVCardType);
+                            String formatted =
+                                    PhoneNumberUtils.formatNumber(actualPhoneNumber, phoneFormat);
+
+                            // In vCard 4.0, value type must be "a single URI value",
+                            // not just a phone number. (Based on vCard 4.0 rev.13)
+                            if (VCardConfig.isVersion40(mVCardType)
+                                    && !TextUtils.isEmpty(formatted)
+                                    && !formatted.startsWith("tel:")) {
+                                formatted = "tel:" + formatted;
+                            }
+
+                            // Pre-formatted string should be stored.
                             phoneSet.add(actualPhoneNumber);
-                            appendTelLine(type, label, formattedPhoneNumber, isPrimary);
+                            appendTelLine(type, label, formatted, isPrimary);
                         }
                     }  // for (String actualPhoneNumber : phoneNumberList) {
+
+                    // TODO: TEL with SIP URI?
                 }
             }
         }
