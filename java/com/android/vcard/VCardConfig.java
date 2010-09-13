@@ -258,6 +258,14 @@ public class VCardConfig {
      */
     public static final int FLAG_TORELATE_NEST = 0x01000000;
 
+    /**
+     * <P>
+     * The flag asking exporter to refrain image export.
+     * </P>
+     * @hide will be deleted in the near future.
+     */
+    public static final int FLAG_REFRAIN_IMAGE_EXPORT = 0x00800000;
+
     //// The followings are VCard types available from importer/exporter. ////
 
     /**
