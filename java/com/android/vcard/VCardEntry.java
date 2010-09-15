@@ -1241,6 +1241,7 @@ public class VCardEntry {
         if (mPostalList != null) {
             for (PostalData postalData : mPostalList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
+                builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
                 VCardUtils.insertStructuredPostalDataUsingContactsStruct(
                         mVCardType, builder, postalData);
                 operationList.add(builder.build());
@@ -1322,6 +1323,7 @@ public class VCardEntry {
         if (mSipList != null && !mSipList.isEmpty()) {
             for (String sipAddress : mSipList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
+                builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
                 builder.withValue(Data.MIMETYPE, SipAddress.CONTENT_ITEM_TYPE);
                 builder.withValue(SipAddress.SIP_ADDRESS, sipAddress);
                 operationList.add(builder.build());
