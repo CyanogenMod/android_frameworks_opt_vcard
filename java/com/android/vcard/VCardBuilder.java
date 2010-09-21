@@ -1773,8 +1773,6 @@ public class VCardBuilder {
      * instead of "IMPP;sip:...".
      *
      * We honor RFC 4770 and don't allow vCard 3.0 to emit X-SIP at all.
-     *
-     * vCard 4.0 is aware of RFC 4770, so just using IMPP would be fine.
      */
     public VCardBuilder appendSipAddresses(final List<ContentValues> contentValuesList) {
         final boolean useXProperty;
@@ -1803,11 +1801,19 @@ public class VCardBuilder {
                     // No type is available yet.
                     appendLineWithCharsetAndQPDetection(VCardConstants.PROPERTY_X_SIP, sipAddress);
                 } else {
-                    // IMPP is not just for SIP but the other protcols like XMPP.
                     if (!sipAddress.startsWith("sip:")) {
                         sipAddress = "sip:" + sipAddress;
                     }
-                    appendLineWithCharsetAndQPDetection(VCardConstants.PROPERTY_IMPP, sipAddress);
+                    final String propertyName;
+                    if (VCardConfig.isVersion40(mVCardType)) {
+                        // We have two ways to emit sip address: TEL and IMPP. Currently (rev.13)
+                        // TEL seems appropriate but may change in the future.
+                        propertyName = VCardConstants.PROPERTY_TEL;
+                    } else {
+                        // RFC 4770 (for vCard 3.0)
+                        propertyName = VCardConstants.PROPERTY_IMPP;
+                    }
+                    appendLineWithCharsetAndQPDetection(propertyName, sipAddress);
                 }
             }
         }

@@ -49,8 +49,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class bridges between data structure of Contact app and VCard data.
@@ -470,7 +472,7 @@ public class VCardEntry {
     private List<ImData> mImList;
     private List<PhotoData> mPhotoList;
     private List<String> mWebsiteList;
-    private List<String> mSipList;
+    private Set<String> mSipSet;
     private List<List<String>> mAndroidCustomPropertyList;
 
     private final int mVCardType;
@@ -977,9 +979,36 @@ public class VCardEntry {
                 addPhotoBytes(formatName, propBytes, isPrimary);
             }
         } else if (propName.equals(VCardConstants.PROPERTY_TEL)) {
+            final String phoneNumber;
+            if (VCardConfig.isVersion40(mVCardType)) {
+                // Given propValue is in URI format, not in phone number format used until
+                // vCard 3.0.
+                if (propValue.startsWith("sip:") ) {
+                    if (propValue.length() > 4) {
+                        if (mSipSet == null) {
+                            mSipSet = new LinkedHashSet<String>();
+                        }
+                        mSipSet.add(propValue.substring(4));
+                    }
+                    return;
+                } else if (propValue.startsWith("tel:")) {
+                    phoneNumber = propValue.substring(4);
+                } else {
+                    // We don't know appropriate way to handle the other schemas. Also,
+                    // we may still have non-URI phone number. To keep given data as much as
+                    // we can, just save original value here.
+                    phoneNumber = propValue;
+                }
+            } else {
+                phoneNumber = propValue;
+            }
+
+            if (propValue.length() == 0) {
+                return;
+            }
             final Collection<String> typeCollection = paramMap.get(VCardConstants.PARAM_TYPE);
             final Object typeObject =
-                VCardUtils.getPhoneTypeFromStrings(typeCollection, propValue);
+                    VCardUtils.getPhoneTypeFromStrings(typeCollection, phoneNumber);
             final int type;
             final String label;
             if (typeObject instanceof Integer) {
@@ -991,12 +1020,13 @@ public class VCardEntry {
             }
 
             final boolean isPrimary;
-            if (typeCollection != null && typeCollection.contains(VCardConstants.PARAM_TYPE_PREF)) {
+            if (typeCollection != null &&
+                    typeCollection.contains(VCardConstants.PARAM_TYPE_PREF)) {
                 isPrimary = true;
             } else {
                 isPrimary = false;
             }
-            addPhone(type, propValue, label, isPrimary);
+            addPhone(type, phoneNumber, label, isPrimary);
         } else if (propName.equals(VCardConstants.PROPERTY_X_SKYPE_PSTNNUMBER)) {
             // The phone number available via Skype.
             Collection<String> typeCollection = paramMap.get(VCardConstants.PARAM_TYPE);
@@ -1050,24 +1080,26 @@ public class VCardEntry {
         } else if (propName.equals(VCardConstants.PROPERTY_IMPP)) {
             // See also RFC 4770 (for vCard 3.0)
             if (propValue.startsWith("sip:") && propValue.length() > 4) {
-                if (mSipList == null) {
-                    mSipList = new ArrayList<String>();
+                if (mSipSet == null) {
+                    mSipSet = new LinkedHashSet<String>();
                 }
-                mSipList.add(propValue.substring(4));
+                mSipSet.add(propValue.substring(4));
             }
         } else if (propName.equals(VCardConstants.PROPERTY_X_SIP)) {
             if (!TextUtils.isEmpty(propValue)) {
-                if (mSipList == null) {
-                    mSipList = new ArrayList<String>();
+                if (mSipSet == null) {
+                    mSipSet = new LinkedHashSet<String>();
                 }
 
-                final String sipAddress;
-                if (propValue.startsWith("sip:") && propValue.length() > 4) {
-                    sipAddress = propValue.substring(4);
+                if (propValue.startsWith("sip:")) {
+                    if (propValue.length() > 4) {
+                        mSipSet.add(propValue.substring(4));
+                    } else {
+                        // Empty sip value. Ignore.
+                    }
                 } else {
-                    sipAddress = propValue;
+                    mSipSet.add(propValue);
                 }
-                mSipList.add(sipAddress);
             }
         } else if (propName.equals(VCardConstants.PROPERTY_X_ANDROID_CUSTOM)) {
             final List<String> customPropertyList =
@@ -1075,6 +1107,7 @@ public class VCardEntry {
             handleAndroidCustomProperty(customPropertyList);
         } else {
         }
+        // Be careful when adding some logic here, as some blocks above may use "return".
     }
 
     private void handleAndroidCustomProperty(final List<String> customPropertyList) {
@@ -1320,8 +1353,8 @@ public class VCardEntry {
             operationList.add(builder.build());
         }
 
-        if (mSipList != null && !mSipList.isEmpty()) {
-            for (String sipAddress : mSipList) {
+        if (mSipSet != null && !mSipSet.isEmpty()) {
+            for (String sipAddress : mSipSet) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
                 builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
                 builder.withValue(Data.MIMETYPE, SipAddress.CONTENT_ITEM_TYPE);

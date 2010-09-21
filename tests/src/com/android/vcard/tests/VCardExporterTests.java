@@ -1299,8 +1299,8 @@ public class VCardExporterTests extends VCardTestsBase {
                 .put(SipAddress.SIP_ADDRESS, "android@example.com");
         mVerifier.addLineVerifierElem()
                 .addExpected("FN:")
-                .addExpected("IMPP:sip:android@example.com");
+                .addExpected("TEL:sip:android@example.com");
         mVerifier.addPropertyNodesVerifierElemWithEmptyName()
-                .addExpectedNode("IMPP", "sip:android@example.com");
+                .addExpectedNode("TEL", "sip:android@example.com");
     }
 }

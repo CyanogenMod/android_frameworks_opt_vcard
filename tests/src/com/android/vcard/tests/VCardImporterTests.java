@@ -1144,4 +1144,18 @@ public class VCardImporterTests extends VCardTestsBase {
         elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
                 .put(SipAddress.SIP_ADDRESS, "90-180-360");
     }
+
+    public void testSipV40() {
+        mVerifier.initForImportTest(V40, R.raw.v40_sip);
+        final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "\u5B89\u85E4")
+                .put(StructuredName.GIVEN_NAME, "\u30ED\u30A4\u30C9")
+                .put(StructuredName.DISPLAY_NAME, "\u5B89\u85E4\u0020\u30ED\u30A4\u30C9");
+        elem.addExpected(Phone.CONTENT_ITEM_TYPE)
+                .put(Phone.TYPE, Phone.TYPE_HOME)
+                .put(Phone.NUMBER, "1");
+        elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.SIP_ADDRESS, "example@example.com");
+    }
 }
