@@ -17,9 +17,6 @@ package com.android.vcard;
 
 import com.android.vcard.exception.VCardException;
 
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.net.QuotedPrintableCodec;
-
 import android.content.ContentProviderOperation;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.CommonDataKinds.Im;
@@ -29,6 +26,7 @@ import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -46,6 +44,47 @@ import java.util.Set;
  */
 public class VCardUtils {
     private static final String LOG_TAG = "VCardUtils";
+
+    /**
+     * See org.apache.commons.codec.DecoderException
+     */
+    private static class DecoderException extends Exception {
+        public DecoderException(String pMessage) {
+            super(pMessage);
+        }
+    }
+
+    /**
+     * See org.apache.commons.codec.net.QuotedPrintableCodec
+     */
+    private static class QuotedPrintableCodecPort {
+        private static byte ESCAPE_CHAR = '=';
+        public static final byte[] decodeQuotedPrintable(byte[] bytes)
+                throws DecoderException {
+            if (bytes == null) {
+                return null;
+            }
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            for (int i = 0; i < bytes.length; i++) {
+                int b = bytes[i];
+                if (b == ESCAPE_CHAR) {
+                    try {
+                        int u = Character.digit((char) bytes[++i], 16);
+                        int l = Character.digit((char) bytes[++i], 16);
+                        if (u == -1 || l == -1) {
+                            throw new DecoderException("Invalid quoted-printable encoding");
+                        }
+                        buffer.write((char) ((u << 4) + l));
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        throw new DecoderException("Invalid quoted-printable encoding");
+                    }
+                } else {
+                    buffer.write(b);
+                }
+            }
+            return buffer.toByteArray();
+        }
+    }
 
     // Note that not all types are included in this map/set, since, for example, TYPE_HOME_FAX is
     // converted to two parameter Strings. These only contain some minor fields valid in both
@@ -744,7 +783,7 @@ public class VCardUtils {
 
         byte[] decodedBytes = null;
         try {
-            decodedBytes = QuotedPrintableCodec.decodeQuotedPrintable(rawBytes);
+            decodedBytes = QuotedPrintableCodecPort.decodeQuotedPrintable(rawBytes);
         } catch (DecoderException e) {
             Log.e(LOG_TAG, "DecoderException is thrown.");
             decodedBytes = rawBytes;
