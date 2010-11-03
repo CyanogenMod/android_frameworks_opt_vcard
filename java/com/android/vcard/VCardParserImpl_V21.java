@@ -224,6 +224,7 @@ import java.util.Set;
         boolean readingFirstFile = true;
         while (true) {
             if (mCanceled) {
+                Log.i(LOG_TAG, "Cancel request has come. exitting parse operation.");
                 break;
             }
             if (!parseOneVCard(readingFirstFile)) {
@@ -1042,6 +1043,7 @@ import java.util.Set;
     }
 
     public final void cancel() {
+        Log.i(LOG_TAG, "ParserImpl received cancel operation.");
         mCanceled = true;
     }
 }
