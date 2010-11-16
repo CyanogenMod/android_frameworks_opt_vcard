@@ -255,7 +255,8 @@ public class VCardBuilder {
                 TextUtils.isEmpty(displayName));
     }
 
-    private ContentValues getPrimaryContentValue(final List<ContentValues> contentValuesList) {
+    private ContentValues getPrimaryContentValueWithStructuredName(
+            final List<ContentValues> contentValuesList) {
         ContentValues primaryContentValues = null;
         ContentValues subprimaryContentValues = null;
         for (ContentValues contentValues : contentValuesList) {
@@ -288,7 +289,7 @@ public class VCardBuilder {
                 // We choose the first ContentValues if any "primary" ContentValues does not exist.
                 primaryContentValues = subprimaryContentValues;
             } else {
-                Log.e(LOG_TAG, "All ContentValues given from database is empty.");
+                // There's no appropriate ContentValue with StructuredName.
                 primaryContentValues = new ContentValues();
             }
         }
@@ -319,7 +320,8 @@ public class VCardBuilder {
         //
         // e.g. How to handle non-empty phonetic names with empty structured names?
 
-        final ContentValues contentValues = getPrimaryContentValue(contentValuesList);
+        final ContentValues contentValues =
+                getPrimaryContentValueWithStructuredName(contentValuesList);
         String familyName = contentValues.getAsString(StructuredName.FAMILY_NAME);
         final String middleName = contentValues.getAsString(StructuredName.MIDDLE_NAME);
         final String givenName = contentValues.getAsString(StructuredName.GIVEN_NAME);
@@ -422,7 +424,8 @@ public class VCardBuilder {
             return this;
         }
 
-        final ContentValues contentValues = getPrimaryContentValue(contentValuesList);
+        final ContentValues contentValues =
+                getPrimaryContentValueWithStructuredName(contentValuesList);
         final String familyName = contentValues.getAsString(StructuredName.FAMILY_NAME);
         final String middleName = contentValues.getAsString(StructuredName.MIDDLE_NAME);
         final String givenName = contentValues.getAsString(StructuredName.GIVEN_NAME);
