@@ -1158,4 +1158,49 @@ public class VCardImporterTests extends VCardTestsBase {
         elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
                 .put(SipAddress.SIP_ADDRESS, "example@example.com");
     }
+
+    public void testCustomPropertyV21_Parse() {
+        mVerifier.initForImportTest(V21, R.raw.v21_x_param);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("N", "Ando;Roid;", Arrays.asList("Ando", "Roid", ""))
+                .addExpectedNodeWithOrder("ADR", "pobox;street", Arrays.asList("pobox", "street"),
+                        new TypeSet("X-custom"))
+                .addExpectedNodeWithOrder("TEL", "1", new TypeSet("X-CuStoMpRop"))
+                .addExpectedNodeWithOrder("TEL", "2", new TypeSet("custompropertywithoutx"))
+                .addExpectedNodeWithOrder("EMAIL", "email@example.com",
+                        new TypeSet("X-cUstomPrOperty"))
+                .addExpectedNodeWithOrder("EMAIL", "email2@example.com",
+                        new TypeSet("CUSTOMPROPERTYWITHOUTX"));
+    }
+
+    public void testCustomPropertyV21() {
+        mVerifier.initForImportTest(V21, R.raw.v21_x_param);
+        final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "Ando")
+                .put(StructuredName.GIVEN_NAME, "Roid")
+                .put(StructuredName.DISPLAY_NAME, "Roid Ando");
+        elem.addExpected(StructuredPostal.CONTENT_ITEM_TYPE)
+                .put(StructuredPostal.TYPE, StructuredPostal.TYPE_CUSTOM)
+                .put(StructuredPostal.LABEL, "custom")
+                .put(StructuredPostal.POBOX, "pobox")
+                .put(StructuredPostal.STREET, "street")
+                .put(StructuredPostal.FORMATTED_ADDRESS, "pobox street");
+        elem.addExpected(Phone.CONTENT_ITEM_TYPE)
+                .put(Phone.TYPE, Phone.TYPE_CUSTOM)
+                .put(Phone.LABEL, "CuStoMpRop")
+                .put(Phone.NUMBER, "1");
+        elem.addExpected(Phone.CONTENT_ITEM_TYPE)
+                .put(Phone.TYPE, Phone.TYPE_CUSTOM)
+                .put(Phone.LABEL, "custompropertywithoutx")
+                .put(Phone.NUMBER, "2");
+        elem.addExpected(Email.CONTENT_ITEM_TYPE)
+                .put(Email.TYPE, Email.TYPE_CUSTOM)
+                .put(Email.LABEL, "cUstomPrOperty")
+                .put(Email.ADDRESS, "email@example.com");
+        elem.addExpected(Email.CONTENT_ITEM_TYPE)
+                .put(Email.TYPE, Email.TYPE_CUSTOM)
+                .put(Email.LABEL, "CUSTOMPROPERTYWITHOUTX")
+                .put(Email.ADDRESS, "email2@example.com");
+    }
 }

@@ -871,34 +871,34 @@ public class VCardEntry {
             int type = -1;
             String label = "";
             boolean isPrimary = false;
-            Collection<String> typeCollection = paramMap.get(VCardConstants.PARAM_TYPE);
+            final Collection<String> typeCollection = paramMap.get(VCardConstants.PARAM_TYPE);
             if (typeCollection != null) {
-                for (String typeString : typeCollection) {
-                    typeString = typeString.toUpperCase();
-                    if (typeString.equals(VCardConstants.PARAM_TYPE_PREF)) {
+                for (final String typeStringOrg : typeCollection) {
+                    final String typeStringUpperCase = typeStringOrg.toUpperCase();
+                    if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_PREF)) {
                         isPrimary = true;
-                    } else if (typeString.equals(VCardConstants.PARAM_TYPE_HOME)) {
+                    } else if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_HOME)) {
                         type = StructuredPostal.TYPE_HOME;
                         label = "";
-                    } else if (typeString.equals(VCardConstants.PARAM_TYPE_WORK) ||
-                            typeString.equalsIgnoreCase(VCardConstants.PARAM_EXTRA_TYPE_COMPANY)) {
+                    } else if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_WORK) ||
+                            typeStringUpperCase.equalsIgnoreCase(
+                                        VCardConstants.PARAM_EXTRA_TYPE_COMPANY)) {
                         // "COMPANY" seems emitted by Windows Mobile, which is not
                         // specifically supported by vCard 2.1. We assume this is same
                         // as "WORK".
                         type = StructuredPostal.TYPE_WORK;
                         label = "";
-                    } else if (typeString.equals(VCardConstants.PARAM_ADR_TYPE_PARCEL) ||
-                            typeString.equals(VCardConstants.PARAM_ADR_TYPE_DOM) ||
-                            typeString.equals(VCardConstants.PARAM_ADR_TYPE_INTL)) {
+                    } else if (typeStringUpperCase.equals(VCardConstants.PARAM_ADR_TYPE_PARCEL) ||
+                            typeStringUpperCase.equals(VCardConstants.PARAM_ADR_TYPE_DOM) ||
+                            typeStringUpperCase.equals(VCardConstants.PARAM_ADR_TYPE_INTL)) {
                         // We do not have any appropriate way to store this information.
-                    } else {
-                        if (typeString.startsWith("X-") && type < 0) {
-                            typeString = typeString.substring(2);
-                        }
-                        // vCard 3.0 allows iana-token. Also some vCard 2.1 exporters
-                        // emit non-standard types. We do not handle their values now.
+                    } else if (type < 0) {  // If no other type is specified before
                         type = StructuredPostal.TYPE_CUSTOM;
-                        label = typeString;
+                        if (typeStringUpperCase.startsWith("X-")) {  // If X- or x-
+                            label = typeStringOrg.substring(2);
+                        } else {
+                            label = typeStringOrg;
+                        }
                     }
                 }
             }
@@ -912,27 +912,25 @@ public class VCardEntry {
             int type = -1;
             String label = null;
             boolean isPrimary = false;
-            Collection<String> typeCollection = paramMap.get(VCardConstants.PARAM_TYPE);
+            final Collection<String> typeCollection = paramMap.get(VCardConstants.PARAM_TYPE);
             if (typeCollection != null) {
-                for (String typeString : typeCollection) {
-                    typeString = typeString.toUpperCase();
-                    if (typeString.equals(VCardConstants.PARAM_TYPE_PREF)) {
+                for (final String typeStringOrg : typeCollection) {
+                    final String typeStringUpperCase = typeStringOrg.toUpperCase();
+                    if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_PREF)) {
                         isPrimary = true;
-                    } else if (typeString.equals(VCardConstants.PARAM_TYPE_HOME)) {
+                    } else if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_HOME)) {
                         type = Email.TYPE_HOME;
-                    } else if (typeString.equals(VCardConstants.PARAM_TYPE_WORK)) {
+                    } else if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_WORK)) {
                         type = Email.TYPE_WORK;
-                    } else if (typeString.equals(VCardConstants.PARAM_TYPE_CELL)) {
+                    } else if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_CELL)) {
                         type = Email.TYPE_MOBILE;
-                    } else {
-                        if (typeString.startsWith("X-") && type < 0) {
-                            typeString = typeString.substring(2);
+                    } else if (type < 0) {  // If no other type is specified before
+                        if (typeStringUpperCase.startsWith("X-")) {  // If X- or x-
+                            label = typeStringOrg.substring(2);
+                        } else {
+                            label = typeStringOrg;
                         }
-                        // vCard 3.0 allows iana-token.
-                        // We may have INTERNET (specified in vCard spec),
-                        // SCHOOL, etc.
                         type = Email.TYPE_CUSTOM;
-                        label = typeString;
                     }
                 }
             }

@@ -167,23 +167,27 @@ public class VCardUtils {
         boolean hasPref = false;
         
         if (types != null) {
-            for (String typeString : types) {
-                if (typeString == null) {
+            for (final String typeStringOrg : types) {
+                if (typeStringOrg == null) {
                     continue;
                 }
-                typeString = typeString.toUpperCase();
-                if (typeString.equals(VCardConstants.PARAM_TYPE_PREF)) {
+                final String typeStringUpperCase = typeStringOrg.toUpperCase();
+                if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_PREF)) {
                     hasPref = true;
-                } else if (typeString.equals(VCardConstants.PARAM_TYPE_FAX)) {
+                } else if (typeStringUpperCase.equals(VCardConstants.PARAM_TYPE_FAX)) {
                     isFax = true;
                 } else {
-                    if (typeString.startsWith("X-") && type < 0) {
-                        typeString = typeString.substring(2);
+                    final String labelCandidate;
+                    if (typeStringUpperCase.startsWith("X-") && type < 0) {
+                        labelCandidate = typeStringOrg.substring(2);
+                    } else {
+                        labelCandidate = typeStringOrg;
                     }
-                    if (typeString.length() == 0) {
+                    if (labelCandidate.length() == 0) {
                         continue;
                     }
-                    final Integer tmp = sKnownPhoneTypeMap_StoI.get(typeString);
+                    // e.g. "home" -> TYPE_HOME
+                    final Integer tmp = sKnownPhoneTypeMap_StoI.get(labelCandidate.toUpperCase());
                     if (tmp != null) {
                         final int typeCandidate = tmp;
                         // TYPE_PAGER is prefered when the number contains @ surronded by
@@ -201,7 +205,7 @@ public class VCardUtils {
                         }
                     } else if (type < 0) {
                         type = Phone.TYPE_CUSTOM;
-                        label = typeString;
+                        label = labelCandidate;
                     }
                 }
             }
