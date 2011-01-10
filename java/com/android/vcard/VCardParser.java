@@ -51,5 +51,5 @@ public interface VCardParser {
      * Actual cancel is done after parsing the current vcard.
      * </p>
      */
-    public abstract void cancel();
+    public void cancel();
 }

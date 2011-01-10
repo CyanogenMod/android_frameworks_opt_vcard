@@ -874,14 +874,32 @@ import java.util.Set;
     }
 
     protected String getBase64(String firstString) throws IOException, VCardException {
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
         builder.append(firstString);
 
         while (true) {
-            String line = getLine();
+            final String line = peekLine();
             if (line == null) {
                 throw new VCardException("File ended during parsing BASE64 binary");
             }
+
+            // vCard 2.1 requires two spaces at the end of BASE64 strings, but some vCard doesn't
+            // have them. We try to detect those cases using semi-colon, given BASE64 doesn't
+            // contain it. Specifically BASE64 doesn't have semi-colon in it, so we should be able
+            // to detect the case safely.
+            if (line.contains(":")) {
+                if (getKnownPropertyNameSet().contains(
+                        line.substring(0, line.indexOf(":")).toUpperCase())) {
+                    Log.w(LOG_TAG, "Found a next property during parsing a BASE64 string, " +
+                            "which must not contain semi-colon. Treat the line as next property.");
+                    Log.w(LOG_TAG, "Problematic line: " + line.trim());
+                    break;
+                }
+            }
+
+            // Consume the line.
+            getLine();
+
             if (line.length() == 0) {
                 break;
             }

@@ -46,7 +46,7 @@ public final class VCardParser_V21 implements VCardParser {
      */
     /* package */ static final Set<String> sKnownPropertyNameSet =
             Collections.unmodifiableSet(new HashSet<String>(
-                    Arrays.asList("BEGIN", "LOGO", "PHOTO", "LABEL", "FN", "TITLE", "SOUND",
+                    Arrays.asList("BEGIN", "END", "LOGO", "PHOTO", "LABEL", "FN", "TITLE", "SOUND",
                             "VERSION", "TEL", "EMAIL", "TZ", "GEO", "NOTE", "URL",
                             "BDAY", "ROLE", "REV", "UID", "KEY", "MAILER")));
 
@@ -98,11 +98,13 @@ public final class VCardParser_V21 implements VCardParser {
         mVCardParserImpl = new VCardParserImpl_V21(vcardType);
     }
 
+    @Override
     public void parse(InputStream is, VCardInterpreter interepreter)
             throws IOException, VCardException {
         mVCardParserImpl.parse(is, interepreter);
     }
 
+    @Override
     public void cancel() {
         mVCardParserImpl.cancel();
     }

@@ -1203,4 +1203,14 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Email.LABEL, "CUSTOMPROPERTYWITHOUTX")
                 .put(Email.ADDRESS, "email2@example.com");
     }
+
+    public void testBase64Without2CrLf_Parse() {
+        mVerifier.initForImportTest(V21, R.raw.v21_base64_no_2_crlf);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("N", "name")
+                .addExpectedNodeWithOrder("FN", "fullname")
+                .addExpectedNodeWithOrder("PHOTO", null,
+                        null, sPhotoByteArrayForComplicatedCase, mContentValuesForBase64V21,
+                        new TypeSet("JPEG"), null);
+    }
 }
