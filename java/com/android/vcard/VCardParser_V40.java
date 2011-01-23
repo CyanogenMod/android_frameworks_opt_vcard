@@ -26,24 +26,24 @@ import java.util.Set;
 
 /**
  * <p>
- * vCard parser for vCard 4.0.
+ * vCard parser for vCard 4.0. DO NOT USE IN PRODUCTION.
  * </p>
  * <p>
- * Currently this parser is based on vCard 4.0 specification rev 11.
+ * Currently this parser is based on vCard 4.0 specification rev 15 (partly).
+ * Note that some of current implementation lack basic capability required in vCard 4.0.
+ * (e.g. PHOTO has data parameter in rev 15 while this implementation requires "ENCODING=b")
  * </p>
  */
 public class VCardParser_V40 implements VCardParser {
     /* package */ static final Set<String> sKnownPropertyNameSet =
             Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
-                    "BEGIN", "END", "SOURCE", "NAME", "KIND", "XML",
-                    "FN", "N", "NICKNAME", "PHOTO", "BDAY", "DDAY",
-                    "BIRTH", "DEATH", "ANNIVERSARY", "SEX", "ADR",
-                    "LABEL", "TEL", "EMAIL", "IMPP", "LANG", "TZ",
-                    "GEO", "TITLE", "ROLE", "LOGO", "ORG", "MEMBER",
-                    "RELATED", "CATEGORIES", "NOTE", "PRODID",
-                    "REV", "SOUND", "UID", "CLIENTPIDMAP",
-                    "URL", "VERSION", "CLASS", "KEY", "FBURL", "CALENDRURI",
-                    "CALURI")));
+                    "BEGIN", "END", "VERSION",
+                    "SOURCE", "KIND", "FN", "N", "NICKNAME",
+                    "PHOTO", "BDAY", "ANNIVERSARY", "GENDER", "ADR", "TEL",
+                    "EMAIL", "IMPP", "LANG", "TZ", "GEO", "TITLE", "ROLE",
+                    "LOGO", "ORG", "MEMBER", "RELATED", "CATEGORIES",
+                    "NOTE", "PRODID", "REV", "SOUND", "UID", "CLIENTPIDMAP",
+                    "URL", "KEY", "FBURL", "CALENDRURI", "CALURI", "XML")));
 
     /**
      * <p>

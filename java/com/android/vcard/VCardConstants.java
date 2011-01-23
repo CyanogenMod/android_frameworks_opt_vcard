@@ -23,7 +23,7 @@ public class VCardConstants {
     public static final String VERSION_V30 = "3.0";
     public static final String VERSION_V40 = "4.0";
 
-    // The property names valid both in vCard 2.1 and 3.0.
+    // Valid and supported property names.
     public static final String PROPERTY_BEGIN = "BEGIN";
     public static final String PROPERTY_VERSION = "VERSION";
     public static final String PROPERTY_N = "N";
@@ -40,23 +40,30 @@ public class VCardConstants {
     public static final String PROPERTY_LOGO = "LOGO";
     public static final String PROPERTY_URL = "URL";
     public static final String PROPERTY_BDAY = "BDAY";  // Birthday (3.0, 4.0)
-    public static final String PROPERTY_BIRTH = "BIRTH";  // Place of birth (4.0)
     public static final String PROPERTY_ANNIVERSARY = "ANNIVERSARY";  // Date of marriage (4.0)
-    public static final String PROPERTY_NAME = "NAME";  // (3.0, 4,0)
+    public static final String PROPERTY_NAME = "NAME";  // (3.0)
     public static final String PROPERTY_NICKNAME = "NICKNAME";  // (3.0, 4.0)
     public static final String PROPERTY_SORT_STRING = "SORT-STRING";  // (3.0, 4.0)
     public static final String PROPERTY_IMPP = "IMPP";  // RFC 4770 (vCard 3.0) and vCard 4.0
     public static final String PROPERTY_END = "END";
 
-    // defact SIP property which had been used till RFC 4770.
-    public static final String PROPERTY_X_SIP = "X-SIP";
-
-    // Valid property names not supported (not appropriately handled) by our importer.
-    // TODO: Should be removed from the view of memory efficiency?
+    // Valid property names which are not supported (not appropriately handled) by
+    // importer/exporter. Those properties will be read and discarded silently.
     public static final String PROPERTY_REV = "REV";
     public static final String PROPERTY_AGENT = "AGENT";  // (3.0)
-    public static final String PROPERTY_DDAY = "DDAY";  // Date of death (4.0)
-    public static final String PROPERTY_DEATH = "DEATH";  // Place of death (4.0)
+    public static final String PROPERTY_GENDER = "GENDER";  // (4.0)
+    public static final String PROPERTY_XML = "XML";  // (4.0)
+    public static final String PROPERTY_FBURL = "FBURL";  // (4.0)
+    public static final String PROPERTY_PRODID = "PRODID";  // (4.0)
+    public static final String PROPERTY_RELATED = "RELATED";  // (4.0)
+    public static final String PROPERTY_CATEGORIES = "CATEGORIES";  // (4.0)
+    public static final String PROPERTY_CLIENTPIDMAP = "CLIENTPIDMAP";  // (4.0)
+    public static final String PROPERTY_CALURI = "CALURI";  // (4.0)
+
+
+
+    // defact SIP property which had been used till RFC 4770.
+    public static final String PROPERTY_X_SIP = "X-SIP";
 
     // Available in vCard 3.0. Shoud not use when composing vCard 2.1 file.
     

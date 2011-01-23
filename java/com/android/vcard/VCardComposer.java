@@ -179,6 +179,7 @@ public class VCardComposer {
             mOutputStream = outputStream;
         }
 
+        @Override
         public boolean onInit(final Context context) {
             try {
                 mWriter = new BufferedWriter(new OutputStreamWriter(
@@ -209,6 +210,7 @@ public class VCardComposer {
             return true;
         }
 
+        @Override
         public boolean onEntryCreated(String vcard) {
             try {
                 mWriter.write(vcard);
@@ -222,6 +224,7 @@ public class VCardComposer {
             return true;
         }
 
+        @Override
         public void onTerminate() {
             mOnTerminateIsCalled = true;
             if (mWriter != null) {
