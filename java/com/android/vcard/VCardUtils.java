@@ -23,6 +23,7 @@ import android.provider.ContactsContract.CommonDataKinds.Im;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.telephony.PhoneNumberUtils;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -83,6 +84,38 @@ public class VCardUtils {
                 }
             }
             return buffer.toByteArray();
+        }
+    }
+
+    /**
+     * Ported methods which are hidden in {@link PhoneNumberUtils}.
+     */
+    public static class PhoneNumberUtilsPort {
+        public static String formatNumber(String source, int defaultFormattingType) {
+            final SpannableStringBuilder text = new SpannableStringBuilder(source);
+            PhoneNumberUtils.formatNumber(text, defaultFormattingType);
+            return text.toString();
+        }
+    }
+
+    /**
+     * Ported methods which are hidden in {@link TextUtils}.
+     */
+    public static class TextUtilsPort {
+        public static boolean isPrintableAscii(final char c) {
+            final int asciiFirst = 0x20;
+            final int asciiLast = 0x7E;  // included
+            return (asciiFirst <= c && c <= asciiLast) || c == '\r' || c == '\n';
+        }
+
+        public static boolean isPrintableAsciiOnly(final CharSequence str) {
+            final int len = str.length();
+            for (int i = 0; i < len; i++) {
+                if (!isPrintableAscii(str.charAt(i))) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
@@ -434,7 +467,7 @@ public class VCardUtils {
             if (TextUtils.isEmpty(value)) {
                 continue;
             }
-            if (!TextUtils.isPrintableAsciiOnly(value)) {
+            if (!TextUtilsPort.isPrintableAsciiOnly(value)) {
                 return false;
             }
         }

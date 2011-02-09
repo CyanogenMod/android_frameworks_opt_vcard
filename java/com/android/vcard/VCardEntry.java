@@ -15,6 +15,8 @@
  */
 package com.android.vcard;
 
+import com.android.vcard.VCardUtils.PhoneNumberUtilsPort;
+
 import android.accounts.Account;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
@@ -39,7 +41,6 @@ import android.provider.ContactsContract.CommonDataKinds.Website;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
-import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -510,8 +511,8 @@ public class VCardEntry {
             }
 
             final int formattingType = VCardUtils.getPhoneNumberFormat(mVCardType);
-            formattedNumber = PhoneNumberUtils.formatNumber(builder.toString(), formattingType);
-        }
+            formattedNumber = PhoneNumberUtilsPort.formatNumber(builder.toString(), formattingType);
+         }
         PhoneData phoneData = new PhoneData(type, formattedNumber, label, isPrimary);
         mPhoneList.add(phoneData);
     }

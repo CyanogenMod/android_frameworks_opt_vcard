@@ -44,7 +44,6 @@ import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.RawContactsEntity;
 import android.text.TextUtils;
-import android.util.CharsetUtils;
 import android.util.Log;
 
 import java.io.BufferedWriter;
@@ -56,7 +55,6 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -330,8 +328,9 @@ public class VCardComposer {
                 VCardConfig.isVersion30(vcardType) && UTF_8.equalsIgnoreCase(charset));
 
         if (mIsDoCoMo || shouldAppendCharsetParam) {
+            // TODO: clean up once we're sure CharsetUtils are really unnecessary any more.
             if (SHIFT_JIS.equalsIgnoreCase(charset)) {
-                if (mIsDoCoMo) {
+                /*if (mIsDoCoMo) {
                     try {
                         charset = CharsetUtils.charsetForVendor(SHIFT_JIS, "docomo").name();
                     } catch (UnsupportedCharsetException e) {
@@ -344,12 +343,12 @@ public class VCardComposer {
                     try {
                         charset = CharsetUtils.charsetForVendor(SHIFT_JIS).name();
                     } catch (UnsupportedCharsetException e) {
-                        /* Log.e(LOG_TAG,
-                                "Career-specific SHIFT_JIS was not found. "
-                                + "Use SHIFT_JIS as is."); */
+                        // Log.e(LOG_TAG,
+                        // "Career-specific SHIFT_JIS was not found. "
+                        // + "Use SHIFT_JIS as is.");
                         charset = SHIFT_JIS;
                     }
-                }
+                }*/
                 mCharset = charset;
             } else {
                 /* Log.w(LOG_TAG,
@@ -358,13 +357,14 @@ public class VCardComposer {
                 if (TextUtils.isEmpty(charset)) {
                     mCharset = SHIFT_JIS;
                 } else {
+                    /*
                     try {
                         charset = CharsetUtils.charsetForVendor(charset).name();
                     } catch (UnsupportedCharsetException e) {
                         Log.i(LOG_TAG,
                                 "Career-specific \"" + charset + "\" was not found (as usual). "
                                 + "Use it as is.");
-                    }
+                    }*/
                     mCharset = charset;
                 }
             }
@@ -372,13 +372,13 @@ public class VCardComposer {
             if (TextUtils.isEmpty(charset)) {
                 mCharset = UTF_8;
             } else {
-                try {
+                /*try {
                     charset = CharsetUtils.charsetForVendor(charset).name();
                 } catch (UnsupportedCharsetException e) {
                     Log.i(LOG_TAG,
                             "Career-specific \"" + charset + "\" was not found (as usual). "
                             + "Use it as is.");
-                }
+                }*/
                 mCharset = charset;
             }
         }
@@ -530,6 +530,7 @@ public class VCardComposer {
         //      they are hidden from the view of this method, though contact id itself exists.
         EntityIterator entityIterator = null;
         try {
+            // TODO: confirm whether we can safely remove Data.FOR_EXPORT_ONLY or not.
             final Uri uri = RawContactsEntity.CONTENT_URI.buildUpon()
                     // .appendQueryParameter("for_export_only", "1")
                     .appendQueryParameter(Data.FOR_EXPORT_ONLY, "1")

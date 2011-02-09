@@ -15,6 +15,8 @@
  */
 package com.android.vcard;
 
+import com.android.vcard.VCardUtils.PhoneNumberUtilsPort;
+
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
@@ -29,10 +31,8 @@ import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
-import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.CharsetUtils;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
@@ -165,17 +165,17 @@ public class VCardBuilder {
                 if (TextUtils.isEmpty(charset)) {
                     mCharset = SHIFT_JIS;
                 } else {
-                    try {
+                    /*try {
                         charset = CharsetUtils.charsetForVendor(charset).name();
                     } catch (UnsupportedCharsetException e) {
                         Log.i(LOG_TAG,
                                 "Career-specific \"" + charset + "\" was not found (as usual). "
                                 + "Use it as is.");
-                    }
+                    }*/
                     mCharset = charset;
                 }
             } else {
-                if (mIsDoCoMo) {
+                /*if (mIsDoCoMo) {
                     try {
                         charset = CharsetUtils.charsetForVendor(SHIFT_JIS, "docomo").name();
                     } catch (UnsupportedCharsetException e) {
@@ -193,7 +193,7 @@ public class VCardBuilder {
                                 + "Use SHIFT_JIS as is.");
                         charset = SHIFT_JIS;
                     }
-                }
+                }*/
                 mCharset = charset;
             }
             mVCardCharsetParameter = "CHARSET=" + SHIFT_JIS;
@@ -205,13 +205,14 @@ public class VCardBuilder {
                 mCharset = VCardConfig.DEFAULT_EXPORT_CHARSET;
                 mVCardCharsetParameter = "CHARSET=" + VCardConfig.DEFAULT_EXPORT_CHARSET;
             } else {
+                /*
                 try {
                     charset = CharsetUtils.charsetForVendor(charset).name();
                 } catch (UnsupportedCharsetException e) {
                     Log.i(LOG_TAG,
                             "Career-specific \"" + charset + "\" was not found (as usual). "
                             + "Use it as is.");
-                }
+                }*/
                 mCharset = charset;
                 mVCardCharsetParameter = "CHARSET=" + charset;
             }
@@ -855,7 +856,8 @@ public class VCardBuilder {
                         if (!phoneSet.contains(actualPhoneNumber)) {
                             final int phoneFormat = VCardUtils.getPhoneNumberFormat(mVCardType);
                             String formatted =
-                                    PhoneNumberUtils.formatNumber(actualPhoneNumber, phoneFormat);
+                                    PhoneNumberUtilsPort.formatNumber(
+                                            actualPhoneNumber, phoneFormat);
 
                             // In vCard 4.0, value type must be "a single URI value",
                             // not just a phone number. (Based on vCard 4.0 rev.13)

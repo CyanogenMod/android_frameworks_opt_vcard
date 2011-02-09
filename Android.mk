@@ -15,11 +15,11 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
+# Comment in when we don't want private API (methods with @hide)
+# LOCAL_SDK_VERSION := current
+
 LOCAL_MODULE := com.android.vcard
 LOCAL_SRC_FILES := $(call all-java-files-under, java)
-
-# Use ext for using Quoted-Printable codec.
-LOCAL_JAVA_LIBRARIES := ext
 
 include $(BUILD_STATIC_JAVA_LIBRARY)
 

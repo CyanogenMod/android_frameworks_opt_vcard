@@ -18,12 +18,8 @@ package com.android.vcard;
 import android.accounts.Account;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.CharsetUtils;
 import android.util.Log;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -203,7 +199,8 @@ public class VCardEntryConstructor implements VCardInterpreter {
         // Just translate the charset of a given String from inputCharset to a system one. 
         return VCardUtils.convertStringCharset(value, sourceCharset, targetCharset);
     }
-    
+
+    @Override
     public void propertyValues(List<String> values) {
         if (values == null || values.isEmpty()) {
             return;
@@ -215,8 +212,11 @@ public class VCardEntryConstructor implements VCardInterpreter {
                 mCurrentProperty.getParameters(VCardConstants.PARAM_ENCODING);
         final String encoding =
             ((encodingCollection != null) ? encodingCollection.iterator().next() : null);
-        String targetCharset = CharsetUtils.nameForDefaultVendor(
-                ((charsetCollection != null) ? charsetCollection.iterator().next() : null));
+
+        // String targetCharset = CharsetUtils.nameForDefaultVendor(
+        //    ((charsetCollection != null) ? charsetCollection.iterator().next() : null));
+        String targetCharset =
+            ((charsetCollection != null) ? charsetCollection.iterator().next() : null);
         if (TextUtils.isEmpty(targetCharset)) {
             targetCharset = VCardConfig.DEFAULT_IMPORT_CHARSET;
         }
