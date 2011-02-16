@@ -1156,14 +1156,32 @@ public class VCardEntry {
         }
     }
 
-    public Uri pushIntoContentResolver(ContentResolver resolver) {
-        ArrayList<ContentProviderOperation> operationList =
-            new ArrayList<ContentProviderOperation>();
+    /**
+     * Constructs the list of insert operation for this object.
+     *
+     * When the operationList argument is null, this method creates a new ArrayList and return it.
+     * The returned object is filled with new insert operations for this object. When operationList
+     * argument is not null, this method appends those new operations into the object instead
+     * of creating a new ArrayList.
+     *
+     * @param resolver {@link ContentResolver} object to be used in this method.
+     * @param operationList object to be filled. You can use this argument to concatinate
+     * operation lists. If null, this method creates a new array object.
+     * @return If operationList argument is null, new object with new insert operations.
+     * If it is not null, the operationList object with operations inserted by this method.
+     */
+    public ArrayList<ContentProviderOperation> constructInsertOperations(
+            ContentResolver resolver, ArrayList<ContentProviderOperation> operationList) {
+        if (operationList == null) {
+            operationList = new ArrayList<ContentProviderOperation>();
+        }
+
+        final int backReferenceIndex = operationList.size();
+
         // After applying the batch the first result's Uri is returned so it is important that
-        // the RawContact is the first operation that gets inserted into the list
+        // the RawContact is the first operation that gets inserted into the list.
         ContentProviderOperation.Builder builder =
-            ContentProviderOperation.newInsert(RawContacts.CONTENT_URI);
-        String myGroupsId = null;
+                ContentProviderOperation.newInsert(RawContacts.CONTENT_URI);
         if (mAccount != null) {
             builder.withValue(RawContacts.ACCOUNT_NAME, mAccount.name);
             builder.withValue(RawContacts.ACCOUNT_TYPE, mAccount.type);
@@ -1175,7 +1193,7 @@ public class VCardEntry {
 
         if (!nameFieldsAreEmpty()) {
             builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-            builder.withValueBackReference(StructuredName.RAW_CONTACT_ID, 0);
+            builder.withValueBackReference(StructuredName.RAW_CONTACT_ID, backReferenceIndex);
             builder.withValue(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE);
 
             builder.withValue(StructuredName.GIVEN_NAME, mGivenName);
@@ -1201,7 +1219,7 @@ public class VCardEntry {
         if (mNickNameList != null && mNickNameList.size() > 0) {
             for (String nickName : mNickNameList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Nickname.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Nickname.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
                 builder.withValue(Nickname.TYPE, Nickname.TYPE_DEFAULT);
                 builder.withValue(Nickname.NAME, nickName);
@@ -1212,7 +1230,7 @@ public class VCardEntry {
         if (mPhoneList != null) {
             for (PhoneData phoneData : mPhoneList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Phone.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Phone.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
 
                 builder.withValue(Phone.TYPE, phoneData.type);
@@ -1230,7 +1248,7 @@ public class VCardEntry {
         if (mOrganizationList != null) {
             for (OrganizationData organizationData : mOrganizationList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Organization.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Organization.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, Organization.CONTENT_ITEM_TYPE);
                 builder.withValue(Organization.TYPE, organizationData.type);
                 if (organizationData.companyName != null) {
@@ -1255,7 +1273,7 @@ public class VCardEntry {
         if (mEmailList != null) {
             for (EmailData emailData : mEmailList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Email.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Email.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, Email.CONTENT_ITEM_TYPE);
 
                 builder.withValue(Email.TYPE, emailData.type);
@@ -1273,7 +1291,7 @@ public class VCardEntry {
         if (mPostalList != null) {
             for (PostalData postalData : mPostalList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Event.RAW_CONTACT_ID, backReferenceIndex);
                 VCardUtils.insertStructuredPostalDataUsingContactsStruct(
                         mVCardType, builder, postalData);
                 operationList.add(builder.build());
@@ -1283,7 +1301,7 @@ public class VCardEntry {
         if (mImList != null) {
             for (ImData imData : mImList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Im.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Im.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, Im.CONTENT_ITEM_TYPE);
                 builder.withValue(Im.TYPE, imData.type);
                 builder.withValue(Im.PROTOCOL, imData.protocol);
@@ -1301,7 +1319,7 @@ public class VCardEntry {
         if (mNoteList != null) {
             for (String note : mNoteList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Note.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Note.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, Note.CONTENT_ITEM_TYPE);
                 builder.withValue(Note.NOTE, note);
                 operationList.add(builder.build());
@@ -1311,7 +1329,7 @@ public class VCardEntry {
         if (mPhotoList != null) {
             for (PhotoData photoData : mPhotoList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Photo.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Photo.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, Photo.CONTENT_ITEM_TYPE);
                 builder.withValue(Photo.PHOTO, photoData.photoBytes);
                 if (photoData.isPrimary) {
@@ -1324,7 +1342,7 @@ public class VCardEntry {
         if (mWebsiteList != null) {
             for (String website : mWebsiteList) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Website.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Website.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, Website.CONTENT_ITEM_TYPE);
                 builder.withValue(Website.URL, website);
                 // There's no information about the type of URL in vCard.
@@ -1336,7 +1354,7 @@ public class VCardEntry {
 
         if (!TextUtils.isEmpty(mBirthday)) {
             builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-            builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
+            builder.withValueBackReference(Event.RAW_CONTACT_ID, backReferenceIndex);
             builder.withValue(Data.MIMETYPE, Event.CONTENT_ITEM_TYPE);
             builder.withValue(Event.START_DATE, mBirthday);
             builder.withValue(Event.TYPE, Event.TYPE_BIRTHDAY);
@@ -1345,7 +1363,7 @@ public class VCardEntry {
 
         if (!TextUtils.isEmpty(mAnniversary)) {
             builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-            builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
+            builder.withValueBackReference(Event.RAW_CONTACT_ID, backReferenceIndex);
             builder.withValue(Data.MIMETYPE, Event.CONTENT_ITEM_TYPE);
             builder.withValue(Event.START_DATE, mAnniversary);
             builder.withValue(Event.TYPE, Event.TYPE_ANNIVERSARY);
@@ -1355,7 +1373,7 @@ public class VCardEntry {
         if (mSipSet != null && !mSipSet.isEmpty()) {
             for (String sipAddress : mSipSet) {
                 builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                builder.withValueBackReference(Event.RAW_CONTACT_ID, 0);
+                builder.withValueBackReference(Event.RAW_CONTACT_ID, backReferenceIndex);
                 builder.withValue(Data.MIMETYPE, SipAddress.CONTENT_ITEM_TYPE);
                 builder.withValue(SipAddress.SIP_ADDRESS, sipAddress);
                 operationList.add(builder.build());
@@ -1370,7 +1388,7 @@ public class VCardEntry {
                 } else if (size > VCardConstants.MAX_DATA_COLUMN + 1) {
                     size = VCardConstants.MAX_DATA_COLUMN + 1;
                     customPropertyList =
-                        customPropertyList.subList(0, VCardConstants.MAX_DATA_COLUMN + 2);
+                            customPropertyList.subList(0, VCardConstants.MAX_DATA_COLUMN + 2);
                 }
 
                 int i = 0;
@@ -1378,7 +1396,8 @@ public class VCardEntry {
                     if (i == 0) {
                         final String mimeType = customPropertyValue;
                         builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-                        builder.withValueBackReference(GroupMembership.RAW_CONTACT_ID, 0);
+                        builder.withValueBackReference(GroupMembership.RAW_CONTACT_ID,
+                                backReferenceIndex);
                         builder.withValue(Data.MIMETYPE, mimeType);
                     } else {  // 1 <= i && i <= MAX_DATA_COLUMNS
                         if (!TextUtils.isEmpty(customPropertyValue)) {
@@ -1392,30 +1411,7 @@ public class VCardEntry {
             }
         }
 
-        if (myGroupsId != null) {
-            builder = ContentProviderOperation.newInsert(Data.CONTENT_URI);
-            builder.withValueBackReference(GroupMembership.RAW_CONTACT_ID, 0);
-            builder.withValue(Data.MIMETYPE, GroupMembership.CONTENT_ITEM_TYPE);
-            builder.withValue(GroupMembership.GROUP_SOURCE_ID, myGroupsId);
-            operationList.add(builder.build());
-        }
-
-        try {
-            ContentProviderResult[] results = resolver.applyBatch(
-                        ContactsContract.AUTHORITY, operationList);
-            // the first result is always the raw_contact. return it's uri so
-            // that it can be found later. do null checking for badly behaving
-            // ContentResolvers
-            return (results == null || results.length == 0 || results[0] == null)
-                ? null
-                : results[0].uri;
-        } catch (RemoteException e) {
-            Log.e(LOG_TAG, String.format("%s: %s", e.toString(), e.getMessage()));
-            return null;
-        } catch (OperationApplicationException e) {
-            Log.e(LOG_TAG, String.format("%s: %s", e.toString(), e.getMessage()));
-            return null;
-        }
+        return operationList;
     }
 
     public static VCardEntry buildFromResolver(ContentResolver resolver) {

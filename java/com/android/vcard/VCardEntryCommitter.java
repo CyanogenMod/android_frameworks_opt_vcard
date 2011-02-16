@@ -15,8 +15,13 @@
  */
 package com.android.vcard;
 
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
 import android.content.ContentResolver;
+import android.content.OperationApplicationException;
 import android.net.Uri;
+import android.os.RemoteException;
+import android.provider.ContactsContract;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -37,25 +42,59 @@ public class VCardEntryCommitter implements VCardEntryHandler {
 
     private final ContentResolver mContentResolver;
     private long mTimeToCommit;
+    private int mCounter;
+    private ArrayList<ContentProviderOperation> mOperationList;
     private ArrayList<Uri> mCreatedUris = new ArrayList<Uri>();
 
     public VCardEntryCommitter(ContentResolver resolver) {
         mContentResolver = resolver;
     }
 
+    @Override
     public void onStart() {
     }
 
+    @Override
     public void onEnd() {
+        if (mOperationList != null) {
+            mCreatedUris.add(pushIntoContentResolver(mOperationList));
+        }
+
         if (VCardConfig.showPerformanceLog()) {
             Log.d(LOG_TAG, String.format("time to commit entries: %d ms", mTimeToCommit));
         }
     }
 
+    @Override
     public void onEntryCreated(final VCardEntry vcardEntry) {
-        long start = System.currentTimeMillis();
-        mCreatedUris.add(vcardEntry.pushIntoContentResolver(mContentResolver));
+        final long start = System.currentTimeMillis();
+        mOperationList = vcardEntry.constructInsertOperations(mContentResolver, mOperationList);
+        mCounter++;
+        if (mCounter >= 20) {
+            mCreatedUris.add(pushIntoContentResolver(mOperationList));
+            mCounter = 0;
+            mOperationList = null;
+        }
         mTimeToCommit += System.currentTimeMillis() - start;
+    }
+
+    private Uri pushIntoContentResolver(ArrayList<ContentProviderOperation> operationList) {
+        try {
+            final ContentProviderResult[] results = mContentResolver.applyBatch(
+                    ContactsContract.AUTHORITY, operationList);
+
+            // the first result is always the raw_contact. return it's uri so
+            // that it can be found later. do null checking for badly behaving
+            // ContentResolvers
+            return ((results == null || results.length == 0 || results[0] == null)
+                            ? null : results[0].uri);
+        } catch (RemoteException e) {
+            Log.e(LOG_TAG, String.format("%s: %s", e.toString(), e.getMessage()));
+            return null;
+        } catch (OperationApplicationException e) {
+            Log.e(LOG_TAG, String.format("%s: %s", e.toString(), e.getMessage()));
+            return null;
+        }
     }
 
     /**
