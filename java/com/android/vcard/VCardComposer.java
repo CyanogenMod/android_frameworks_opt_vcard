@@ -17,6 +17,8 @@ package com.android.vcard;
 
 import com.android.vcard.exception.VCardException;
 
+import dalvik.system.CloseGuard;
+
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -47,7 +49,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -165,8 +166,6 @@ public class VCardComposer {
         @SuppressWarnings("hiding")
         private static final String LOG_TAG = "VCardComposer.HandlerForOutputStream";
 
-        private boolean mOnTerminateIsCalled = false;
-
         private final OutputStream mOutputStream; // mWriter will close this.
         private Writer mWriter;
 
@@ -224,39 +223,12 @@ public class VCardComposer {
 
         @Override
         public void onTerminate() {
-            mOnTerminateIsCalled = true;
             if (mWriter != null) {
                 try {
-                    // Flush and sync the data so that a user is able to pull
-                    // the SDCard just after
-                    // the export.
-                    mWriter.flush();
-                    if (mOutputStream != null
-                            && mOutputStream instanceof FileOutputStream) {
-                            ((FileOutputStream) mOutputStream).getFD().sync();
-                    }
+                    mWriter.close();
                 } catch (IOException e) {
-                    Log.d(LOG_TAG,
-                            "IOException during closing the output stream: "
-                                    + e.getMessage());
-                } finally {
-                    closeOutputStream();
+                    Log.w(LOG_TAG, "IOException is thrown during close(). Ignored.", e);
                 }
-            }
-        }
-
-        public void closeOutputStream() {
-            try {
-                mWriter.close();
-            } catch (IOException e) {
-                Log.w(LOG_TAG, "IOException is thrown during close(). Ignoring.");
-            }
-        }
-
-        @Override
-        public void finalize() {
-            if (!mOnTerminateIsCalled) {
-                onTerminate();
             }
         }
     }
@@ -271,10 +243,11 @@ public class VCardComposer {
     private int mIdColumn;
 
     private final String mCharset;
-    private boolean mTerminateIsCalled;
     private final List<OneEntryHandler> mHandlerList;
 
     private String mErrorReason = NO_ERROR;
+
+    private final CloseGuard mGuard = CloseGuard.get();
 
     private static final String[] sContactsProjection = new String[] {
         Contacts._ID,
@@ -464,6 +437,7 @@ public class VCardComposer {
 
         mIdColumn = mCursor.getColumnIndex(Contacts._ID);
 
+        mGuard.open("terminate");
         return true;
     }
 
@@ -640,14 +614,15 @@ public class VCardComposer {
             mCursor = null;
         }
 
-        mTerminateIsCalled = true;
+        mGuard.close();
     }
 
     @Override
-    public void finalize() {
-        if (!mTerminateIsCalled) {
-            Log.w(LOG_TAG, "terminate() is not called yet. We call it in finalize() step.");
-            terminate();
+    protected void finalize() throws Throwable {
+        try {
+            mGuard.warnIfOpen();
+        } finally {
+            super.finalize();
         }
     }
 
