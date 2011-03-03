@@ -17,8 +17,6 @@ package com.android.vcard;
 
 import com.android.vcard.exception.VCardException;
 
-import dalvik.system.CloseGuard;
-
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -241,13 +239,18 @@ public class VCardComposer {
     private final boolean mIsDoCoMo;
     private Cursor mCursor;
     private int mIdColumn;
+    private Uri mContentUriForRawContactsEntity = RawContactsEntity.CONTENT_URI;
 
     private final String mCharset;
     private final List<OneEntryHandler> mHandlerList;
 
     private String mErrorReason = NO_ERROR;
 
-    private final CloseGuard mGuard = CloseGuard.get();
+    /**
+     * Set to false when one of {@link #init()} variants is called, and set to true when
+     * {@link #terminate()} is called. Initially set to true.
+     */
+    private boolean mTerminateCalled = true;
 
     private static final String[] sContactsProjection = new String[] {
         Contacts._ID,
@@ -376,6 +379,21 @@ public class VCardComposer {
         return init(null, null);
     }
 
+    /**
+     * Special variant of init(), which accepts a Uri for obtaining {@link RawContactsEntity} from
+     * {@link ContentResolver} with {@link Contacts#_ID}.
+     * <code>
+     * String selection = Data.CONTACT_ID + "=?";
+     * String[] selectionArgs = new String[] {contactId};
+     * Cursor cursor = mContentResolver.query(
+     *         contentUriForRawContactsEntity, null, selection, selectionArgs, null)
+     * </code>
+     */
+    public boolean initWithRawContactsEntityUri(Uri contentUriForRawContactsEntity) {
+        mContentUriForRawContactsEntity = contentUriForRawContactsEntity;
+        return init(null, null);
+    }
+
     public boolean init(final String selection, final String[] selectionArgs) {
         return init(Contacts.CONTENT_URI, selection, selectionArgs, null);
     }
@@ -437,7 +455,7 @@ public class VCardComposer {
 
         mIdColumn = mCursor.getColumnIndex(Contacts._ID);
 
-        mGuard.open("terminate");
+        mTerminateCalled = false;
         return true;
     }
 
@@ -504,11 +522,7 @@ public class VCardComposer {
         //      they are hidden from the view of this method, though contact id itself exists.
         EntityIterator entityIterator = null;
         try {
-            // TODO: confirm whether we can safely remove Data.FOR_EXPORT_ONLY or not.
-            final Uri uri = RawContactsEntity.CONTENT_URI.buildUpon()
-                    // .appendQueryParameter("for_export_only", "1")
-                    .appendQueryParameter(Data.FOR_EXPORT_ONLY, "1")
-                    .build();
+            final Uri uri = mContentUriForRawContactsEntity;
             final String selection = Data.CONTACT_ID + "=?";
             final String[] selectionArgs = new String[] {contactId};
             if (getEntityIteratorMethod != null) {
@@ -614,13 +628,15 @@ public class VCardComposer {
             mCursor = null;
         }
 
-        mGuard.close();
+        mTerminateCalled = true;
     }
 
     @Override
     protected void finalize() throws Throwable {
         try {
-            mGuard.warnIfOpen();
+            if (!mTerminateCalled) {
+                Log.e(LOG_TAG, "finalized() is called before terminate() being called");
+            }
         } finally {
             super.finalize();
         }

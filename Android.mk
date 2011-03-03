@@ -15,8 +15,8 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-# Comment in when we don't want private API (methods with @hide)
-# LOCAL_SDK_VERSION := current
+# 2.3
+LOCAL_SDK_VERSION := 9
 
 LOCAL_MODULE := com.android.vcard
 LOCAL_SRC_FILES := $(call all-java-files-under, java)
