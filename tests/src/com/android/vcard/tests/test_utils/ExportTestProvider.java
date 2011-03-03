@@ -28,8 +28,6 @@ import android.test.AndroidTestCase;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockCursor;
 
-import com.android.vcard.VCardComposer;
-
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
@@ -40,8 +38,8 @@ public class ExportTestProvider extends MockContentProvider {
     final private ArrayList<ContactEntry> mContactEntryList = new ArrayList<ContactEntry>();
 
     private static class MockEntityIterator implements EntityIterator {
-        List<Entity> mEntityList;
-        Iterator<Entity> mIterator;
+        private final List<Entity> mEntityList;
+        private Iterator<Entity> mIterator;
 
         public MockEntityIterator(List<ContentValues> contentValuesList) {
             mEntityList = new ArrayList<Entity>();
@@ -53,22 +51,27 @@ public class ExportTestProvider extends MockContentProvider {
             mIterator = mEntityList.iterator();
         }
 
+        @Override
         public boolean hasNext() {
             return mIterator.hasNext();
         }
 
+        @Override
         public Entity next() {
             return mIterator.next();
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("remove not supported");
         }
 
+        @Override
         public void reset() {
             mIterator = mEntityList.iterator();
         }
 
+        @Override
         public void close() {
         }
     }
@@ -108,7 +111,7 @@ public class ExportTestProvider extends MockContentProvider {
     @Override
     public Cursor query(Uri uri,String[] projection,
             String selection, String[] selectionArgs, String sortOrder) {
-        TestCase.assertTrue(VCardComposer.CONTACTS_TEST_CONTENT_URI.equals(uri));
+        TestCase.assertTrue(VCardVerifier.CONTACTS_TEST_CONTENT_URI.equals(uri));
         // In this test, following arguments are not supported.
         TestCase.assertNull(selection);
         TestCase.assertNull(selectionArgs);

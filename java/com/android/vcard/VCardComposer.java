@@ -100,6 +100,7 @@ import java.util.Map;
  */
 public class VCardComposer {
     private static final String LOG_TAG = "VCardComposer";
+    private static final boolean DEBUG = false;
 
     public static final String FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO =
         "Failed to get database information";
@@ -116,21 +117,10 @@ public class VCardComposer {
 
     public static final String NO_ERROR = "No error";
 
-    public static final String VCARD_TYPE_STRING_DOCOMO = "docomo";
-
     // Strictly speaking, "Shift_JIS" is the most appropriate, but we use upper version here,
     // since usual vCard devices for Japanese devices already use it.
     private static final String SHIFT_JIS = "SHIFT_JIS";
     private static final String UTF_8 = "UTF-8";
-
-    /**
-     * Special URI for testing.
-     */
-    public static final String VCARD_TEST_AUTHORITY = "com.android.unit_tests.vcard";
-    public static final Uri VCARD_TEST_AUTHORITY_URI =
-        Uri.parse("content://" + VCARD_TEST_AUTHORITY);
-    public static final Uri CONTACTS_TEST_CONTENT_URI =
-        Uri.withAppendedPath(VCARD_TEST_AUTHORITY_URI, "contacts");
 
     private static final Map<Integer, String> sImMap;
 
@@ -161,9 +151,6 @@ public class VCardComposer {
      * </p>
      */
     public final class HandlerForOutputStream implements OneEntryHandler {
-        @SuppressWarnings("hiding")
-        private static final String LOG_TAG = "VCardComposer.HandlerForOutputStream";
-
         private final OutputStream mOutputStream; // mWriter will close this.
         private Writer mWriter;
 
@@ -238,12 +225,14 @@ public class VCardComposer {
 
     private final boolean mIsDoCoMo;
     private Cursor mCursor;
+    private boolean mCursorSuppliedFromOutside;
     private int mIdColumn;
     private Uri mContentUriForRawContactsEntity = RawContactsEntity.CONTENT_URI;
 
     private final String mCharset;
     private final List<OneEntryHandler> mHandlerList;
 
+    private boolean mInitDone;
     private String mErrorReason = NO_ERROR;
 
     /**
@@ -280,7 +269,7 @@ public class VCardComposer {
     }
 
     /**
-     * Construct for supporting call log entry vCard composing.
+     * Constructs for supporting call log entry vCard composing.
      *
      * @param context Context to be used during the composition.
      * @param vcardType The type of vCard, typically available via {@link VCardConfig}.
@@ -291,10 +280,20 @@ public class VCardComposer {
      */
     public VCardComposer(final Context context, final int vcardType, String charset,
             final boolean careHandlerErrors) {
+        this(context, context.getContentResolver(), vcardType, charset, careHandlerErrors);
+    }
+
+    /**
+     * Just for testing for now.
+     * @param resolver {@link ContentResolver} which used by this object.
+     * @hide
+     */
+    public VCardComposer(final Context context, ContentResolver resolver,
+            final int vcardType, String charset, final boolean careHandlerErrors) {
         mContext = context;
         mVCardType = vcardType;
         mCareHandlerErrors = careHandlerErrors;
-        mContentResolver = context.getContentResolver();
+        mContentResolver = resolver;
 
         mIsDoCoMo = VCardConfig.isDoCoMo(vcardType);
         mHandlerList = new ArrayList<OneEntryHandler>();
@@ -372,6 +371,11 @@ public class VCardComposer {
     }
 
     /**
+     * Initializes this object using default {@link Contacts#CONTENT_URI}.
+     *
+     * You can call this method or a variant of this method just once. In other words, you cannot
+     * reuse this object.
+     *
      * @return Returns true when initialization is successful and all the other
      *          methods are available. Returns false otherwise.
      */
@@ -388,14 +392,21 @@ public class VCardComposer {
      * Cursor cursor = mContentResolver.query(
      *         contentUriForRawContactsEntity, null, selection, selectionArgs, null)
      * </code>
+     *
+     * You can call this method or a variant of this method just once. In other words, you cannot
+     * reuse this object.
      */
     public boolean initWithRawContactsEntityUri(Uri contentUriForRawContactsEntity) {
         mContentUriForRawContactsEntity = contentUriForRawContactsEntity;
         return init(null, null);
     }
 
+    /**
+     * Initializes this object using default {@link Contacts#CONTENT_URI} and given selection
+     * arguments.
+     */
     public boolean init(final String selection, final String[] selectionArgs) {
-        return init(Contacts.CONTENT_URI, selection, selectionArgs, null);
+        return init(Contacts.CONTENT_URI, sContactsProjection, selection, selectionArgs, null);
     }
 
     /**
@@ -403,7 +414,48 @@ public class VCardComposer {
      */
     public boolean init(final Uri contentUri, final String selection,
             final String[] selectionArgs, final String sortOrder) {
-        if (contentUri == null) {
+        return init(contentUri, sContactsProjection, selection, selectionArgs, sortOrder);
+    }
+
+    private boolean init(final Uri contentUri, final String[] projection,
+            final String selection, final String[] selectionArgs, final String sortOrder) {
+        if (!Contacts.CONTENT_URI.equals(contentUri)) {
+            if (DEBUG) Log.d(LOG_TAG, "Unexpected contentUri: " + contentUri);
+            mErrorReason = FAILURE_REASON_UNSUPPORTED_URI;
+            return false;
+        }
+        if (!initInterFirstPart()) {
+            return false;
+        }
+        if (!initInterCursorCreationPart(contentUri, projection, selection, selectionArgs,
+                sortOrder)) {
+            return false;
+        }
+        if (!initInterMainPart()) {
+            return false;
+        }
+        return initInterLastPart();
+    }
+
+    /**
+     * Just for testing for now. Do not use.
+     * @hide
+     */
+    public boolean init(Cursor cursor) {
+        if (!initInterFirstPart()) {
+            return false;
+        }
+        mCursorSuppliedFromOutside = true;
+        mCursor = cursor;
+        if (!initInterMainPart()) {
+            return false;
+        }
+        return initInterLastPart();
+    }
+
+    private boolean initInterFirstPart() {
+        if (mInitDone) {
+            Log.e(LOG_TAG, "init() is already called");
             return false;
         }
 
@@ -412,6 +464,11 @@ public class VCardComposer {
                     mHandlerList.size());
             for (OneEntryHandler handler : mHandlerList) {
                 if (!handler.onInit(mContext)) {
+                    if (DEBUG) {
+                        Log.d(LOG_TAG,
+                                String.format("One of OneEntryHandler (%s) return false on init.",
+                                        handler.toString()));
+                    }
                     for (OneEntryHandler finished : finishedList) {
                         finished.onTerminate();
                     }
@@ -425,36 +482,39 @@ public class VCardComposer {
             }
         }
 
-        final String[] projection;
-        if (Contacts.CONTENT_URI.equals(contentUri) ||
-                CONTACTS_TEST_CONTENT_URI.equals(contentUri)) {
-            projection = sContactsProjection;
-        } else {
-            mErrorReason = FAILURE_REASON_UNSUPPORTED_URI;
-            return false;
-        }
+        return true;
+    }
+
+    private boolean initInterCursorCreationPart(
+            final Uri contentUri, final String[] projection,
+            final String selection, final String[] selectionArgs, final String sortOrder) {
+        mCursorSuppliedFromOutside = false;
         mCursor = mContentResolver.query(
                 contentUri, projection, selection, selectionArgs, sortOrder);
 
         if (mCursor == null) {
+            Log.e(LOG_TAG, String.format("Cursor became null unexpectedly"));
             mErrorReason = FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO;
             return false;
         }
+        return true;
+    }
 
-        if (getCount() == 0 || !mCursor.moveToFirst()) {
-            try {
-                mCursor.close();
-            } catch (SQLiteException e) {
-                Log.e(LOG_TAG, "SQLiteException on Cursor#close(): " + e.getMessage());
-            } finally {
-                mCursor = null;
-                mErrorReason = FAILURE_REASON_NO_ENTRY;
+    private boolean initInterMainPart() {
+        if (mCursor.getCount() == 0 || !mCursor.moveToFirst()) {
+            if (DEBUG) {
+                Log.d(LOG_TAG,
+                    String.format("mCursor has an error (getCount: %d): ", mCursor.getCount()));
             }
+            closeCursorIfAppropriate();
             return false;
         }
-
         mIdColumn = mCursor.getColumnIndex(Contacts._ID);
+        return true;
+    }
 
+    private boolean initInterLastPart() {
+        mInitDone = true;
         mTerminateCalled = false;
         return true;
     }
@@ -468,7 +528,7 @@ public class VCardComposer {
      * @hide just for testing.
      */
     public boolean createOneEntry(Method getEntityIteratorMethod) {
-        if (mCursor == null || mCursor.isAfterLast()) {
+        if (!mInitDone) {
             mErrorReason = FAILURE_REASON_NOT_INITIALIZED;
             return false;
         }
@@ -619,7 +679,12 @@ public class VCardComposer {
             handler.onTerminate();
         }
 
-        if (mCursor != null) {
+        closeCursorIfAppropriate();
+        mTerminateCalled = true;
+    }
+
+    private void closeCursorIfAppropriate() {
+        if (!mCursorSuppliedFromOutside && mCursor != null) {
             try {
                 mCursor.close();
             } catch (SQLiteException e) {
@@ -627,8 +692,6 @@ public class VCardComposer {
             }
             mCursor = null;
         }
-
-        mTerminateCalled = true;
     }
 
     @Override

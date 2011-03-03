@@ -15,15 +15,6 @@
  */
 package com.android.vcard.tests.test_utils;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.EntityIterator;
-import android.net.Uri;
-import android.test.AndroidTestCase;
-import android.test.mock.MockContext;
-import android.text.TextUtils;
-import android.util.Log;
-
 import com.android.vcard.VCardComposer;
 import com.android.vcard.VCardConfig;
 import com.android.vcard.VCardEntryConstructor;
@@ -32,6 +23,17 @@ import com.android.vcard.VCardInterpreterCollection;
 import com.android.vcard.VCardParser;
 import com.android.vcard.VCardUtils;
 import com.android.vcard.exception.VCardException;
+
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.EntityIterator;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.ContactsContract.Contacts;
+import android.test.AndroidTestCase;
+import android.test.mock.MockContext;
+import android.text.TextUtils;
+import android.util.Log;
 
 import junit.framework.TestCase;
 
@@ -55,6 +57,15 @@ import java.util.Arrays;
 public class VCardVerifier {
     private static final String LOG_TAG = "VCardVerifier";
 
+    /**
+     * Special URI for testing.
+     */
+    /* package */ static final String VCARD_TEST_AUTHORITY = "com.android.unit_tests.vcard";
+    private static final Uri VCARD_TEST_AUTHORITY_URI =
+            Uri.parse("content://" + VCARD_TEST_AUTHORITY);
+    /* package */ static final Uri CONTACTS_TEST_CONTENT_URI =
+        Uri.withAppendedPath(VCARD_TEST_AUTHORITY_URI, "contacts");
+
     private static class CustomMockContext extends MockContext {
         final ContentResolver mResolver;
         public CustomMockContext(ContentResolver resolver) {
@@ -68,13 +79,16 @@ public class VCardVerifier {
     }
 
     private class VCardVerifierInternal implements VCardComposer.OneEntryHandler {
+        @Override
         public boolean onInit(Context context) {
             return true;
         }
+        @Override
         public boolean onEntryCreated(String vcard) {
             verifyOneVCardForExport(vcard);
             return true;
         }
+        @Override
         public void onTerminate() {
         }
     }
@@ -344,11 +358,14 @@ public class VCardVerifier {
     }
 
     private void verifyForExportTest() {
-       final VCardComposer composer =
-            new VCardComposer(new CustomMockContext(mExportTestResolver), mVCardType, mCharset);
+        final CustomMockContext context = new CustomMockContext(mExportTestResolver);
+        final ContentResolver resolver = context.getContentResolver();
+        final VCardComposer composer = new VCardComposer(context, mVCardType, mCharset);
+        // projection is ignored.
+        final Cursor cursor = resolver.query(CONTACTS_TEST_CONTENT_URI, null, null, null, null);
         composer.addHandler(mLineVerifier);
         composer.addHandler(mVCardVerifierInternal);
-        if (!composer.init(VCardComposer.CONTACTS_TEST_CONTENT_URI, null, null, null)) {
+        if (!composer.init(cursor)) {
             AndroidTestCase.fail("init() failed. Reason: " + composer.getErrorReason());
         }
         AndroidTestCase.assertFalse(composer.isAfterLast());
