@@ -19,7 +19,7 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.test.AndroidTestCase;
 
 import com.android.vcard.VCardConfig;
-import com.android.vcard.tests.test_utils.VCardVerifier;
+import com.android.vcard.tests.testutils.VCardVerifier;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;

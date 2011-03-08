@@ -34,66 +34,77 @@ public final class VCardInterpreterCollection implements VCardInterpreter {
         return mInterpreterCollection;
     }
 
+    @Override
     public void start() {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.start();
         }
     }
 
+    @Override
     public void end() {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.end();
         }
     }
 
+    @Override
     public void startEntry() {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.startEntry();
         }
     }
 
+    @Override
     public void endEntry() {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.endEntry();
         }
     }
 
+    @Override
     public void startProperty() {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.startProperty();
         }
     }
 
+    @Override
     public void endProperty() {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.endProperty();
         }
     }
 
+    @Override
     public void propertyGroup(String group) {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.propertyGroup(group);
         }
     }
 
+    @Override
     public void propertyName(String name) {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.propertyName(name);
         }
     }
 
+    @Override
     public void propertyParamType(String type) {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.propertyParamType(type);
         }
     }
 
+    @Override
     public void propertyParamValue(String value) {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.propertyParamValue(value);
         }
     }
 
+    @Override
     public void propertyValues(List<String> values) {
         for (VCardInterpreter builder : mInterpreterCollection) {
             builder.propertyValues(values);

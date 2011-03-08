@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.android.vcard.tests.test_utils;
+package com.android.vcard.tests.testutils;
 
 import android.provider.ContactsContract.RawContacts;
 import android.test.AndroidTestCase;

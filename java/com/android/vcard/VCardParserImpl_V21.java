@@ -37,7 +37,7 @@ import java.util.Set;
 
 /**
  * <p>
- * Basic implementation achieving vCard parsing. Based on vCard 2.1,
+ * Basic implementation achieving vCard parsing. Based on vCard 2.1.
  * </p>
  * @hide
  */
@@ -102,9 +102,9 @@ import java.util.Set;
                 return ret;
             }
 
-            long start = System.currentTimeMillis();
+            final long start = System.currentTimeMillis();
             final String line = super.readLine();
-            long end = System.currentTimeMillis();
+            final long end = System.currentTimeMillis();
             mTime += end - start;
             return line;
         }
@@ -114,9 +114,9 @@ import java.util.Set;
          */
         public String peekLine() throws IOException {
             if (!mNextLineIsValid) {
-                long start = System.currentTimeMillis();
+                final long start = System.currentTimeMillis();
                 final String line = super.readLine();
-                long end = System.currentTimeMillis();
+                final long end = System.currentTimeMillis();
                 mTime += end - start;
 
                 mNextLine = line;
@@ -167,6 +167,9 @@ import java.util.Set;
      * Set for storing unkonwn TYPE attributes, which is not acceptable in vCard
      * specification, but happens to be seen in real world vCard.
      * </p>
+     * <p>
+     * We just accept those invalid types after emitting a warning for each of it.
+     * </p>
      */
     protected final Set<String> mUnknownTypeSet = new HashSet<String>();
 
@@ -174,6 +177,9 @@ import java.util.Set;
      * <p>
      * Set for storing unkonwn VALUE attributes, which is not acceptable in
      * vCard specification, but happens to be seen in real world vCard.
+     * </p>
+     * <p>
+     * We just accept those invalid types after emitting a warning for each of it.
      * </p>
      */
     protected final Set<String> mUnknownValueSet = new HashSet<String>();
@@ -368,7 +374,7 @@ import java.util.Set;
      * The arguments useCache and allowGarbase are usually true and false
      * accordingly when this function is called outside this function itself.
      * </p>
-     * 
+     *
      * @param useCache When true, line is obtained from mPreviousline.
      *            Otherwise, getLine() is used.
      * @param allowGarbage When true, ignore non "END:VCARD" line.
@@ -536,7 +542,7 @@ import java.util.Set;
                             mInterpreter.propertyGroup(groupName);
                         }
                         nameIndex = i + 1;  // Next should be another group or a property name.
-                    } else if (ch == ';') {  // End of property name and beginneng of parameters.  
+                    } else if (ch == ';') {  // End of property name and beginneng of parameters.
                         final String propertyName = line.substring(nameIndex, i);
                         if (propertyName.equalsIgnoreCase("END")) {
                             mPreviousLine = line;

@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.vcard.tests.test_utils;
+package com.android.vcard.tests.testutils;
 
 import android.content.ContentValues;
 import android.test.AndroidTestCase;
 
 import com.android.vcard.VCardConfig;
-import com.android.vcard.tests.test_utils.VCardVerifier;
+import com.android.vcard.tests.testutils.VCardVerifier;
 
 /**
  * BaseClass for vCard unit tests with utility classes.
  * Please do not add each unit test here.
  */
-public class VCardTestsBase extends AndroidTestCase {
+public abstract class VCardTestsBase extends AndroidTestCase {
     public static final int V21 = VCardConfig.VCARD_TYPE_V21_GENERIC;
     public static final int V30 = VCardConfig.VCARD_TYPE_V30_GENERIC;
     public static final int V40 = VCardConfig.VCARD_TYPE_V40_GENERIC;
@@ -40,6 +40,9 @@ public class VCardTestsBase extends AndroidTestCase {
     protected final ContentValues mContentValuesForBase64V30;
 
     protected VCardVerifier mVerifier;
+    /**
+     * true when we shouldn't call {@link VCardVerifier#verify()}.
+     */
     private boolean mSkipVerification;
 
     public VCardTestsBase() {
@@ -69,18 +72,28 @@ public class VCardTestsBase extends AndroidTestCase {
         mSkipVerification = true;
     }
 
+    /**
+     * Calls super's {@link #setUp()} and prepares {@link VCardVerifier}. We call
+     * {@link VCardVerifier#verify()} on {@link #tearDown()}.
+     */
     @Override
-    public void setUp() throws Exception{
+    public final void setUp() throws Exception{
         super.setUp();
         mVerifier = new VCardVerifier(this);
         mSkipVerification = false;
     }
 
+    /**
+     * Calls super's {@link #tearDown()} and {@link VCardVerifier#verify()}.
+     */
     @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
+    public final void tearDown() throws Exception {
+        // We don't want to forget to call verify() as it makes unit test successful silently even
+        // when it shouldn't be, while each test case tends become so large to manage and sometimes
+        // we had forgotten to call the method. That is why we override setUp()/tearDown() here.
         if (!mSkipVerification) {
             mVerifier.verify();
         }
+        super.tearDown();
     }
 }

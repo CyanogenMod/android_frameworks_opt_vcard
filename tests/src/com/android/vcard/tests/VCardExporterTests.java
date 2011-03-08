@@ -17,10 +17,10 @@
 package com.android.vcard.tests;
 
 import com.android.vcard.VCardConfig;
-import com.android.vcard.tests.test_utils.ContactEntry;
-import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem;
-import com.android.vcard.tests.test_utils.PropertyNodesVerifierElem.TypeSet;
-import com.android.vcard.tests.test_utils.VCardTestsBase;
+import com.android.vcard.tests.testutils.ContactEntry;
+import com.android.vcard.tests.testutils.PropertyNodesVerifierElem;
+import com.android.vcard.tests.testutils.VCardTestsBase;
+import com.android.vcard.tests.testutils.PropertyNodesVerifierElem.TypeSet;
 
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;

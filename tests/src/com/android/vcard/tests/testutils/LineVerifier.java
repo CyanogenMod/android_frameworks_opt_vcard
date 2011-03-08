@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.vcard.tests.test_utils;
+package com.android.vcard.tests.testutils;
 
-import android.content.Context;
 import android.test.AndroidTestCase;
-
-import com.android.vcard.VCardComposer;
 
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
 
-public class LineVerifier implements VCardComposer.OneEntryHandler {
+public class LineVerifier {
     private final AndroidTestCase mAndroidTestCase;
     private final ArrayList<LineVerifierElem> mLineVerifierElemList;
     private int mVCardType;
@@ -51,17 +48,5 @@ public class LineVerifier implements VCardComposer.OneEntryHandler {
         lineVerifier.verify(vcard);
 
         index++;
-    }
-
-    public boolean onEntryCreated(String vcard) {
-        verify(vcard);
-        return true;
-    }
-
-    public boolean onInit(Context context) {
-        return true;
-    }
-
-    public void onTerminate() {
     }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.vcard.tests.test_utils;
+package com.android.vcard.tests.testutils;
 
 import android.test.AndroidTestCase;
 
@@ -34,18 +34,21 @@ public class ContentValuesVerifier implements VCardEntryHandler {
         return elem;
     }
 
+    @Override
     public void onStart() {
         for (ContentValuesVerifierElem elem : mContentValuesVerifierElemList) {
             elem.onParsingStart();
         }
     }
 
+    @Override
     public void onEntryCreated(VCardEntry entry) {
         AndroidTestCase.assertTrue(mIndex < mContentValuesVerifierElemList.size());
         mContentValuesVerifierElemList.get(mIndex).onEntryCreated(entry);
         mIndex++;
     }
 
+    @Override
     public void onEnd() {
         for (ContentValuesVerifierElem elem : mContentValuesVerifierElemList) {
             elem.onParsingEnd();

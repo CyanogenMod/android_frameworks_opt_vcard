@@ -27,37 +27,48 @@ public class VCardEntryCounter implements VCardInterpreter {
         return mCount;
     }
 
+    @Override
     public void start() {
     }
 
+    @Override
     public void end() {
     }
 
+    @Override
     public void startEntry() {
     }
 
+    @Override
     public void endEntry() {
         mCount++;
     }
 
+    @Override
     public void startProperty() {
     }
 
+    @Override
     public void endProperty() {
     }
 
+    @Override
     public void propertyGroup(String group) {
     }
 
+    @Override
     public void propertyName(String name) {
     }
 
+    @Override
     public void propertyParamType(String type) {
     }
 
+    @Override
     public void propertyParamValue(String value) {
     }
 
+    @Override
     public void propertyValues(List<String> values) {
-    }    
+    }
 }
