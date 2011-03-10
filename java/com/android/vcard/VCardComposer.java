@@ -559,23 +559,24 @@ public class VCardComposer {
         return true;
     }
 
-    // TODO: replace this with createOneEntryNew(). Also remove OneEntryHandler. init/terminate
-    // capability can be prepared if caller really wants.
-    public boolean createOneEntry() {
-        return createOneEntry(null);
+    /**
+     * @deprecated use {@link #createOneEntry()} instead.
+     */
+    public boolean createOneEntryLegacy() {
+        return createOneEntryLegacy(null);
     }
 
     /**
      * @return a vCard string.
      */
-    public String createOneEntryNew() {
-        return createOneEntryNew(null);
+    public String createOneEntry() {
+        return createOneEntry(null);
     }
 
     /**
      * @hide
      */
-    public String createOneEntryNew(Method getEntityIteratorMethod) {
+    public String createOneEntry(Method getEntityIteratorMethod) {
         final String vcard = createOneEntryInternal(mCursor.getString(mIdColumn),
                 getEntityIteratorMethod);
         if (!mCursor.moveToNext()) {
@@ -588,7 +589,7 @@ public class VCardComposer {
      * @param getEntityIteratorMethod For Dependency Injection.
      * @hide just for testing.
      */
-    public boolean createOneEntry(Method getEntityIteratorMethod) {
+    public boolean createOneEntryLegacy(Method getEntityIteratorMethod) {
         if (!mInitDone) {
             mErrorReason = FAILURE_REASON_NOT_INITIALIZED;
             return false;

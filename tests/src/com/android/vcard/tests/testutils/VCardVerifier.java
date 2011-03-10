@@ -355,7 +355,7 @@ public class VCardVerifier {
                 try {
                     final Method mockGetEntityIteratorMethod = getMockGetEntityIteratorMethod();
                     AndroidTestCase.assertNotNull(mockGetEntityIteratorMethod);
-                    final String vcard = composer.createOneEntryNew(mockGetEntityIteratorMethod);
+                    final String vcard = composer.createOneEntry(mockGetEntityIteratorMethod);
                     AndroidTestCase.assertNotNull(vcard);
                     if (mLineVerifier != null) {
                         mLineVerifier.verify(vcard);
