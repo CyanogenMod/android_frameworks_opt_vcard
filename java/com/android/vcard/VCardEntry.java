@@ -19,12 +19,8 @@ import com.android.vcard.VCardUtils.PhoneNumberUtilsPort;
 
 import android.accounts.Account;
 import android.content.ContentProviderOperation;
-import android.content.ContentProviderResult;
 import android.content.ContentResolver;
-import android.content.OperationApplicationException;
 import android.net.Uri;
-import android.os.RemoteException;
-import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
@@ -59,7 +55,7 @@ import java.util.Set;
  * This class bridges between data structure of Contact app and VCard data.
  */
 public class VCardEntry {
-    private static final String LOG_TAG = "VCardEntry";
+    private static final String LOG_TAG = VCardConstants.LOG_TAG;
 
     private final static int DEFAULT_ORGANIZATION_TYPE = Organization.TYPE_WORK;
 
@@ -539,7 +535,7 @@ public class VCardEntry {
     }
 
     /**
-     * Should be called via {@link #handleOrgValue(int, List, Map, boolean) or
+     * Should be called via {@link #handleOrgValue(int, List, Map, boolean)} or
      * {@link #handleTitleValue(String)}.
      */
     private void addNewOrganization(int type, final String companyName,
@@ -1031,7 +1027,8 @@ public class VCardEntry {
             Collection<String> typeCollection = paramMap.get(VCardConstants.PARAM_TYPE);
             final int type = Phone.TYPE_OTHER;
             final boolean isPrimary;
-            if (typeCollection != null && typeCollection.contains(VCardConstants.PARAM_TYPE_PREF)) {
+            if (typeCollection != null &&
+                    typeCollection.contains(VCardConstants.PARAM_TYPE_PREF)) {
                 isPrimary = true;
             } else {
                 isPrimary = false;

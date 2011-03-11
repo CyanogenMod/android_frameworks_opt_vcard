@@ -42,7 +42,7 @@ import java.util.Set;
  * @hide
  */
 /* package */ class VCardParserImpl_V21 {
-    private static final String LOG_TAG = "VCardParserImpl_V21";
+    private static final String LOG_TAG = VCardConstants.LOG_TAG;
 
     private static final class EmptyInterpreter implements VCardInterpreter {
         @Override
@@ -485,7 +485,8 @@ import java.util.Set;
                 } else {
                     throw new VCardException("Unknown BEGIN type: " + propertyValue);
                 }
-            } else if (propertyName.equals("VERSION") && !propertyValue.equals(getVersionString())) {
+            } else if (propertyName.equals("VERSION") &&
+                    !propertyValue.equals(getVersionString())) {
                 throw new VCardVersionException("Incompatible version: " + propertyValue + " != "
                         + getVersionString());
             }

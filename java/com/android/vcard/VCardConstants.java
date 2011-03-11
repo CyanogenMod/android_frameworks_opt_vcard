@@ -19,6 +19,7 @@ package com.android.vcard;
  * Constants used in both exporter and importer code.
  */
 public class VCardConstants {
+    /* package */ static final String LOG_TAG = "vCard";
     public static final String VERSION_V21 = "2.1";
     public static final String VERSION_V30 = "3.0";
     public static final String VERSION_V40 = "4.0";
@@ -66,7 +67,7 @@ public class VCardConstants {
     public static final String PROPERTY_X_SIP = "X-SIP";
 
     // Available in vCard 3.0. Shoud not use when composing vCard 2.1 file.
-    
+
     // De-fact property values expressing phonetic names.
     public static final String PROPERTY_X_PHONETIC_FIRST_NAME = "X-PHONETIC-FIRST-NAME";
     public static final String PROPERTY_X_PHONETIC_MIDDLE_NAME = "X-PHONETIC-MIDDLE-NAME";

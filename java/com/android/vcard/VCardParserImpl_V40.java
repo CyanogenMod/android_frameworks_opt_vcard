@@ -23,12 +23,12 @@ import java.util.Set;
  * Basic implementation parsing vCard 4.0.
  * </p>
  * <p>
- * vCard 4.0 is not published yet. Also this implementation is premature. 
+ * vCard 4.0 is not published yet. Also this implementation is premature.
  * </p>
  * @hide
  */
 /* package */ class VCardParserImpl_V40 extends VCardParserImpl_V30 {
-    // private static final String LOG_TAG = "VCardParserImpl_V40";
+    // private static final String LOG_TAG = VCardConstants.LOG_TAG;
 
     public VCardParserImpl_V40() {
         super();
