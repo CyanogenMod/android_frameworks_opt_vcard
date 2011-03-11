@@ -38,13 +38,13 @@ import java.util.ArrayList;
  * </P>
  */
 public class VCardEntryCommitter implements VCardEntryHandler {
-    public static String LOG_TAG = "VCardEntryComitter";
+    public static String LOG_TAG = VCardConstants.LOG_TAG;
 
     private final ContentResolver mContentResolver;
     private long mTimeToCommit;
     private int mCounter;
     private ArrayList<ContentProviderOperation> mOperationList;
-    private ArrayList<Uri> mCreatedUris = new ArrayList<Uri>();
+    private final ArrayList<Uri> mCreatedUris = new ArrayList<Uri>();
 
     public VCardEntryCommitter(ContentResolver resolver) {
         mContentResolver = resolver;

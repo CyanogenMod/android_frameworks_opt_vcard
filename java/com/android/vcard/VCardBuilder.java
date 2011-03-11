@@ -36,7 +36,6 @@ import android.util.Base64;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,7 +65,7 @@ import java.util.Set;
  * return builder.toString();</pre>
  */
 public class VCardBuilder {
-    private static final String LOG_TAG = "VCardBuilder";
+    private static final String LOG_TAG = VCardConstants.LOG_TAG;
 
     // If you add the other element, please check all the columns are able to be
     // converted to String.
@@ -837,7 +836,7 @@ public class VCardBuilder {
                 }
 
                 // PAGER number needs unformatted "phone number".
-                // TODO: It would be better to have this logic as optional. 
+                // TODO: It would be better to have this logic as optional.
                 final int type = (typeAsObject != null ? typeAsObject : DEFAULT_PHONE_TYPE);
                 if (type == Phone.TYPE_PAGER ||
                         VCardConfig.refrainPhoneNumberFormatting(mVCardType)) {
@@ -1732,7 +1731,7 @@ public class VCardBuilder {
     }
 
     /**
-     * @param encodedValue Must be encoded by BASE64 
+     * @param encodedValue Must be encoded by BASE64
      * @param photoType
      */
     public void appendPhotoLine(final String encodedValue, final String photoType) {
@@ -1907,7 +1906,7 @@ public class VCardBuilder {
     }
 
     /**
-     * Appends one line with a given property name and value.  
+     * Appends one line with a given property name and value.
      */
     public void appendLine(final String propertyName, final String rawValue) {
         appendLine(propertyName, rawValue, false, false);

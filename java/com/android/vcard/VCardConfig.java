@@ -28,7 +28,7 @@ import java.util.Set;
  * but in VCardUtils.
  */
 public class VCardConfig {
-    private static final String LOG_TAG = "VCardConfig";
+    private static final String LOG_TAG = VCardConstants.LOG_TAG;
 
     /* package */ static final int LOG_LEVEL_NONE = 0;
     /* package */ static final int LOG_LEVEL_PERFORMANCE_MEASUREMENT = 0x1;
@@ -98,13 +98,13 @@ public class VCardConfig {
      * </p>
      */
     private static final int FLAG_USE_ANDROID_PROPERTY = 0x80000000;
-    
+
     /**
      * <p>
      * The flag indicating the vCard composer will add some "X-" properties seen in the
      * vCard data emitted by the other softwares/devices when the formal vCard specification
      * does not have appropriate field(s) for that data.
-     * </p> 
+     * </p>
      * <p>
      * One example is X-PHONETIC-FIRST-NAME/X-PHONETIC-MIDDLE-NAME/X-PHONETIC-LAST-NAME, which are
      * for phonetic name (how the name is pronounced), seen in the vCard emitted by some other
@@ -299,7 +299,7 @@ public class VCardConfig {
         (VERSION_21 | NAME_ORDER_DEFAULT | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
 
     /* package */ static String VCARD_TYPE_V21_GENERIC_STR = "v21_generic";
-    
+
     /**
      * <p>
      * General vCard format with the version 3.0. Uses UTF-8 for the charset.
@@ -332,7 +332,7 @@ public class VCardConfig {
         (VERSION_21 | NAME_ORDER_EUROPE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
 
     /* package */ static final String VCARD_TYPE_V21_EUROPE_STR = "v21_europe";
-    
+
     /**
      * <p>
      * General vCard format with the version 3.0 with some Europe convension. Uses UTF-8.
@@ -343,7 +343,7 @@ public class VCardConfig {
      */
     public static final int VCARD_TYPE_V30_EUROPE =
         (VERSION_30 | NAME_ORDER_EUROPE | FLAG_USE_DEFACT_PROPERTY | FLAG_USE_ANDROID_PROPERTY);
-    
+
     /* package */ static final String VCARD_TYPE_V30_EUROPE_STR = "v30_europe";
 
     /**
@@ -407,7 +407,7 @@ public class VCardConfig {
 
     private static final Map<String, Integer> sVCardTypeMap;
     private static final Set<Integer> sJapaneseMobileTypeSet;
-    
+
     static {
         sVCardTypeMap = new HashMap<String, Integer>();
         sVCardTypeMap.put(VCARD_TYPE_V21_GENERIC_STR, VCARD_TYPE_V21_GENERIC);

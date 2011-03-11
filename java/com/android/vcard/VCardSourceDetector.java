@@ -40,7 +40,7 @@ import java.util.Set;
  * </p>
  */
 public class VCardSourceDetector implements VCardInterpreter {
-    private static final String LOG_TAG = "VCardSourceDetector";
+    private static final String LOG_TAG = VCardConstants.LOG_TAG;
 
     private static Set<String> APPLE_SIGNS = new HashSet<String>(Arrays.asList(
             "X-PHONETIC-FIRST-NAME", "X-PHONETIC-MIDDLE-NAME", "X-PHONETIC-LAST-NAME",
