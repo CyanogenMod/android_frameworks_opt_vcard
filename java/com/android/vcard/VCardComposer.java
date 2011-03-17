@@ -44,12 +44,6 @@ import android.provider.ContactsContract.RawContactsEntity;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -133,98 +127,22 @@ public class VCardComposer {
         // We don't add Google talk here since it has to be handled separately.
     }
 
-    public static interface OneEntryHandler {
-        public boolean onInit(Context context);
-        public boolean onEntryCreated(String vcard);
-        public void onTerminate();
-    }
-
-    /**
-     * <p>
-     * An useful handler for emitting vCard String to an OutputStream object one by one.
-     * </p>
-     * <p>
-     * The input OutputStream object is closed() on {@link #onTerminate()}.
-     * Must not close the stream outside this class.
-     * </p>
-     */
-    public final class HandlerForOutputStream implements OneEntryHandler {
-        private final OutputStream mOutputStream; // mWriter will close this.
-        private Writer mWriter;
-
-        /**
-         * Input stream will be closed on the detruction of this object.
-         */
-        public HandlerForOutputStream(final OutputStream outputStream) {
-            mOutputStream = outputStream;
-        }
-
-        @Override
-        public boolean onInit(final Context context) {
-            try {
-                mWriter = new BufferedWriter(new OutputStreamWriter(
-                        mOutputStream, mCharset));
-            } catch (UnsupportedEncodingException e1) {
-                Log.e(LOG_TAG, "Unsupported charset: " + mCharset);
-                mErrorReason = "Encoding is not supported (usually this does not happen!): "
-                        + mCharset;
-                return false;
-            }
-
-            if (mIsDoCoMo) {
-                try {
-                    // Create one empty entry.
-                    mWriter.write(createOneEntryInternal("-1", null));
-                } catch (IOException e) {
-                    Log.e(LOG_TAG,
-                            "IOException occurred during exportOneContactData: "
-                                    + e.getMessage());
-                    mErrorReason = "IOException occurred: " + e.getMessage();
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public boolean onEntryCreated(String vcard) {
-            try {
-                mWriter.write(vcard);
-            } catch (IOException e) {
-                Log.e(LOG_TAG,
-                        "IOException occurred during exportOneContactData: "
-                                + e.getMessage());
-                mErrorReason = "IOException occurred: " + e.getMessage();
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public void onTerminate() {
-            if (mWriter != null) {
-                try {
-                    mWriter.close();
-                } catch (IOException e) {
-                    Log.w(LOG_TAG, "IOException is thrown during close(). Ignored.", e);
-                }
-            }
-        }
-    }
-
-    private final Context mContext;
     private final int mVCardType;
-    private final boolean mCareHandlerErrors;
     private final ContentResolver mContentResolver;
 
     private final boolean mIsDoCoMo;
+    /**
+     * Used only when {@link #mIsDoCoMo} is true. Set to true when the first vCard for DoCoMo
+     * vCard is emitted.
+     */
+    private boolean mFirstVCardEmittedInDoCoMoCase;
+
     private Cursor mCursor;
     private boolean mCursorSuppliedFromOutside;
     private int mIdColumn;
     private Uri mContentUriForRawContactsEntity;
 
     private final String mCharset;
-    private final List<OneEntryHandler> mHandlerList;
 
     private boolean mInitDone;
     private String mErrorReason = NO_ERROR;
@@ -269,8 +187,6 @@ public class VCardComposer {
      * @param vcardType The type of vCard, typically available via {@link VCardConfig}.
      * @param charset The charset to be used. Use null when you don't need the charset.
      * @param careHandlerErrors If true, This object returns false everytime
-     * a Handler object given via {{@link #addHandler(OneEntryHandler)} returns false.
-     * If false, this ignores those errors.
      */
     public VCardComposer(final Context context, final int vcardType, String charset,
             final boolean careHandlerErrors) {
@@ -284,13 +200,12 @@ public class VCardComposer {
      */
     public VCardComposer(final Context context, ContentResolver resolver,
             final int vcardType, String charset, final boolean careHandlerErrors) {
-        mContext = context;
+        // Not used right now
+        // mContext = context;
         mVCardType = vcardType;
-        mCareHandlerErrors = careHandlerErrors;
         mContentResolver = resolver;
 
         mIsDoCoMo = VCardConfig.isDoCoMo(vcardType);
-        mHandlerList = new ArrayList<OneEntryHandler>();
 
         charset = (TextUtils.isEmpty(charset) ? VCardConfig.DEFAULT_EXPORT_CHARSET : charset);
         final boolean shouldAppendCharsetParam = !(
@@ -353,15 +268,6 @@ public class VCardComposer {
         }
 
         Log.d(LOG_TAG, "Use the charset \"" + mCharset + "\"");
-    }
-
-    /**
-     * Must be called before {@link #init()}.
-     */
-    public void addHandler(OneEntryHandler handler) {
-        if (handler != null) {
-            mHandlerList.add(handler);
-        }
     }
 
     /**
@@ -498,30 +404,6 @@ public class VCardComposer {
             Log.e(LOG_TAG, "init() is already called");
             return false;
         }
-
-        if (mCareHandlerErrors) {
-            final List<OneEntryHandler> finishedList = new ArrayList<OneEntryHandler>(
-                    mHandlerList.size());
-            for (OneEntryHandler handler : mHandlerList) {
-                if (!handler.onInit(mContext)) {
-                    if (DEBUG) {
-                        Log.d(LOG_TAG,
-                                String.format("One of OneEntryHandler (%s) return false on init.",
-                                        handler.toString()));
-                    }
-                    for (OneEntryHandler finished : finishedList) {
-                        finished.onTerminate();
-                    }
-                    return false;
-                }
-            }
-        } else {
-            // Just ignore the false returned from onInit().
-            for (OneEntryHandler handler : mHandlerList) {
-                handler.onInit(mContext);
-            }
-        }
-
         return true;
     }
 
@@ -560,13 +442,6 @@ public class VCardComposer {
     }
 
     /**
-     * @deprecated use {@link #createOneEntry()} instead.
-     */
-    public boolean createOneEntryLegacy() {
-        return createOneEntryLegacy(null);
-    }
-
-    /**
      * @return a vCard string.
      */
     public String createOneEntry() {
@@ -577,61 +452,21 @@ public class VCardComposer {
      * @hide
      */
     public String createOneEntry(Method getEntityIteratorMethod) {
+        if (mIsDoCoMo && !mFirstVCardEmittedInDoCoMoCase) {
+            mFirstVCardEmittedInDoCoMoCase = true;
+            // Previously we needed to emit empty data for this specific case, but actually
+            // this doesn't work now, as resolver doesn't return any data with "-1" contactId.
+            // TODO: re-introduce or remove this logic. Needs to modify unit test when we
+            // re-introduce the logic.
+            // return createOneEntryInternal("-1", getEntityIteratorMethod);
+        }
+
         final String vcard = createOneEntryInternal(mCursor.getString(mIdColumn),
                 getEntityIteratorMethod);
         if (!mCursor.moveToNext()) {
             Log.e(LOG_TAG, "Cursor#moveToNext() returned false");
         }
         return vcard;
-    }
-
-    /**
-     * @param getEntityIteratorMethod For Dependency Injection.
-     * @hide just for testing.
-     */
-    public boolean createOneEntryLegacy(Method getEntityIteratorMethod) {
-        if (!mInitDone) {
-            mErrorReason = FAILURE_REASON_NOT_INITIALIZED;
-            return false;
-        }
-        final String vcard;
-        try {
-            if (mIdColumn >= 0) {
-                vcard = createOneEntryInternal(mCursor.getString(mIdColumn),
-                        getEntityIteratorMethod);
-            } else {
-                Log.e(LOG_TAG, "Incorrect mIdColumn: " + mIdColumn);
-                return true;
-            }
-        } catch (OutOfMemoryError error) {
-            // Maybe some data (e.g. photo) is too big to have in memory. But it
-            // should be rare.
-            Log.e(LOG_TAG, "OutOfMemoryError occured. Ignore the entry.");
-            System.gc();
-            // TODO: should tell users what happened?
-            return true;
-        } finally {
-            if (!mCursor.moveToNext()) {
-                Log.e(LOG_TAG, "Cursor#moveToNext() returned false");
-            }
-        }
-
-        // This function does not care the OutOfMemoryError on the handler side :-P
-        if (mCareHandlerErrors) {
-            List<OneEntryHandler> finishedList = new ArrayList<OneEntryHandler>(
-                    mHandlerList.size());
-            for (OneEntryHandler handler : mHandlerList) {
-                if (!handler.onEntryCreated(vcard)) {
-                    return false;
-                }
-            }
-        } else {
-            for (OneEntryHandler handler : mHandlerList) {
-                handler.onEntryCreated(vcard);
-            }
-        }
-
-        return true;
     }
 
     private String createOneEntryInternal(final String contactId,
@@ -658,13 +493,8 @@ public class VCardComposer {
                     Log.e(LOG_TAG, "IllegalAccessException has been thrown: " +
                             e.getMessage());
                 } catch (InvocationTargetException e) {
-                    Log.e(LOG_TAG, "InvocationTargetException has been thrown: ");
-                    StackTraceElement[] stackTraceElements = e.getCause().getStackTrace();
-                    for (StackTraceElement element : stackTraceElements) {
-                        Log.e(LOG_TAG, "    at " + element.toString());
-                    }
-                    throw new RuntimeException("InvocationTargetException has been thrown: " +
-                            e.getCause().getMessage());
+                    Log.e(LOG_TAG, "InvocationTargetException has been thrown: ", e);
+                    throw new RuntimeException("InvocationTargetException has been thrown");
                 }
             } else {
                 entityIterator = RawContacts.newEntityIterator(mContentResolver.query(
@@ -736,10 +566,6 @@ public class VCardComposer {
     }
 
     public void terminate() {
-        for (OneEntryHandler handler : mHandlerList) {
-            handler.onTerminate();
-        }
-
         closeCursorIfAppropriate();
         mTerminateCalled = true;
     }

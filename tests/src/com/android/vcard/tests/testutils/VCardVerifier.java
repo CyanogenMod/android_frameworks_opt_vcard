@@ -54,7 +54,7 @@ import java.util.Arrays;
  */
 public class VCardVerifier {
     private static final String LOG_TAG = "VCardVerifier";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     /**
      * Special URI for testing.
@@ -353,19 +353,19 @@ public class VCardVerifier {
         AndroidTestCase.assertFalse(composer.isAfterLast());
         try {
             while (!composer.isAfterLast()) {
+                Method mockGetEntityIteratorMethod = null;
                 try {
-                    final Method mockGetEntityIteratorMethod = getMockGetEntityIteratorMethod();
-                    AndroidTestCase.assertNotNull(mockGetEntityIteratorMethod);
-                    final String vcard = composer.createOneEntry(mockGetEntityIteratorMethod);
-                    AndroidTestCase.assertNotNull(vcard);
-                    if (mLineVerifier != null) {
-                        mLineVerifier.verify(vcard);
-                    }
-                    verifyOneVCardForExport(vcard);
+                    mockGetEntityIteratorMethod = getMockGetEntityIteratorMethod();
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    AndroidTestCase.fail(e.toString());
+                    AndroidTestCase.fail("Exception thrown: " + e);
                 }
+                AndroidTestCase.assertNotNull(mockGetEntityIteratorMethod);
+                final String vcard = composer.createOneEntry(mockGetEntityIteratorMethod);
+                AndroidTestCase.assertNotNull(vcard);
+                if (mLineVerifier != null) {
+                    mLineVerifier.verify(vcard);
+                }
+                verifyOneVCardForExport(vcard);
             }
         } finally {
             composer.terminate();

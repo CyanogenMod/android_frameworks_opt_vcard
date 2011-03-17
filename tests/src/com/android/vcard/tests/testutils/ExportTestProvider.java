@@ -27,6 +27,7 @@ import android.provider.ContactsContract.RawContacts;
 import android.test.AndroidTestCase;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockCursor;
+import android.util.Log;
 
 import junit.framework.TestCase;
 
@@ -103,7 +104,8 @@ public class ExportTestProvider extends MockContentProvider {
         TestCase.assertTrue((Data.CONTACT_ID + "=?").equals(selection));
         TestCase.assertEquals(1, selectionArgs.length);
         final int id = Integer.parseInt(selectionArgs[0]);
-        TestCase.assertTrue(id >= 0 && id < mContactEntryList.size());
+        TestCase.assertTrue(id >= 0);
+        TestCase.assertTrue(id < mContactEntryList.size());
 
         return new MockEntityIterator(mContactEntryList.get(id).getList());
     }
