@@ -37,6 +37,8 @@ import java.util.List;
  * e.g. group1.propName;paramName1=paramValue1;paramName2=paramValue2;propertyValue1;propertyValue2...
  * </P>
  */
+// TODO: "on" should be appended for consistency..
+// e.g. onStart(), onEnd()
 public interface VCardInterpreter {
     /**
      * Called when vCard interpretation started.
@@ -48,17 +50,26 @@ public interface VCardInterpreter {
      */
     void end();
 
-    /** 
+    /**
      * Called when parsing one vCard entry started.
      * More specifically, this method is called when "BEGIN:VCARD" is read.
+     *
+     * This may be called before {@link #endEntry()} is called, as vCard 2.1 accepts nested vCard.
+     *
+     * <code>
+     * BEGIN:VCARD
+     * BEGIN:VCARD
+     * VERSION:2.1
+     * N:test;;;;
+     * END:VCARD
+     * END:VCARD
+     * </code>
      */
     void startEntry();
 
     /**
      * Called when parsing one vCard entry ended.
      * More specifically, this method is called when "END:VCARD" is read.
-     * Note that {@link #startEntry()} may be called since
-     * vCard (especially 2.1) allows nested vCard.
      */
     void endEntry();
 

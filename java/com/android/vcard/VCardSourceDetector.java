@@ -70,8 +70,8 @@ public class VCardSourceDetector implements VCardInterpreter {
     private static final int PARSE_TYPE_APPLE = 1;
     // For Japanese mobile phones, which are usually using Shift_JIS as a charset.
     private static final int PARSE_TYPE_MOBILE_PHONE_JP = 2;
-    // For some of mobile phones released from DoCoMo, which use nested vCard.
-    private static final int PARSE_TYPE_DOCOMO_TORELATE_NEST = 3;
+    // For some of mobile phones released from DoCoMo.
+    private static final int PARSE_TYPE_DOCOMO_FOMA = 3;
     // For Japanese Windows Mobel phones. It's version is supposed to be 6.5.
     private static final int PARSE_TYPE_WINDOWS_MOBILE_V65_JP = 4;
 
@@ -120,7 +120,7 @@ public class VCardSourceDetector implements VCardInterpreter {
             mNeedToParseVersion = true;
             return;
         } else if (name.equalsIgnoreCase(TYPE_FOMA_CHARSET_SIGN)) {
-            mParseType = PARSE_TYPE_DOCOMO_TORELATE_NEST;
+            mParseType = PARSE_TYPE_DOCOMO_FOMA;
             // Probably Shift_JIS is used, but we should double confirm.
             mNeedToParseCharset = true;
             return;
@@ -131,7 +131,7 @@ public class VCardSourceDetector implements VCardInterpreter {
         if (WINDOWS_MOBILE_PHONE_SIGNS.contains(name)) {
             mParseType = PARSE_TYPE_WINDOWS_MOBILE_V65_JP;
         } else if (FOMA_SIGNS.contains(name)) {
-            mParseType = PARSE_TYPE_DOCOMO_TORELATE_NEST;
+            mParseType = PARSE_TYPE_DOCOMO_FOMA;
         } else if (JAPANESE_MOBILE_PHONE_SIGNS.contains(name)) {
             mParseType = PARSE_TYPE_MOBILE_PHONE_JP;
         } else if (APPLE_SIGNS.contains(name)) {
@@ -171,8 +171,8 @@ public class VCardSourceDetector implements VCardInterpreter {
      */
     public int getEstimatedType() {
         switch (mParseType) {
-            case PARSE_TYPE_DOCOMO_TORELATE_NEST:
-                return VCardConfig.VCARD_TYPE_DOCOMO | VCardConfig.FLAG_TORELATE_NEST;
+            case PARSE_TYPE_DOCOMO_FOMA:
+                return VCardConfig.VCARD_TYPE_DOCOMO;
             case PARSE_TYPE_MOBILE_PHONE_JP:
                 return VCardConfig.VCARD_TYPE_V21_JAPANESE_MOBILE;
             case PARSE_TYPE_APPLE:
@@ -204,7 +204,7 @@ public class VCardSourceDetector implements VCardInterpreter {
         }
         switch (mParseType) {
             case PARSE_TYPE_WINDOWS_MOBILE_V65_JP:
-            case PARSE_TYPE_DOCOMO_TORELATE_NEST:
+            case PARSE_TYPE_DOCOMO_FOMA:
             case PARSE_TYPE_MOBILE_PHONE_JP:
                 return "SHIFT_JIS";
             case PARSE_TYPE_APPLE:

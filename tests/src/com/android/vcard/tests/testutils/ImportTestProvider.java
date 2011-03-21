@@ -190,6 +190,9 @@ public class ImportTestProvider extends MockContentProvider {
         return fakeResultArray;
     }
 
+    /**
+     * Checks all expected ContentValues are consumed during import.
+     */
     public void verify() {
         StringBuilder builder = new StringBuilder();
         for (Collection<ContentValues> contentValuesCollection :

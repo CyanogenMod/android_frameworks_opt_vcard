@@ -15,15 +15,14 @@
  */
 package com.android.vcard;
 
-import android.text.TextUtils;
-import android.util.Log;
-
 import com.android.vcard.exception.VCardAgentNotSupportedException;
 import com.android.vcard.exception.VCardException;
 import com.android.vcard.exception.VCardInvalidCommentLineException;
 import com.android.vcard.exception.VCardInvalidLineException;
-import com.android.vcard.exception.VCardNestedException;
 import com.android.vcard.exception.VCardVersionException;
+
+import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -131,12 +130,92 @@ import java.util.Set;
         }
     }
 
+    /**
+     * Stores param information for a property. Used with {@link PropertyData}.
+     *
+     * e.g. "LANGUAGE=jp" -> paramName = "LANGUAGE", paramvalue = "jp"
+     */
+    private class ParamPair {
+        public String paramName;
+        public String paramValue;
+        public ParamPair(String paramName, String paramValue) {
+            this.paramName = paramName;
+            this.paramValue = paramValue;
+        }
+        @Override
+        public String toString() {
+            return paramName + ", " + paramValue;
+        }
+    }
+
+    /**
+     * Intermediate data for storing property.
+     *
+     * Name, group and param are property encoded when this object is prepared.
+     * Value isn't encoded yet at this point.
+     */
+    protected class PropertyData {
+        private String mName;
+        private List<String> mGroupList;
+        private List<ParamPair> mParamList;
+        private String mRawValue;
+
+        public void setName(String name) throws VCardException {
+            if (mName != null) {
+                throw new VCardException(
+                        String.format("Property name is re-defined " +
+                                "(existing: %s, requested: %s", mName, name));
+            }
+            mName = name;
+        }
+
+        public void addGroup(String group) {
+            if (mGroupList == null) {
+                mGroupList = new ArrayList<String>();
+            }
+            mGroupList.add(group);
+        }
+
+        public void addParam(String paramName, String paramValue) {
+            if (mParamList == null) {
+                mParamList = new ArrayList<ParamPair>();
+            }
+            mParamList.add(new ParamPair(paramName, paramValue));
+        }
+
+        public void setRawValue(String rawValue) throws VCardException {
+            if (mRawValue != null) {
+                throw new VCardException(
+                        String.format("Property value is re-defined " +
+                                "(existing: %s, requested: %s", mRawValue, rawValue));
+            }
+            mRawValue = rawValue;
+        }
+
+        public String getName() {
+            return mName;
+        }
+
+        public List<String> getGroupList() {
+            return mGroupList;
+        }
+
+        public List<ParamPair> getParamList() {
+            return mParamList;
+        }
+
+        public String getRawValue() {
+            return mRawValue;
+        }
+     }
+
     private static final String DEFAULT_ENCODING = "8BIT";
 
+    // TODO: remove this.
     protected boolean mCanceled;
-    protected VCardInterpreter mInterpreter;
-
     protected final String mIntermediateCharset;
+
+    private VCardInterpreter mInterpreter;
 
     /**
      * <p>
@@ -185,38 +264,11 @@ import java.util.Set;
     protected final Set<String> mUnknownValueSet = new HashSet<String>();
 
 
-    // In some cases, vCard is nested. Currently, we only consider the most
-    // interior vCard data.
-    // See v21_foma_1.vcf in test directory for more information.
-    // TODO: Don't ignore by using count, but read all of information outside vCard.
-    private int mNestCount;
-
-    // Used only for parsing END:VCARD.
-    private String mPreviousLine;
-
-    // For measuring performance.
-    private long mTimeTotal;
-    private long mTimeReadStartRecord;
-    private long mTimeReadEndRecord;
-    private long mTimeStartProperty;
-    private long mTimeEndProperty;
-    private long mTimeParseItems;
-    private long mTimeParseLineAndHandleGroup;
-    private long mTimeParsePropertyValues;
-    private long mTimeParseAdrOrgN;
-    private long mTimeHandleMiscPropertyValue;
-    private long mTimeHandleQuotedPrintable;
-    private long mTimeHandleBase64;
-
     public VCardParserImpl_V21() {
         this(VCardConfig.VCARD_TYPE_DEFAULT);
     }
 
     public VCardParserImpl_V21(int vcardType) {
-        if ((vcardType & VCardConfig.FLAG_TORELATE_NEST) != 0) {
-            mNestCount = 1;
-        }
-
         mIntermediateCharset =  VCardConfig.DEFAULT_INTERMEDIATE_CHARSET;
     }
 
@@ -227,23 +279,13 @@ import java.util.Set;
      */
     // <pre class="prettyprint">vcard_file = [wsls] vcard [wsls]</pre>
     protected void parseVCardFile() throws IOException, VCardException {
-        boolean readingFirstFile = true;
         while (true) {
             if (mCanceled) {
                 Log.i(LOG_TAG, "Cancel request has come. exitting parse operation.");
                 break;
             }
-            if (!parseOneVCard(readingFirstFile)) {
+            if (!parseOneVCard()) {
                 break;
-            }
-            readingFirstFile = false;
-        }
-
-        if (mNestCount > 0) {
-            boolean useCache = true;
-            for (int i = 0; i < mNestCount; i++) {
-                readEndVCard(useCache, true);
-                useCache = false;
             }
         }
     }
@@ -290,40 +332,24 @@ import java.util.Set;
         }
     }
 
-    /*
+    /**
+     * <code>
      * vcard = "BEGIN" [ws] ":" [ws] "VCARD" [ws] 1*CRLF
      *         items *CRLF
      *         "END" [ws] ":" [ws] "VCARD"
+     * </code>
      */
-    private boolean parseOneVCard(boolean firstRead) throws IOException, VCardException {
-        boolean allowGarbage = false;
-        if (firstRead) {
-            if (mNestCount > 0) {
-                for (int i = 0; i < mNestCount; i++) {
-                    if (!readBeginVCard(allowGarbage)) {
-                        return false;
-                    }
-                    allowGarbage = true;
-                }
-            }
-        }
+    private boolean parseOneVCard() throws IOException, VCardException {
+        // reset for this entire vCard.
+        mCurrentEncoding = DEFAULT_ENCODING;
 
+        boolean allowGarbage = false;
         if (!readBeginVCard(allowGarbage)) {
             return false;
         }
-        final long beforeStartEntry = System.currentTimeMillis();
         mInterpreter.startEntry();
-        mTimeReadStartRecord += System.currentTimeMillis() - beforeStartEntry;
-
-        final long beforeParseItems = System.currentTimeMillis();
         parseItems();
-        mTimeParseItems += System.currentTimeMillis() - beforeParseItems;
-
-        readEndVCard(true, false);
-
-        final long beforeEndEntry = System.currentTimeMillis();
         mInterpreter.endEntry();
-        mTimeReadEndRecord += System.currentTimeMillis() - beforeEndEntry;
         return true;
     }
 
@@ -333,6 +359,7 @@ import java.util.Set;
      * @throws VCardException
      */
     protected boolean readBeginVCard(boolean allowGarbage) throws IOException, VCardException {
+        // TODO: use consructPropertyLine().
         String line;
         do {
             while (true) {
@@ -349,20 +376,13 @@ import java.util.Set;
             // Although vCard 2.1/3.0 specification does not allow lower cases,
             // we found vCard file emitted by some external vCard expoter have such
             // invalid Strings.
-            // So we allow it.
-            // e.g.
-            // BEGIN:vCard
+            // e.g. BEGIN:vCard
             if (length == 2 && strArray[0].trim().equalsIgnoreCase("BEGIN")
                     && strArray[1].trim().equalsIgnoreCase("VCARD")) {
                 return true;
             } else if (!allowGarbage) {
-                if (mNestCount > 0) {
-                    mPreviousLine = line;
-                    return false;
-                } else {
-                    throw new VCardException("Expected String \"BEGIN:VCARD\" did not come "
-                            + "(Instead, \"" + line + "\" came)");
-                }
+                throw new VCardException("Expected String \"BEGIN:VCARD\" did not come "
+                        + "(Instead, \"" + line + "\" came)");
             }
         } while (allowGarbage);
 
@@ -370,78 +390,28 @@ import java.util.Set;
     }
 
     /**
-     * <p>
-     * The arguments useCache and allowGarbase are usually true and false
-     * accordingly when this function is called outside this function itself.
-     * </p>
-     *
-     * @param useCache When true, line is obtained from mPreviousline.
-     *            Otherwise, getLine() is used.
-     * @param allowGarbage When true, ignore non "END:VCARD" line.
-     * @throws IOException
-     * @throws VCardException
+     * Parses lines other than the first "BEGIN:VCARD". Takes care of "END:VCARD"n and
+     * "BEGIN:VCARD" in nested vCard.
      */
-    protected void readEndVCard(boolean useCache, boolean allowGarbage) throws IOException,
-            VCardException {
-        String line;
-        do {
-            if (useCache) {
-                // Though vCard specification does not allow lower cases,
-                // some data may have them, so we allow it.
-                line = mPreviousLine;
-            } else {
-                while (true) {
-                    line = getLine();
-                    if (line == null) {
-                        throw new VCardException("Expected END:VCARD was not found.");
-                    } else if (line.trim().length() > 0) {
-                        break;
-                    }
-                }
-            }
-
-            String[] strArray = line.split(":", 2);
-            if (strArray.length == 2 && strArray[0].trim().equalsIgnoreCase("END")
-                    && strArray[1].trim().equalsIgnoreCase("VCARD")) {
-                return;
-            } else if (!allowGarbage) {
-                throw new VCardException("END:VCARD != \"" + mPreviousLine + "\"");
-            }
-            useCache = false;
-        } while (allowGarbage);
-    }
-
     /*
      * items = *CRLF item / item
+     *
+     * Note: BEGIN/END aren't include in the original spec while this method handles them.
      */
     protected void parseItems() throws IOException, VCardException {
         boolean ended = false;
 
-        final long beforeBeginProperty = System.currentTimeMillis();
-        mInterpreter.startProperty();
-        mTimeStartProperty += System.currentTimeMillis() - beforeBeginProperty;
-        ended = parseItem();
-        if (!ended) {
-            final long beforeEndProperty = System.currentTimeMillis();
-            mInterpreter.endProperty();
-            mTimeEndProperty += System.currentTimeMillis() - beforeEndProperty;
+        try {
+            ended = parseItem();
+        } catch (VCardInvalidCommentLineException e) {
+            Log.e(LOG_TAG, "Invalid line which looks like some comment was found. Ignored.");
         }
 
         while (!ended) {
-            final long beforeStartProperty = System.currentTimeMillis();
-            mInterpreter.startProperty();
-            mTimeStartProperty += System.currentTimeMillis() - beforeStartProperty;
             try {
                 ended = parseItem();
             } catch (VCardInvalidCommentLineException e) {
                 Log.e(LOG_TAG, "Invalid line which looks like some comment was found. Ignored.");
-                ended = false;
-            }
-
-            if (!ended) {
-                final long beforeEndProperty = System.currentTimeMillis();
-                mInterpreter.endProperty();
-                mTimeEndProperty += System.currentTimeMillis() - beforeEndProperty;
             }
         }
     }
@@ -453,50 +423,78 @@ import java.util.Set;
      * "AGENT" [params] ":" vcard CRLF
      */
     protected boolean parseItem() throws IOException, VCardException {
+        // Reset for an item.
         mCurrentEncoding = DEFAULT_ENCODING;
 
         final String line = getNonEmptyLine();
-        long start = System.currentTimeMillis();
+        final PropertyData propertyData = constructPropertyData(line);
 
-        String[] propertyNameAndValue = separateLineAndHandleGroup(line);
-        if (propertyNameAndValue == null) {
-            return true;
+        final String propertyNameUpper = propertyData.getName().toUpperCase();
+        final String propertyValue = propertyData.getRawValue();
+
+        if (propertyNameUpper.equals(VCardConstants.PROPERTY_BEGIN)) {
+            if (propertyValue.equalsIgnoreCase("VCARD")) {
+                handleNest();
+            } else {
+                throw new VCardException("Unknown BEGIN type: " + propertyValue);
+            }
+        } else if (propertyNameUpper.equals(VCardConstants.PROPERTY_END)) {
+            if (propertyValue.equalsIgnoreCase("VCARD")) {
+                return true;  // Ended.
+            } else {
+                throw new VCardException("Unknown END type: " + propertyValue);
+            }
+        } else {
+            mInterpreter.startProperty();
+            sendPropertyLineMetaInfo(propertyData);
+            parseItemInter(propertyNameUpper, propertyValue);
+            mInterpreter.endProperty();
         }
-        if (propertyNameAndValue.length != 2) {
-            throw new VCardInvalidLineException("Invalid line \"" + line + "\"");
+        return false;
+    }
+
+    private void sendPropertyLineMetaInfo(PropertyData propertyData) {
+        final List<String> groupList = propertyData.getGroupList();
+        if (groupList != null) {
+            for (String group : groupList) {
+                mInterpreter.propertyGroup(group);
+            }
         }
-        String propertyName = propertyNameAndValue[0].toUpperCase();
-        String propertyValue = propertyNameAndValue[1];
+        mInterpreter.propertyName(propertyData.getName());
 
-        mTimeParseLineAndHandleGroup += System.currentTimeMillis() - start;
+        final List<ParamPair> paramList = propertyData.getParamList();
+        if (paramList != null) {
+            for (ParamPair pair : paramList) {
+                mInterpreter.propertyParamType(pair.paramName);
+                mInterpreter.propertyParamValue(pair.paramValue);
+            }
+        }
+    }
 
-        if (propertyName.equals("ADR") || propertyName.equals("ORG") || propertyName.equals("N")) {
-            start = System.currentTimeMillis();
-            handleMultiplePropertyValue(propertyName, propertyValue);
-            mTimeParseAdrOrgN += System.currentTimeMillis() - start;
-            return false;
-        } else if (propertyName.equals("AGENT")) {
+    private void parseItemInter(String propertyNameUpper, String propertyValue)
+            throws IOException, VCardException {
+        if (propertyNameUpper.equals(VCardConstants.PROPERTY_ADR)
+                || propertyNameUpper.equals(VCardConstants.PROPERTY_ORG)
+                || propertyNameUpper.equals(VCardConstants.PROPERTY_N)) {
+            handleMultiplePropertyValue(propertyNameUpper, propertyValue);
+        } else if (propertyNameUpper.equals(VCardConstants.PROPERTY_AGENT)) {
             handleAgent(propertyValue);
-            return false;
-        } else if (isValidPropertyName(propertyName)) {
-            if (propertyName.equals("BEGIN")) {
-                if (propertyValue.equals("VCARD")) {
-                    throw new VCardNestedException("This vCard has nested vCard data in it.");
-                } else {
-                    throw new VCardException("Unknown BEGIN type: " + propertyValue);
-                }
-            } else if (propertyName.equals("VERSION") &&
+        } else if (isValidPropertyName(propertyNameUpper)) {
+            if (propertyNameUpper.equals(VCardConstants.PROPERTY_VERSION) &&
                     !propertyValue.equals(getVersionString())) {
                 throw new VCardVersionException("Incompatible version: " + propertyValue + " != "
                         + getVersionString());
             }
-            start = System.currentTimeMillis();
-            handlePropertyValue(propertyName, propertyValue);
-            mTimeParsePropertyValues += System.currentTimeMillis() - start;
-            return false;
+            handlePropertyValue(propertyNameUpper, propertyValue);
+        } else {
+            throw new VCardException("Unknown property name: \"" + propertyNameUpper + "\"");
         }
+    }
 
-        throw new VCardException("Unknown property name: \"" + propertyName + "\"");
+    private void handleNest() throws IOException, VCardException {
+        mInterpreter.startEntry();
+        parseItems();
+        mInterpreter.endEntry();
     }
 
     // For performance reason, the states for group and property name are merged into one.
@@ -505,8 +503,9 @@ import java.util.Set;
     // vCard 3.0 specification allows double-quoted parameters, while vCard 2.1 does not.
     static private final int STATE_PARAMS_IN_DQUOTE = 2;
 
-    protected String[] separateLineAndHandleGroup(String line) throws VCardException {
-        final String[] propertyNameAndValue = new String[2];
+    protected PropertyData constructPropertyData(String line) throws VCardException {
+        final PropertyData propertyData = new PropertyData();
+
         final int length = line.length();
         if (length > 0 && line.charAt(0) == '#') {
             throw new VCardInvalidCommentLineException();
@@ -523,34 +522,20 @@ import java.util.Set;
                 case STATE_GROUP_OR_PROPERTY_NAME: {
                     if (ch == ':') {  // End of a property name.
                         final String propertyName = line.substring(nameIndex, i);
-                        if (propertyName.equalsIgnoreCase("END")) {
-                            mPreviousLine = line;
-                            return null;
-                        }
-                        mInterpreter.propertyName(propertyName);
-                        propertyNameAndValue[0] = propertyName;
-                        if (i < length - 1) {
-                            propertyNameAndValue[1] = line.substring(i + 1);
-                        } else {
-                            propertyNameAndValue[1] = "";
-                        }
-                        return propertyNameAndValue;
+                        propertyData.setName(propertyName);
+                        propertyData.setRawValue( i < length - 1 ? line.substring(i + 1) : "");
+                        return propertyData;
                     } else if (ch == '.') {  // Each group is followed by the dot.
                         final String groupName = line.substring(nameIndex, i);
                         if (groupName.length() == 0) {
                             Log.w(LOG_TAG, "Empty group found. Ignoring.");
                         } else {
-                            mInterpreter.propertyGroup(groupName);
+                            propertyData.addGroup(groupName);
                         }
                         nameIndex = i + 1;  // Next should be another group or a property name.
                     } else if (ch == ';') {  // End of property name and beginneng of parameters.
                         final String propertyName = line.substring(nameIndex, i);
-                        if (propertyName.equalsIgnoreCase("END")) {
-                            mPreviousLine = line;
-                            return null;
-                        }
-                        mInterpreter.propertyName(propertyName);
-                        propertyNameAndValue[0] = propertyName;
+                        propertyData.setName(propertyName);
                         nameIndex = i + 1;
                         state = STATE_PARAMS;  // Start parameter parsing.
                     }
@@ -565,16 +550,12 @@ import java.util.Set;
                         }
                         state = STATE_PARAMS_IN_DQUOTE;
                     } else if (ch == ';') {  // Starts another param.
-                        handleParams(line.substring(nameIndex, i));
+                        handleParams(propertyData, line.substring(nameIndex, i));
                         nameIndex = i + 1;
                     } else if (ch == ':') {  // End of param and beginenning of values.
-                        handleParams(line.substring(nameIndex, i));
-                        if (i < length - 1) {
-                            propertyNameAndValue[1] = line.substring(i + 1);
-                        } else {
-                            propertyNameAndValue[1] = "";
-                        }
-                        return propertyNameAndValue;
+                        handleParams(propertyData, line.substring(nameIndex, i));
+                        propertyData.setRawValue(i < length - 1 ? line.substring(i + 1) : "");
+                        return propertyData;
                     }
                     break;
                 }
@@ -601,57 +582,56 @@ import java.util.Set;
      * [ws] charsetval / "LANGUAGE" [ws] "=" [ws] langval / "X-" word [ws] "="
      * [ws] word / knowntype
      */
-    protected void handleParams(String params) throws VCardException {
+    protected void handleParams(PropertyData propertyData, String params)
+            throws VCardException {
         final String[] strArray = params.split("=", 2);
         if (strArray.length == 2) {
             final String paramName = strArray[0].trim().toUpperCase();
             String paramValue = strArray[1].trim();
             if (paramName.equals("TYPE")) {
-                handleType(paramValue);
+                handleType(propertyData, paramValue);
             } else if (paramName.equals("VALUE")) {
-                handleValue(paramValue);
+                handleValue(propertyData, paramValue);
             } else if (paramName.equals("ENCODING")) {
-                handleEncoding(paramValue);
+                handleEncoding(propertyData, paramValue);
             } else if (paramName.equals("CHARSET")) {
-                handleCharset(paramValue);
+                handleCharset(propertyData, paramValue);
             } else if (paramName.equals("LANGUAGE")) {
-                handleLanguage(paramValue);
+                handleLanguage(propertyData, paramValue);
             } else if (paramName.startsWith("X-")) {
-                handleAnyParam(paramName, paramValue);
+                handleAnyParam(propertyData, paramName, paramValue);
             } else {
                 throw new VCardException("Unknown type \"" + paramName + "\"");
             }
         } else {
-            handleParamWithoutName(strArray[0]);
+            handleParamWithoutName(propertyData, strArray[0]);
         }
     }
 
     /**
      * vCard 3.0 parser implementation may throw VCardException.
      */
-    @SuppressWarnings("unused")
-    protected void handleParamWithoutName(final String paramValue) throws VCardException {
-        handleType(paramValue);
+    protected void handleParamWithoutName(PropertyData propertyData, final String paramValue) {
+        handleType(propertyData, paramValue);
     }
 
     /*
      * ptypeval = knowntype / "X-" word
      */
-    protected void handleType(final String ptypeval) {
+    protected void handleType(PropertyData propertyData, final String ptypeval) {
         if (!(getKnownTypeSet().contains(ptypeval.toUpperCase())
                 || ptypeval.startsWith("X-"))
                 && !mUnknownTypeSet.contains(ptypeval)) {
             mUnknownTypeSet.add(ptypeval);
             Log.w(LOG_TAG, String.format("TYPE unsupported by %s: ", getVersion(), ptypeval));
         }
-        mInterpreter.propertyParamType("TYPE");
-        mInterpreter.propertyParamValue(ptypeval);
+        propertyData.addParam(VCardConstants.PARAM_TYPE, ptypeval);
     }
 
     /*
      * pvalueval = "INLINE" / "URL" / "CONTENT-ID" / "CID" / "X-" word
      */
-    protected void handleValue(final String pvalueval) {
+    protected void handleValue(PropertyData propertyData, final String pvalueval) {
         if (!(getKnownValueSet().contains(pvalueval.toUpperCase())
                 || pvalueval.startsWith("X-")
                 || mUnknownValueSet.contains(pvalueval))) {
@@ -659,18 +639,18 @@ import java.util.Set;
             Log.w(LOG_TAG, String.format(
                     "The value unsupported by TYPE of %s: ", getVersion(), pvalueval));
         }
-        mInterpreter.propertyParamType("VALUE");
-        mInterpreter.propertyParamValue(pvalueval);
+        propertyData.addParam(VCardConstants.PARAM_VALUE, pvalueval);
     }
 
     /*
      * pencodingval = "7BIT" / "8BIT" / "QUOTED-PRINTABLE" / "BASE64" / "X-" word
      */
-    protected void handleEncoding(String pencodingval) throws VCardException {
+    protected void handleEncoding(PropertyData propertyData, String pencodingval)
+            throws VCardException {
         if (getAvailableEncodingSet().contains(pencodingval) ||
                 pencodingval.startsWith("X-")) {
-            mInterpreter.propertyParamType("ENCODING");
-            mInterpreter.propertyParamValue(pencodingval);
+            propertyData.addParam(VCardConstants.PARAM_ENCODING, pencodingval);
+            // Update encoding right away, as this is needed to understanding other params.
             mCurrentEncoding = pencodingval;
         } else {
             throw new VCardException("Unknown encoding \"" + pencodingval + "\"");
@@ -684,15 +664,15 @@ import java.util.Set;
      * We allow any charset.
      * </p>
      */
-    protected void handleCharset(String charsetval) {
-        mInterpreter.propertyParamType("CHARSET");
-        mInterpreter.propertyParamValue(charsetval);
+    protected void handleCharset(PropertyData propertyData, String charsetval) {
+        propertyData.addParam(VCardConstants.PARAM_CHARSET, charsetval);
     }
 
     /**
      * See also Section 7.1 of RFC 1521
      */
-    protected void handleLanguage(String langval) throws VCardException {
+    protected void handleLanguage(PropertyData propertyData, String langval)
+            throws VCardException {
         String[] strArray = langval.split("-");
         if (strArray.length != 2) {
             throw new VCardException("Invalid Language: \"" + langval + "\"");
@@ -711,8 +691,7 @@ import java.util.Set;
                 throw new VCardException("Invalid Language: \"" + langval + "\"");
             }
         }
-        mInterpreter.propertyParamType(VCardConstants.PARAM_LANGUAGE);
-        mInterpreter.propertyParamValue(langval);
+        propertyData.addParam(VCardConstants.PARAM_LANGUAGE, langval);
     }
 
     private boolean isAsciiLetter(char ch) {
@@ -725,24 +704,21 @@ import java.util.Set;
     /**
      * Mainly for "X-" type. This accepts any kind of type without check.
      */
-    protected void handleAnyParam(String paramName, String paramValue) {
-        mInterpreter.propertyParamType(paramName);
-        mInterpreter.propertyParamValue(paramValue);
+    protected void handleAnyParam(
+            PropertyData propertyData, String paramName, String paramValue) {
+        propertyData.addParam(paramName, paramValue);
     }
 
     protected void handlePropertyValue(String propertyName, String propertyValue)
             throws IOException, VCardException {
         final String upperEncoding = mCurrentEncoding.toUpperCase();
         if (upperEncoding.equals(VCardConstants.PARAM_ENCODING_QP)) {
-            final long start = System.currentTimeMillis();
             final String result = getQuotedPrintable(propertyValue);
             final ArrayList<String> v = new ArrayList<String>();
             v.add(result);
             mInterpreter.propertyValues(v);
-            mTimeHandleQuotedPrintable += System.currentTimeMillis() - start;
         } else if (upperEncoding.equals(VCardConstants.PARAM_ENCODING_BASE64)
                 || upperEncoding.equals(VCardConstants.PARAM_ENCODING_B)) {
-            final long start = System.currentTimeMillis();
             // It is very rare, but some BASE64 data may be so big that
             // OutOfMemoryError occurs. To ignore such cases, use try-catch.
             try {
@@ -753,7 +729,6 @@ import java.util.Set;
                 Log.e(LOG_TAG, "OutOfMemoryError happened during parsing BASE64 data!");
                 mInterpreter.propertyValues(null);
             }
-            mTimeHandleBase64 += System.currentTimeMillis() - start;
         } else {
             if (!(upperEncoding.equals("7BIT") || upperEncoding.equals("8BIT") ||
                     upperEncoding.startsWith("X-"))) {
@@ -813,11 +788,9 @@ import java.util.Set;
                 }
             }
 
-            final long start = System.currentTimeMillis();
             ArrayList<String> v = new ArrayList<String>();
             v.add(maybeUnescapeText(propertyValue));
             mInterpreter.propertyValues(v);
-            mTimeHandleMiscPropertyValue += System.currentTimeMillis() - start;
         }
     }
 
@@ -990,22 +963,6 @@ import java.util.Set;
         }
     }
 
-    private void showPerformanceInfo() {
-        Log.d(LOG_TAG, "Total parsing time:  " + mTimeTotal + " ms");
-        Log.d(LOG_TAG, "Total readLine time: " + mReader.getTotalmillisecond() + " ms");
-        Log.d(LOG_TAG, "Time for handling the beggining of the record: " + mTimeReadStartRecord
-                + " ms");
-        Log.d(LOG_TAG, "Time for handling the end of the record: " + mTimeReadEndRecord + " ms");
-        Log.d(LOG_TAG, "Time for parsing line, and handling group: " + mTimeParseLineAndHandleGroup
-                + " ms");
-        Log.d(LOG_TAG, "Time for parsing ADR, ORG, and N fields:" + mTimeParseAdrOrgN + " ms");
-        Log.d(LOG_TAG, "Time for parsing property values: " + mTimeParsePropertyValues + " ms");
-        Log.d(LOG_TAG, "Time for handling normal property values: " + mTimeHandleMiscPropertyValue
-                + " ms");
-        Log.d(LOG_TAG, "Time for handling Quoted-Printable: " + mTimeHandleQuotedPrintable + " ms");
-        Log.d(LOG_TAG, "Time for handling Base64: " + mTimeHandleBase64 + " ms");
-    }
-
     /**
      * @return {@link VCardConfig#VERSION_21}
      */
@@ -1059,11 +1016,6 @@ import java.util.Set;
         parseVCardFile();
         if (mInterpreter != null) {
             mInterpreter.end();
-        }
-        mTimeTotal += System.currentTimeMillis() - start;
-
-        if (VCardConfig.showPerformanceLog()) {
-            showPerformanceInfo();
         }
     }
 

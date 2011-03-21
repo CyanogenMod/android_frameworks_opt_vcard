@@ -44,8 +44,12 @@ import java.util.List;
 public class VCardEntryConstructor implements VCardInterpreter {
     private static String LOG_TAG = VCardConstants.LOG_TAG;
 
+    /**
+     * Represents current stack of VCardEntry. Used to support nested vCard (vCard 2.1).
+     */
+    private final List<VCardEntry> mEntryStack = new ArrayList<VCardEntry>();
+    private VCardEntry mCurrentEntry;
     private VCardEntry.Property mCurrentProperty = new VCardEntry.Property();
-    private VCardEntry mCurrentVCardEntry;
     private String mParamType;
 
     // The charset using which {@link VCardInterpreter} parses the text.
@@ -57,9 +61,6 @@ public class VCardEntryConstructor implements VCardInterpreter {
     private final boolean mStrictLineBreaking;
     private final int mVCardType;
     private final Account mAccount;
-
-    // For measuring performance.
-    private long mTimePushIntoContentResolver;
 
     private final List<VCardEntryHandler> mEntryHandlers = new ArrayList<VCardEntryHandler>();
 
@@ -114,25 +115,33 @@ public class VCardEntryConstructor implements VCardInterpreter {
     }
 
     public void clear() {
-        mCurrentVCardEntry = null;
+        mCurrentEntry = null;
+        mEntryStack.clear();
         mCurrentProperty = new VCardEntry.Property();
     }
 
     @Override
     public void startEntry() {
-        if (mCurrentVCardEntry != null) {
-            Log.e(LOG_TAG, "Nested VCard code is not supported now.");
-        }
-        mCurrentVCardEntry = new VCardEntry(mVCardType, mAccount);
+        mCurrentEntry = new VCardEntry(mVCardType, mAccount);
+        mEntryStack.add(mCurrentEntry);
     }
 
     @Override
     public void endEntry() {
-        mCurrentVCardEntry.consolidateFields();
+        mCurrentEntry.consolidateFields();
         for (VCardEntryHandler entryHandler : mEntryHandlers) {
-            entryHandler.onEntryCreated(mCurrentVCardEntry);
+            entryHandler.onEntryCreated(mCurrentEntry);
         }
-        mCurrentVCardEntry = null;
+
+        final int size = mEntryStack.size();
+        if (size > 1) {
+            VCardEntry parent = mEntryStack.get(size - 2);
+            parent.addChild(mCurrentEntry);
+            mCurrentEntry = parent;
+        } else {
+            mCurrentEntry = null;
+        }
+        mEntryStack.remove(size - 1);
     }
 
     @Override
@@ -142,7 +151,7 @@ public class VCardEntryConstructor implements VCardInterpreter {
 
     @Override
     public void endProperty() {
-        mCurrentVCardEntry.addProperty(mCurrentProperty);
+        mCurrentEntry.addProperty(mCurrentProperty);
     }
 
     @Override
@@ -222,16 +231,8 @@ public class VCardEntryConstructor implements VCardInterpreter {
         }
 
         for (final String value : values) {
-            mCurrentProperty.addToPropertyValueList(
+            mCurrentProperty.addPropertyValue(
                     handleOneValue(value, mSourceCharset, targetCharset, encoding));
         }
-    }
-
-    /**
-     * @hide
-     */
-    public void showPerformanceInfo() {
-        Log.d(LOG_TAG, "time for insert ContactStruct to database: " +
-                mTimePushIntoContentResolver + " ms");
     }
 }

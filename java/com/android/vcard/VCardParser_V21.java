@@ -99,9 +99,9 @@ public final class VCardParser_V21 implements VCardParser {
     }
 
     @Override
-    public void parse(InputStream is, VCardInterpreter interepreter)
+    public void parse(InputStream is, VCardInterpreter interpreter)
             throws IOException, VCardException {
-        mVCardParserImpl.parse(is, interepreter);
+        mVCardParserImpl.parse(is, interpreter);
     }
 
     @Override

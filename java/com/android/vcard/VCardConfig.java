@@ -235,30 +235,6 @@ public class VCardConfig {
     public static final int FLAG_REFRAIN_PHONE_NUMBER_FORMATTING = 0x02000000;
 
     /**
-     * <p>
-     * For importer only. Ignored in exporter.
-     * </p>
-     * <p>
-     * The flag indicating the parser should handle a nested vCard, in which vCard clause starts
-     * in another vCard clause. Here's a typical example.
-     * </p>
-     * <pre class="prettyprint">BEGIN:VCARD
-     * BEGIN:VCARD
-     * VERSION:2.1
-     * ...
-     * END:VCARD
-     * END:VCARD</pre>
-     * <p>
-     * The vCard 2.1 specification allows the nest, but also let parsers ignore nested entries,
-     * while some mobile devices emit nested ones as primary data to be imported.
-     * </p>
-     * <p>
-     * This flag forces a vCard parser to torelate such a nest and understand its content.
-     * </p>
-     */
-    public static final int FLAG_TORELATE_NEST = 0x01000000;
-
-    /**
      * <P>
      * The flag asking exporter to refrain image export.
      * </P>

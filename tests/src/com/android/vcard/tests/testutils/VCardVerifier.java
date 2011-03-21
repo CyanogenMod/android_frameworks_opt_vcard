@@ -258,6 +258,7 @@ public class VCardVerifier {
             final VCardParser parser = VCardUtils.getAppropriateParser(mVCardType);
             parser.parse(is, interpreter);
         } catch (VCardException e) {
+            Log.e(LOG_TAG, "VCardException", e);
             AndroidTestCase.fail("Unexpected VCardException: " + e.getMessage());
         }
     }

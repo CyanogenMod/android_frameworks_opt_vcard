@@ -18,8 +18,8 @@ package com.android.vcard.tests;
 import com.android.vcard.VCardConfig;
 import com.android.vcard.tests.testutils.ContentValuesVerifier;
 import com.android.vcard.tests.testutils.ContentValuesVerifierElem;
-import com.android.vcard.tests.testutils.VCardTestsBase;
 import com.android.vcard.tests.testutils.PropertyNodesVerifierElem.TypeSet;
+import com.android.vcard.tests.testutils.VCardTestsBase;
 
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;

@@ -150,25 +150,19 @@ import java.util.Set;
         return super.readBeginVCard(allowGarbage);
     }
 
-    @Override
-    protected void readEndVCard(boolean useCache, boolean allowGarbage)
-            throws IOException, VCardException {
-        // TODO: vCard 3.0 supports group.
-        super.readEndVCard(useCache, allowGarbage);
-    }
-
     /**
      * vCard 3.0 allows iana-token as paramType, while vCard 2.1 does not.
      */
     @Override
-    protected void handleParams(final String params) throws VCardException {
+    protected void handleParams(PropertyData propertyData, final String params)
+            throws VCardException {
         try {
-            super.handleParams(params);
+            super.handleParams(propertyData, params);
         } catch (VCardException e) {
             // maybe IANA type
             String[] strArray = params.split("=", 2);
             if (strArray.length == 2) {
-                handleAnyParam(strArray[0], strArray[1]);
+                handleAnyParam(propertyData, strArray[0], strArray[1]);
             } else {
                 // Must not come here in the current implementation.
                 throw new VCardException(
@@ -178,14 +172,14 @@ import java.util.Set;
     }
 
     @Override
-    protected void handleAnyParam(final String paramName, final String paramValue) {
-        mInterpreter.propertyParamType(paramName);
-        splitAndPutParamValue(paramValue);
+    protected void handleAnyParam(
+            PropertyData propertyData, final String paramName, final String paramValue) {
+        splitAndPutParam(propertyData, paramName, paramValue);
     }
 
     @Override
-    protected void handleParamWithoutName(final String paramValue) {
-        handleType(paramValue);
+    protected void handleParamWithoutName(PropertyData propertyData, final String paramValue) {
+        handleType(propertyData, paramValue);
     }
 
     /*
@@ -201,9 +195,8 @@ import java.util.Set;
      *  QSAFE-CHAR must not contain DQUOTE, including escaped one (\").
      */
     @Override
-    protected void handleType(final String paramValue) {
-        mInterpreter.propertyParamType("TYPE");
-        splitAndPutParamValue(paramValue);
+    protected void handleType(PropertyData propertyData, final String paramValue) {
+        splitAndPutParam(propertyData, VCardConstants.PARAM_TYPE, paramValue);
     }
 
     /**
@@ -218,7 +211,8 @@ import java.util.Set;
      *
      *  QSAFE-CHAR must not contain DQUOTE, including escaped one (\")
      */
-    private void splitAndPutParamValue(String paramValue) {
+    private void splitAndPutParam(
+            PropertyData propertyData, String paramName, String paramValue) {
         // "comma,separated:inside.dquote",pref
         //   -->
         // - comma,separated:inside.dquote
@@ -235,7 +229,7 @@ import java.util.Set;
             if (ch == '"') {
                 if (insideDquote) {
                     // End of Dquote.
-                    mInterpreter.propertyParamValue(builder.toString());
+                    propertyData.addParam(paramName, builder.toString());
                     builder = null;
                     insideDquote = false;
                 } else {
@@ -248,7 +242,7 @@ import java.util.Set;
                             // e.g.
                             // pref,"quoted"
                             // "quoted",pref
-                            mInterpreter.propertyParamValue(builder.toString());
+                            propertyData.addParam(paramName, builder.toString());
                         }
                     }
                     insideDquote = true;
@@ -258,7 +252,7 @@ import java.util.Set;
                     Log.w(LOG_TAG, "Comma is used before actual string comes. (" +
                             paramValue + ")");
                 } else {
-                    mInterpreter.propertyParamValue(builder.toString());
+                    propertyData.addParam(paramName, builder.toString());
                     builder = null;
                 }
             } else {
@@ -280,7 +274,7 @@ import java.util.Set;
                 Log.w(LOG_TAG, "Unintended behavior. We must not see empty StringBuilder " +
                         "at the end of parameter value parsing.");
             } else {
-                mInterpreter.propertyParamValue(builder.toString());
+                propertyData.addParam(paramName, builder.toString());
             }
         }
     }

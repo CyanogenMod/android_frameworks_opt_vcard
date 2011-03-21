@@ -57,7 +57,7 @@ import java.util.Set;
 public class VCardEntry {
     private static final String LOG_TAG = VCardConstants.LOG_TAG;
 
-    private final static int DEFAULT_ORGANIZATION_TYPE = Organization.TYPE_WORK;
+    private static final int DEFAULT_ORGANIZATION_TYPE = Organization.TYPE_WORK;
 
     private static final Map<String, Integer> sImMap = new HashMap<String, Integer>();
 
@@ -381,7 +381,12 @@ public class VCardEntry {
         }
     }
 
-    /* package */ static class Property {
+    /**
+     * TODO: implement better structure for Property. We also have PropertyData in
+     * VCardParserImpl_V21 for storing intermidate Property data.
+     * @hide public just for testing.
+     */
+    public static class Property {
         private String mPropertyName;
         private Map<String, Collection<String>> mParameterMap =
             new HashMap<String, Collection<String>>();
@@ -407,8 +412,12 @@ public class VCardEntry {
             values.add(paramValue);
         }
 
-        public void addToPropertyValueList(final String propertyValue) {
+        public void addPropertyValue(final String propertyValue) {
             mPropertyValueList.add(propertyValue);
+        }
+
+        public void addPropertyValue(final String... propertyValueList) {
+            mPropertyValueList.addAll(Arrays.asList(propertyValueList));
         }
 
         public void setPropertyBytes(final byte[] propertyBytes) {
@@ -428,6 +437,12 @@ public class VCardEntry {
             mParameterMap.clear();
             mPropertyValueList.clear();
             mPropertyBytes = null;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Name: %s, value: %s",
+                    mPropertyName, Arrays.toString(mPropertyValueList.toArray(new String[0])));
         }
     }
 
@@ -474,6 +489,56 @@ public class VCardEntry {
 
     private final int mVCardType;
     private final Account mAccount;
+
+    private List<VCardEntry> mChildren;
+
+    public String getNameFieldDebugString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(String.format(
+                "Family: %s, Given: %s, Middle: %s, Prefix: %s, Suffix: %s\n",
+                        mFamilyName, mGivenName, mMiddleName, mPrefix, mSuffix));
+        builder.append(String.format(
+                "Phonetic Family: %s, Phonetyc Given: %s, Phonetic Middle: %s\n",
+                        mPhoneticFamilyName, mPhoneticGivenName, mPhoneticMiddleName));
+        builder.append(String.format("Phonetic Full: %s\n", mPhoneticFullName));
+        builder.append(String.format("Formatted: %s, Display Name: %s\n",
+                mFormattedName, mDisplayName));
+        if (mNickNameList != null) {
+            builder.append(String.format(
+                    "Nick names: %s\n", Arrays.toString(mNickNameList.toArray(new String[0]))));
+        }
+        return builder.toString();
+    }
+
+    private String getStringFromCollection(String name, Collection<?> collection) {
+        return collection != null ?
+                String.format("%s: %s\n", name, Arrays.toString(collection.toArray())) : "";
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("hash: " + hashCode() + "\n");
+        builder.append(getNameFieldDebugString());
+        builder.append(getStringFromCollection("phone", mPhoneList));
+        builder.append(getStringFromCollection("email", mEmailList));
+        builder.append(getStringFromCollection("postal", mPostalList));
+        builder.append(getStringFromCollection("note", mNoteList));
+        builder.append(getStringFromCollection("organization", mOrganizationList));
+        builder.append(getStringFromCollection("im", mImList));
+        builder.append(getStringFromCollection("photo", mPhotoList));
+        builder.append(getStringFromCollection("website", mWebsiteList));
+        builder.append(getStringFromCollection("sip", mSipSet));
+        if (mChildren != null) {
+            int size = mChildren.size();
+            int[] hashArray = new int[size];
+            for (int i = 0; i < size; i++) {
+                hashArray[i] = mChildren.get(i).hashCode();
+            }
+            builder.append("children: " + Arrays.toString(hashArray) + "\n");
+        }
+        return "[[" + builder.toString().trim() + "]]";
+    }
 
     public VCardEntry() {
         this(VCardConfig.VCARD_TYPE_V21_GENERIC);
@@ -1106,6 +1171,13 @@ public class VCardEntry {
         // Be careful when adding some logic here, as some blocks above may use "return".
     }
 
+    public void addChild(VCardEntry child) {
+        if (mChildren == null) {
+            mChildren = new ArrayList<VCardEntry>();
+        }
+        mChildren.add(child);
+    }
+
     private void handleAndroidCustomProperty(final List<String> customPropertyList) {
         if (mAndroidCustomPropertyList == null) {
             mAndroidCustomPropertyList = new ArrayList<List<String>>();
@@ -1153,6 +1225,22 @@ public class VCardEntry {
         }
     }
 
+    private boolean isEmpty(Collection<?> collection) {
+        return (collection == null || collection.size() == 0);
+    }
+
+    public boolean isEmpty() {
+        // TODO: should implement iterator for all collections so that we can share iteration
+        // logic for isEmpty(), constructInsertOperations(), and toString()
+        // TODO: handle mAndroidCustomPropertyList appropriately. This logic is fragile.
+        return (nameFieldsAreEmpty() && isEmpty(mNickNameList) && isEmpty(mNoteList)
+                && isEmpty(mPhoneList) && isEmpty(mEmailList) && isEmpty(mPostalList)
+                && isEmpty(mOrganizationList) && isEmpty(mImList) && isEmpty(mPhotoList)
+                && isEmpty(mWebsiteList) && isEmpty(mSipSet)
+                && isEmpty(mAndroidCustomPropertyList)
+                && TextUtils.isEmpty(mBirthday) && TextUtils.isEmpty(mAnniversary));
+    }
+
     /**
      * Constructs the list of insert operation for this object.
      *
@@ -1171,6 +1259,10 @@ public class VCardEntry {
             ContentResolver resolver, ArrayList<ContentProviderOperation> operationList) {
         if (operationList == null) {
             operationList = new ArrayList<ContentProviderOperation>();
+        }
+
+        if (isEmpty()) {
+            return operationList;
         }
 
         final int backReferenceIndex = operationList.size();
@@ -1416,7 +1508,6 @@ public class VCardEntry {
     }
 
     public static VCardEntry buildFromResolver(ContentResolver resolver, Uri uri) {
-
         return null;
     }
 
@@ -1542,6 +1633,13 @@ public class VCardEntry {
 
     public final List<String> getWebsiteList() {
         return mWebsiteList;
+    }
+
+    /**
+     * @hide this interface may be changed for better support of vCard 4.0 (UID)
+     */
+    public final List<VCardEntry> getChildlen() {
+        return mChildren;
     }
 
     public String getDisplayName() {

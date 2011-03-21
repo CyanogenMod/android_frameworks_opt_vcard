@@ -73,11 +73,15 @@ public class PropertyNodesVerifier extends VNodeBuilder {
     }
 
     @Override
-    public void endEntry() {
-        super.endEntry();
+    public void startEntry() {
+        super.startEntry();
         AndroidTestCase.assertTrue(mIndex < mPropertyNodesVerifierElemList.size());
-        AndroidTestCase.assertTrue(mIndex < vNodeList.size());
-        mPropertyNodesVerifierElemList.get(mIndex).verify(vNodeList.get(mIndex));
+    }
+
+    @Override
+    public void endEntry() {
+        mPropertyNodesVerifierElemList.get(mIndex).verify(getCurrentVNode());
+        super.endEntry();
         mIndex++;
     }
 }

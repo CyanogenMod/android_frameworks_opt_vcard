@@ -21,22 +21,13 @@ import android.test.AndroidTestCase;
 
 import com.android.vcard.VCardEntry;
 import com.android.vcard.VCardEntryCommitter;
-import com.android.vcard.VCardEntryConstructor;
 import com.android.vcard.VCardEntryHandler;
-import com.android.vcard.VCardParser;
-import com.android.vcard.VCardUtils;
-import com.android.vcard.exception.VCardException;
-
-import java.io.IOException;
-import java.io.InputStream;
 
 public class ContentValuesVerifierElem {
-    private final AndroidTestCase mTestCase;
     private final ImportTestResolver mResolver;
     private final VCardEntryHandler mHandler;
 
     public ContentValuesVerifierElem(AndroidTestCase androidTestCase) {
-        mTestCase = androidTestCase;
         mResolver = new ImportTestResolver(androidTestCase);
         mHandler = new VCardEntryCommitter(mResolver);
     }
@@ -46,28 +37,6 @@ public class ContentValuesVerifierElem {
         contentValues.put(Data.MIMETYPE, mimeType);
         mResolver.addExpectedContentValues(contentValues);
         return new ContentValuesBuilder(contentValues);
-    }
-
-    public void verify(int resId, int vcardType)
-            throws IOException, VCardException {
-        verify(mTestCase.getContext().getResources().openRawResource(resId), vcardType);
-    }
-
-    public void verify(InputStream is, int vcardType) throws IOException, VCardException {
-        final VCardParser vCardParser = VCardUtils.getAppropriateParser(vcardType);
-        final VCardEntryConstructor builder = new VCardEntryConstructor(vcardType, null);
-        builder.addEntryHandler(mHandler);
-        try {
-            vCardParser.parse(is, builder);
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                }
-            }
-        }
-        verifyResolver();
     }
 
     public void verifyResolver() {

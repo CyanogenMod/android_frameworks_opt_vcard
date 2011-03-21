@@ -107,6 +107,7 @@ public class VCardConstants {
     public static final String PARAM_TYPE_VOICE = "VOICE";
     public static final String PARAM_TYPE_INTERNET = "INTERNET";
 
+    public static final String PARAM_VALUE = "VALUE";
     public static final String PARAM_CHARSET = "CHARSET";
     public static final String PARAM_ENCODING = "ENCODING";
 

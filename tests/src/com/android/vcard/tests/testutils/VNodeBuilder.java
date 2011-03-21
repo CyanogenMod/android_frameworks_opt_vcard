@@ -41,10 +41,9 @@ import java.util.List;
  * </p>
  */
 public class VNodeBuilder implements VCardInterpreter {
-    static private String LOG_TAG = "VNodeBuilder"; 
-    
-    public List<VNode> vNodeList = new ArrayList<VNode>();
-    private int mNodeListPos = 0;
+    private static String LOG_TAG = "VNodeBuilder";
+
+    private List<VNode> mVNodeList = new ArrayList<VNode>();
     private VNode mCurrentVNode;
     private PropertyNode mCurrentPropNode;
     private String mCurrentParamType;
@@ -58,9 +57,9 @@ public class VNodeBuilder implements VCardInterpreter {
      * The charset with which byte array is encoded to String.
      */
     private String mTargetCharset;
-    
+
     private boolean mStrictLineBreakParsing;
-    
+
     public VNodeBuilder() {
         this(VCardConfig.DEFAULT_IMPORT_CHARSET, false);
     }
@@ -75,70 +74,53 @@ public class VNodeBuilder implements VCardInterpreter {
         mStrictLineBreakParsing = strictLineBreakParsing;
     }
 
+    @Override
     public void start() {
     }
 
+    @Override
     public void end() {
     }
 
-    // Note: I guess that this code assumes the Record may nest like this:
-    // START:VPOS
-    // ...
-    // START:VPOS2
-    // ...
-    // END:VPOS2
-    // ...
-    // END:VPOS
-    //
-    // However the following code has a bug.
-    // When error occurs after calling startRecord(), the entry which is probably
-    // the cause of the error remains to be in vNodeList, while endRecord() is not called.
-    //
-    // I leave this code as is since I'm not familiar with vcalendar specification.
-    // But I believe we should refactor this code in the future.
-    // Until this, the last entry has to be removed when some error occurs.
+    @Override
     public void startEntry() {
-        VNode vnode = new VNode();
-        vnode.parseStatus = 1;
-        vnode.VName = "VCARD";
-        // I feel this should be done in endRecord(), but it cannot be done because of
-        // the reason above.
-        vNodeList.add(vnode);
-        mNodeListPos = vNodeList.size() - 1;
-        mCurrentVNode = vNodeList.get(mNodeListPos);
+        mCurrentVNode = new VNode();
+        mVNodeList.add(mCurrentVNode);
     }
 
+    @Override
     public void endEntry() {
-        VNode endNode = vNodeList.get(mNodeListPos);
-        endNode.parseStatus = 0;
-        while(mNodeListPos > 0){
-            mNodeListPos--;
-            if((vNodeList.get(mNodeListPos)).parseStatus == 1)
-                break;
-        }
-        mCurrentVNode = vNodeList.get(mNodeListPos);
+        int lastIndex = mVNodeList.size() - 1;
+        mVNodeList.remove(lastIndex--);
+        mCurrentVNode = lastIndex >= 0 ? mVNodeList.get(lastIndex) : null;
     }
 
+    @Override
     public void startProperty() {
         mCurrentPropNode = new PropertyNode();
     }
 
+    @Override
     public void endProperty() {
         mCurrentVNode.propList.add(mCurrentPropNode);
     }
-    
+
+    @Override
     public void propertyName(String name) {
         mCurrentPropNode.propName = name;
     }
 
+    @Override
     public void propertyGroup(String group) {
         mCurrentPropNode.propGroupSet.add(group);
     }
-    
+
+    @Override
     public void propertyParamType(String type) {
         mCurrentParamType = type;
     }
 
+    @Override
     public void propertyParamValue(String value) {
         if (!VCardUtils.containsOnlyAlphaDigitHyphen(value)) {
             value = VCardUtils.convertStringCharset(value,
@@ -173,7 +155,7 @@ public class VNodeBuilder implements VCardInterpreter {
             return null;
         }
     }
-    
+
     private String handleOneValue(String value, String targetCharset, String encoding) {
         if (encoding != null) {
             encoding = encoding.toUpperCase();
@@ -189,7 +171,8 @@ public class VNodeBuilder implements VCardInterpreter {
         }
         return encodeString(value, targetCharset);
     }
-    
+
+    @Override
     public void propertyValues(List<String> values) {
         if (values == null || values.size() == 0) {
             mCurrentPropNode.propValue_bytes = null;
@@ -198,16 +181,16 @@ public class VNodeBuilder implements VCardInterpreter {
             mCurrentPropNode.propValue = "";
             return;
         }
-        
+
         ContentValues paramMap = mCurrentPropNode.paramMap;
-        
-        String targetCharset = CharsetUtils.nameForDefaultVendor(paramMap.getAsString("CHARSET")); 
-        String encoding = paramMap.getAsString("ENCODING"); 
-        
+
+        String targetCharset = CharsetUtils.nameForDefaultVendor(paramMap.getAsString("CHARSET"));
+        String encoding = paramMap.getAsString("ENCODING");
+
         if (targetCharset == null || targetCharset.length() == 0) {
             targetCharset = mTargetCharset;
         }
-        
+
         for (String value : values) {
             mCurrentPropNode.propValue_vector.add(
                     handleOneValue(value, targetCharset, encoding));
@@ -234,8 +217,16 @@ public class VNodeBuilder implements VCardInterpreter {
             return "";
         }
     }
-    
+
     public String getResult(){
         throw new RuntimeException("Not supported");
+    }
+
+    public List<VNode> getVNodeList() {
+        return mVNodeList;
+    }
+
+    public VNode getCurrentVNode() {
+        return mCurrentVNode;
     }
 }

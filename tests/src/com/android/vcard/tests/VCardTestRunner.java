@@ -27,11 +27,14 @@ public class VCardTestRunner extends InstrumentationTestRunner {
     @Override
     public TestSuite getAllTests() {
         TestSuite suite = new InstrumentationTestSuite(this);
+        suite.addTestSuite(VCardEntryTests.class);
+        suite.addTestSuite(VCardInterpreterTests.class);
         suite.addTestSuite(VCardUtilsTests.class);
         suite.addTestSuite(VCardTestUtilsTests.class);
         suite.addTestSuite(VCardImporterTests.class);
         suite.addTestSuite(VCardExporterTests.class);
         suite.addTestSuite(VCardJapanizationTests.class);
+        suite.addTestSuite(VCardImporterNestTests.class);
         return suite;
     }
 
