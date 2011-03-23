@@ -72,85 +72,40 @@ public class VCardSourceDetector implements VCardInterpreter {
     private static final int PARSE_TYPE_MOBILE_PHONE_JP = 2;
     // For some of mobile phones released from DoCoMo.
     private static final int PARSE_TYPE_DOCOMO_FOMA = 3;
-    // For Japanese Windows Mobel phones. It's version is supposed to be 6.5.
+    // For Japanese Windows Mobile phones. It's version is supposed to be 6.5.
     private static final int PARSE_TYPE_WINDOWS_MOBILE_V65_JP = 4;
 
-    private int mParseType = 0;  // Not sure.
+    private int mParseType = PARSE_TYPE_UNKNOWN;
 
-    private boolean mNeedToParseVersion = false;
     private int mVersion = -1;  // -1 == unknown
 
     // Some mobile phones (like FOMA) tells us the charset of the data.
-    private boolean mNeedToParseCharset;
     private String mSpecifiedCharset;
 
     @Override
-    public void start() {
+    public void onVCardStarted() {
     }
 
     @Override
-    public void end() {
+    public void onVCardEnded() {
     }
 
     @Override
-    public void startEntry() {
+    public void onEntryStarted() {
     }
 
     @Override
-    public void startProperty() {
-        mNeedToParseCharset = false;
-        mNeedToParseVersion = false;
+    public void onEntryEnded() {
     }
 
     @Override
-    public void endProperty() {
-    }
+    public void onPropertyCreated(VCardProperty property) {
+        final String propertyName = property.getName();
+        final List<String> valueList = property.getValueList();
 
-    @Override
-    public void endEntry() {
-    }
-
-    @Override
-    public void propertyGroup(String group) {
-    }
-
-    @Override
-    public void propertyName(String name) {
-        if (name.equalsIgnoreCase(VCardConstants.PROPERTY_VERSION)) {
-            mNeedToParseVersion = true;
-            return;
-        } else if (name.equalsIgnoreCase(TYPE_FOMA_CHARSET_SIGN)) {
-            mParseType = PARSE_TYPE_DOCOMO_FOMA;
-            // Probably Shift_JIS is used, but we should double confirm.
-            mNeedToParseCharset = true;
-            return;
-        }
-        if (mParseType != PARSE_TYPE_UNKNOWN) {
-            return;
-        }
-        if (WINDOWS_MOBILE_PHONE_SIGNS.contains(name)) {
-            mParseType = PARSE_TYPE_WINDOWS_MOBILE_V65_JP;
-        } else if (FOMA_SIGNS.contains(name)) {
-            mParseType = PARSE_TYPE_DOCOMO_FOMA;
-        } else if (JAPANESE_MOBILE_PHONE_SIGNS.contains(name)) {
-            mParseType = PARSE_TYPE_MOBILE_PHONE_JP;
-        } else if (APPLE_SIGNS.contains(name)) {
-            mParseType = PARSE_TYPE_APPLE;
-        }
-    }
-
-    @Override
-    public void propertyParamType(String type) {
-    }
-
-    @Override
-    public void propertyParamValue(String value) {
-    }
-
-    @Override
-    public void propertyValues(List<String> values) {
-        if (mNeedToParseVersion && values.size() > 0) {
-            final String versionString = values.get(0);
+        if (propertyName.equalsIgnoreCase(VCardConstants.PROPERTY_VERSION)
+                && valueList.size() > 0) {
+            final String versionString = valueList.get(0);
             if (versionString.equals(VCardConstants.VERSION_V21)) {
                 mVersion = VCardConfig.VERSION_21;
             } else if (versionString.equals(VCardConstants.VERSION_V30)) {
@@ -160,8 +115,23 @@ public class VCardSourceDetector implements VCardInterpreter {
             } else {
                 Log.w(LOG_TAG, "Invalid version string: " + versionString);
             }
-        } else if (mNeedToParseCharset && values.size() > 0) {
-            mSpecifiedCharset = values.get(0);
+        } else if (propertyName.equalsIgnoreCase(TYPE_FOMA_CHARSET_SIGN)) {
+            mParseType = PARSE_TYPE_DOCOMO_FOMA;
+            if (valueList.size() > 0) {
+                mSpecifiedCharset = valueList.get(0);
+            }
+        }
+        if (mParseType != PARSE_TYPE_UNKNOWN) {
+            return;
+        }
+        if (WINDOWS_MOBILE_PHONE_SIGNS.contains(propertyName)) {
+            mParseType = PARSE_TYPE_WINDOWS_MOBILE_V65_JP;
+        } else if (FOMA_SIGNS.contains(propertyName)) {
+            mParseType = PARSE_TYPE_DOCOMO_FOMA;
+        } else if (JAPANESE_MOBILE_PHONE_SIGNS.contains(propertyName)) {
+            mParseType = PARSE_TYPE_MOBILE_PHONE_JP;
+        } else if (APPLE_SIGNS.contains(propertyName)) {
+            mParseType = PARSE_TYPE_APPLE;
         }
     }
 

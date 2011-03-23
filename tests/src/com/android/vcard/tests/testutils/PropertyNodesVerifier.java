@@ -60,8 +60,9 @@ public class PropertyNodesVerifier extends VNodeBuilder {
 
     public void verify(InputStream is, int vcardType, final VCardParser parser)
             throws IOException, VCardException {
+        parser.addInterpreter(this);
         try {
-            parser.parse(is, this);
+            parser.parse(is);
         } finally {
             if (is != null) {
                 try {
@@ -73,15 +74,15 @@ public class PropertyNodesVerifier extends VNodeBuilder {
     }
 
     @Override
-    public void startEntry() {
-        super.startEntry();
+    public void onEntryStarted() {
+        super.onEntryStarted();
         AndroidTestCase.assertTrue(mIndex < mPropertyNodesVerifierElemList.size());
     }
 
     @Override
-    public void endEntry() {
+    public void onEntryEnded() {
         mPropertyNodesVerifierElemList.get(mIndex).verify(getCurrentVNode());
-        super.endEntry();
+        super.onEntryEnded();
         mIndex++;
     }
 }

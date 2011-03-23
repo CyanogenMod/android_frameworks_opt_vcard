@@ -40,7 +40,7 @@ import java.util.Set;
  * (possible in Japanese mobile phones).
  * </p>
  */
-public final class VCardParser_V21 implements VCardParser {
+public final class VCardParser_V21 extends VCardParser {
     /**
      * A unmodifiable Set storing the property names available in the vCard 2.1 specification.
      */
@@ -99,9 +99,13 @@ public final class VCardParser_V21 implements VCardParser {
     }
 
     @Override
-    public void parse(InputStream is, VCardInterpreter interpreter)
-            throws IOException, VCardException {
-        mVCardParserImpl.parse(is, interpreter);
+    public void addInterpreter(VCardInterpreter interpreter) {
+        mVCardParserImpl.addInterpreter(interpreter);
+    }
+
+    @Override
+    public void parse(InputStream is) throws IOException, VCardException {
+        mVCardParserImpl.parse(is);
     }
 
     @Override

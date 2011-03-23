@@ -28,7 +28,7 @@ public class ImportTestResolver extends MockContentResolver {
     private final ImportTestProvider mProvider;
 
     public ImportTestResolver(AndroidTestCase androidTestCase) {
-        mProvider = new ImportTestProvider(androidTestCase);
+        mProvider = new ImportTestProvider();
     }
 
     @Override

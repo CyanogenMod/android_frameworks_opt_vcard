@@ -19,23 +19,8 @@ import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.net.Uri;
-import android.provider.ContactsContract.CommonDataKinds.Email;
-import android.provider.ContactsContract.CommonDataKinds.Event;
-import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
-import android.provider.ContactsContract.CommonDataKinds.Im;
-import android.provider.ContactsContract.CommonDataKinds.Nickname;
-import android.provider.ContactsContract.CommonDataKinds.Note;
-import android.provider.ContactsContract.CommonDataKinds.Organization;
-import android.provider.ContactsContract.CommonDataKinds.Phone;
-import android.provider.ContactsContract.CommonDataKinds.Photo;
-import android.provider.ContactsContract.CommonDataKinds.Relation;
-import android.provider.ContactsContract.CommonDataKinds.SipAddress;
-import android.provider.ContactsContract.CommonDataKinds.StructuredName;
-import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
-import android.provider.ContactsContract.CommonDataKinds.Website;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
-import android.test.AndroidTestCase;
 import android.test.mock.MockContentProvider;
 import android.text.TextUtils;
 
@@ -53,40 +38,20 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class ImportTestProvider extends MockContentProvider {
-    private static final Set<String> sKnownMimeTypeSet =
-        new HashSet<String>(Arrays.asList(StructuredName.CONTENT_ITEM_TYPE,
-                Nickname.CONTENT_ITEM_TYPE, Phone.CONTENT_ITEM_TYPE,
-                Email.CONTENT_ITEM_TYPE, StructuredPostal.CONTENT_ITEM_TYPE,
-                Im.CONTENT_ITEM_TYPE, Organization.CONTENT_ITEM_TYPE,
-                Event.CONTENT_ITEM_TYPE, Photo.CONTENT_ITEM_TYPE,
-                Note.CONTENT_ITEM_TYPE, Website.CONTENT_ITEM_TYPE,
-                Relation.CONTENT_ITEM_TYPE, Event.CONTENT_ITEM_TYPE,
-                GroupMembership.CONTENT_ITEM_TYPE, SipAddress.CONTENT_ITEM_TYPE));
-
-    final Map<String, Collection<ContentValues>> mMimeTypeToExpectedContentValues;
-
-    public ImportTestProvider(AndroidTestCase androidTestCase) {
-        mMimeTypeToExpectedContentValues =
-            new HashMap<String, Collection<ContentValues>>();
-        for (String acceptanbleMimeType : sKnownMimeTypeSet) {
-            // Do not use HashSet since the current implementation changes the content of
-            // ContentValues after the insertion, which make the result of hashCode()
-            // changes...
-            mMimeTypeToExpectedContentValues.put(
-                    acceptanbleMimeType, new ArrayList<ContentValues>());
-        }
-    }
+    private final Map<String, Collection<ContentValues>>
+            mMimeTypeToExpectedContentValues = new HashMap<String, Collection<ContentValues>>();
 
     public void addExpectedContentValues(ContentValues expectedContentValues) {
         final String mimeType = expectedContentValues.getAsString(Data.MIMETYPE);
-        if (!sKnownMimeTypeSet.contains(mimeType)) {
-            TestCase.fail(String.format(
-                    "Unknow MimeType %s in the test code. Test code should be broken.",
-                    mimeType));
+
+        final Collection<ContentValues> contentValuesCollection;
+        if (mMimeTypeToExpectedContentValues.containsKey(mimeType)) {
+             contentValuesCollection = mMimeTypeToExpectedContentValues.get(mimeType);
+        } else {
+            contentValuesCollection = new ArrayList<ContentValues>();
+            mMimeTypeToExpectedContentValues.put(mimeType, contentValuesCollection);
         }
 
-        final Collection<ContentValues> contentValuesCollection =
-                mMimeTypeToExpectedContentValues.get(mimeType);
         contentValuesCollection.add(expectedContentValues);
     }
 
@@ -119,12 +84,8 @@ public class ImportTestProvider extends MockContentProvider {
                 TestCase.assertNull(actualContentValues.get(RawContacts.ACCOUNT_TYPE));
             } else if (uri.equals(Data.CONTENT_URI)) {
                 final String mimeType = actualContentValues.getAsString(Data.MIMETYPE);
-                if (!sKnownMimeTypeSet.contains(mimeType)) {
-                    TestCase.fail(String.format(
-                            "Unknown MimeType %s. " +
-                            "(Maybe the MimeType is added after developing this test suite." +
-                            "Please look into %s if you strongly believe the type is regitimate)",
-                            ImportTestProvider.class.getSimpleName(), mimeType));
+                if (!mMimeTypeToExpectedContentValues.containsKey(mimeType)) {
+                    TestCase.fail("Unregistered MimeType " + mimeType);
                 }
                 // Remove data meaningless in this unit tests.
                 // Specifically, Data.DATA1 - DATA7 are set to null or empty String

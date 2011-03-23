@@ -37,24 +37,23 @@ import java.util.List;
  * e.g. group1.propName;paramName1=paramValue1;paramName2=paramValue2;propertyValue1;propertyValue2...
  * </P>
  */
-// TODO: "on" should be appended for consistency..
-// e.g. onStart(), onEnd()
 public interface VCardInterpreter {
     /**
      * Called when vCard interpretation started.
      */
-    void start();
+    void onVCardStarted();
 
     /**
      * Called when vCard interpretation finished.
      */
-    void end();
+    void onVCardEnded();
 
     /**
      * Called when parsing one vCard entry started.
      * More specifically, this method is called when "BEGIN:VCARD" is read.
      *
-     * This may be called before {@link #endEntry()} is called, as vCard 2.1 accepts nested vCard.
+     * This may be called before {@link #onEntryEnded()} is called, as vCard 2.1 accepts nested
+     * vCard.
      *
      * <code>
      * BEGIN:VCARD
@@ -65,49 +64,16 @@ public interface VCardInterpreter {
      * END:VCARD
      * </code>
      */
-    void startEntry();
+    void onEntryStarted();
 
     /**
      * Called when parsing one vCard entry ended.
      * More specifically, this method is called when "END:VCARD" is read.
      */
-    void endEntry();
+    void onEntryEnded();
 
     /**
-     * Called when reading one property started.
+     * Called when a property is created.
      */
-    void startProperty();
-
-    /**
-     * Called when reading one property ended.
-     */
-    void endProperty();
-
-    /**
-     * @param group A group name. This method may be called more than once or may not be
-     * called at all, depending on how many gruoups are appended to the property.
-     */
-    void propertyGroup(String group);
-
-    /**
-     * @param name A property name like "N", "FN", "ADR", etc.
-     */
-    void propertyName(String name);
-
-    /**
-     * @param type A parameter name like "ENCODING", "CHARSET", etc.
-     */
-    void propertyParamType(String type);
-
-    /**
-     * @param value A parameter value. This method may be called without
-     * {@link #propertyParamType(String)} being called (when the vCard is vCard 2.1).
-     */
-    void propertyParamValue(String value);
-
-    /**
-     * @param values List of property values. The size of values would be 1 unless
-     * coressponding property name is "N", "ADR", or "ORG".
-     */
-    void propertyValues(List<String> values);
+    void onPropertyCreated(VCardProperty property);
 }

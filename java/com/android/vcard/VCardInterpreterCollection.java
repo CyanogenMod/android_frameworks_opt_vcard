@@ -16,12 +16,12 @@
 package com.android.vcard;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * The {@link VCardInterpreter} implementation which aggregates more than one
  * {@link VCardInterpreter} objects and make a user object treat them as one
  * {@link VCardInterpreter} object.
+ * @deprecated {@link VCardParser} has native support for multiple interpreter now.
  */
 public final class VCardInterpreterCollection implements VCardInterpreter {
     private final Collection<VCardInterpreter> mInterpreterCollection;
@@ -35,79 +35,37 @@ public final class VCardInterpreterCollection implements VCardInterpreter {
     }
 
     @Override
-    public void start() {
+    public void onVCardStarted() {
         for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.start();
+            builder.onVCardStarted();
         }
     }
 
     @Override
-    public void end() {
+    public void onVCardEnded() {
         for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.end();
+            builder.onVCardEnded();
         }
     }
 
     @Override
-    public void startEntry() {
+    public void onEntryStarted() {
         for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.startEntry();
+            builder.onEntryStarted();
         }
     }
 
     @Override
-    public void endEntry() {
+    public void onEntryEnded() {
         for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.endEntry();
+            builder.onEntryEnded();
         }
     }
 
     @Override
-    public void startProperty() {
-        for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.startProperty();
-        }
-    }
-
-    @Override
-    public void endProperty() {
-        for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.endProperty();
-        }
-    }
-
-    @Override
-    public void propertyGroup(String group) {
-        for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.propertyGroup(group);
-        }
-    }
-
-    @Override
-    public void propertyName(String name) {
-        for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.propertyName(name);
-        }
-    }
-
-    @Override
-    public void propertyParamType(String type) {
-        for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.propertyParamType(type);
-        }
-    }
-
-    @Override
-    public void propertyParamValue(String value) {
-        for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.propertyParamValue(value);
-        }
-    }
-
-    @Override
-    public void propertyValues(List<String> values) {
-        for (VCardInterpreter builder : mInterpreterCollection) {
-            builder.propertyValues(values);
+    public void onPropertyCreated(VCardProperty property) {
+        for (VCardInterpreter interpreter : mInterpreterCollection) {
+            interpreter.onPropertyCreated(property);
         }
     }
 }

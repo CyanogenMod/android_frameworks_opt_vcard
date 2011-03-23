@@ -154,7 +154,7 @@ import java.util.Set;
      * vCard 3.0 allows iana-token as paramType, while vCard 2.1 does not.
      */
     @Override
-    protected void handleParams(PropertyData propertyData, final String params)
+    protected void handleParams(VCardProperty propertyData, final String params)
             throws VCardException {
         try {
             super.handleParams(propertyData, params);
@@ -173,13 +173,13 @@ import java.util.Set;
 
     @Override
     protected void handleAnyParam(
-            PropertyData propertyData, final String paramName, final String paramValue) {
+            VCardProperty propertyData, final String paramName, final String paramValue) {
         splitAndPutParam(propertyData, paramName, paramValue);
     }
 
     @Override
-    protected void handleParamWithoutName(PropertyData propertyData, final String paramValue) {
-        handleType(propertyData, paramValue);
+    protected void handleParamWithoutName(VCardProperty property, final String paramValue) {
+        handleType(property, paramValue);
     }
 
     /*
@@ -195,8 +195,8 @@ import java.util.Set;
      *  QSAFE-CHAR must not contain DQUOTE, including escaped one (\").
      */
     @Override
-    protected void handleType(PropertyData propertyData, final String paramValue) {
-        splitAndPutParam(propertyData, VCardConstants.PARAM_TYPE, paramValue);
+    protected void handleType(VCardProperty property, final String paramValue) {
+        splitAndPutParam(property, VCardConstants.PARAM_TYPE, paramValue);
     }
 
     /**
@@ -211,8 +211,7 @@ import java.util.Set;
      *
      *  QSAFE-CHAR must not contain DQUOTE, including escaped one (\")
      */
-    private void splitAndPutParam(
-            PropertyData propertyData, String paramName, String paramValue) {
+    private void splitAndPutParam(VCardProperty property, String paramName, String paramValue) {
         // "comma,separated:inside.dquote",pref
         //   -->
         // - comma,separated:inside.dquote
@@ -229,7 +228,7 @@ import java.util.Set;
             if (ch == '"') {
                 if (insideDquote) {
                     // End of Dquote.
-                    propertyData.addParam(paramName, builder.toString());
+                    property.addParameter(paramName, encodeParamValue(builder.toString()));
                     builder = null;
                     insideDquote = false;
                 } else {
@@ -242,7 +241,7 @@ import java.util.Set;
                             // e.g.
                             // pref,"quoted"
                             // "quoted",pref
-                            propertyData.addParam(paramName, builder.toString());
+                            property.addParameter(paramName, encodeParamValue(builder.toString()));
                         }
                     }
                     insideDquote = true;
@@ -252,7 +251,7 @@ import java.util.Set;
                     Log.w(LOG_TAG, "Comma is used before actual string comes. (" +
                             paramValue + ")");
                 } else {
-                    propertyData.addParam(paramName, builder.toString());
+                    property.addParameter(paramName, encodeParamValue(builder.toString()));
                     builder = null;
                 }
             } else {
@@ -274,13 +273,21 @@ import java.util.Set;
                 Log.w(LOG_TAG, "Unintended behavior. We must not see empty StringBuilder " +
                         "at the end of parameter value parsing.");
             } else {
-                propertyData.addParam(paramName, builder.toString());
+                property.addParameter(paramName, encodeParamValue(builder.toString()));
             }
         }
     }
 
+    /**
+     * Encode a param value using UTF-8.
+     */
+    protected String encodeParamValue(String paramValue) {
+        return VCardUtils.convertStringCharset(
+                paramValue, VCardConfig.DEFAULT_INTERMEDIATE_CHARSET, "UTF-8");
+    }
+
     @Override
-    protected void handleAgent(final String propertyValue) {
+    protected void handleAgent(VCardProperty property) {
         // The way how vCard 3.0 supports "AGENT" is completely different from vCard 2.1.
         //
         // e.g.

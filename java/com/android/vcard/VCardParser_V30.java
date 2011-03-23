@@ -38,7 +38,7 @@ import java.util.Set;
  * but it is not a must. We silently allow "CHARSET".
  * </p>
  */
-public class VCardParser_V30 implements VCardParser {
+public class VCardParser_V30 extends VCardParser {
     /* package */ static final Set<String> sKnownPropertyNameSet =
             Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
                     "BEGIN", "END", "LOGO", "PHOTO", "LABEL", "FN", "TITLE", "SOUND",
@@ -78,9 +78,13 @@ public class VCardParser_V30 implements VCardParser {
     }
 
     @Override
-    public void parse(InputStream is, VCardInterpreter interepreter)
-            throws IOException, VCardException {
-        mVCardParserImpl.parse(is, interepreter);
+    public void addInterpreter(VCardInterpreter interpreter) {
+        mVCardParserImpl.addInterpreter(interpreter);
+    }
+
+    @Override
+    public void parse(InputStream is) throws IOException, VCardException {
+        mVCardParserImpl.parse(is);
     }
 
     @Override

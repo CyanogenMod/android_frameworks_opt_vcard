@@ -34,7 +34,7 @@ import java.util.Set;
  * (e.g. PHOTO has data parameter in rev 15 while this implementation requires "ENCODING=b")
  * </p>
  */
-public class VCardParser_V40 implements VCardParser {
+public class VCardParser_V40 extends VCardParser {
     /* package */ static final Set<String> sKnownPropertyNameSet =
             Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
                     "BEGIN", "END", "VERSION",
@@ -55,7 +55,7 @@ public class VCardParser_V40 implements VCardParser {
                     VCardConstants.PARAM_ENCODING_8BIT,
                     VCardConstants.PARAM_ENCODING_B)));
 
-    private final VCardParserImpl_V30 mVCardParserImpl;
+    private final VCardParserImpl_V40 mVCardParserImpl;
 
     public VCardParser_V40() {
         mVCardParserImpl = new VCardParserImpl_V40();
@@ -66,9 +66,13 @@ public class VCardParser_V40 implements VCardParser {
     }
 
     @Override
-    public void parse(InputStream is, VCardInterpreter interepreter)
-            throws IOException, VCardException {
-        mVCardParserImpl.parse(is, interepreter);
+    public void addInterpreter(VCardInterpreter interpreter) {
+        mVCardParserImpl.addInterpreter(interpreter);
+    }
+
+    @Override
+    public void parse(InputStream is) throws IOException, VCardException {
+        mVCardParserImpl.parse(is);
     }
 
     @Override

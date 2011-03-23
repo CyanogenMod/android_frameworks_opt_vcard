@@ -49,49 +49,31 @@ public class VCardEntryConstructor implements VCardInterpreter {
      */
     private final List<VCardEntry> mEntryStack = new ArrayList<VCardEntry>();
     private VCardEntry mCurrentEntry;
-    private VCardEntry.Property mCurrentProperty = new VCardEntry.Property();
-    private String mParamType;
 
-    // The charset using which {@link VCardInterpreter} parses the text.
-    // Each String is first decoded into binary stream with this charset, and encoded back
-    // to "target charset", which may be explicitly specified by the vCard with "CHARSET"
-    // property or implicitly mentioned by its version (e.g. vCard 3.0 recommends UTF-8).
-    private final String mSourceCharset;
-
-    private final boolean mStrictLineBreaking;
     private final int mVCardType;
     private final Account mAccount;
 
     private final List<VCardEntryHandler> mEntryHandlers = new ArrayList<VCardEntryHandler>();
 
     public VCardEntryConstructor() {
-        this(VCardConfig.VCARD_TYPE_V21_GENERIC, null);
+        this(VCardConfig.VCARD_TYPE_V21_GENERIC, null, null);
     }
 
     public VCardEntryConstructor(final int vcardType) {
-        this(vcardType, null, null, false);
+        this(vcardType, null, null);
     }
 
     public VCardEntryConstructor(final int vcardType, final Account account) {
-        this(vcardType, account, null, false);
-    }
-
-    public VCardEntryConstructor(final int vcardType, final Account account,
-            final String inputCharset) {
-        this(vcardType, account, inputCharset, false);
+        this(vcardType, account, null);
     }
 
     /**
-     * @hide Just for testing.
+     * @deprecated targetCharset is not used anymore.
+     * Use {@link #VCardEntryConstructor(int, Account)}
      */
+    @Deprecated
     public VCardEntryConstructor(final int vcardType, final Account account,
-            final String inputCharset, final boolean strictLineBreakParsing) {
-        if (inputCharset != null) {
-            mSourceCharset = inputCharset;
-        } else {
-            mSourceCharset = VCardConfig.DEFAULT_INTERMEDIATE_CHARSET;
-        }
-        mStrictLineBreaking = strictLineBreakParsing;
+            String targetCharset) {
         mVCardType = vcardType;
         mAccount = account;
     }
@@ -101,14 +83,14 @@ public class VCardEntryConstructor implements VCardInterpreter {
     }
 
     @Override
-    public void start() {
+    public void onVCardStarted() {
         for (VCardEntryHandler entryHandler : mEntryHandlers) {
             entryHandler.onStart();
         }
     }
 
     @Override
-    public void end() {
+    public void onVCardEnded() {
         for (VCardEntryHandler entryHandler : mEntryHandlers) {
             entryHandler.onEnd();
         }
@@ -117,17 +99,16 @@ public class VCardEntryConstructor implements VCardInterpreter {
     public void clear() {
         mCurrentEntry = null;
         mEntryStack.clear();
-        mCurrentProperty = new VCardEntry.Property();
     }
 
     @Override
-    public void startEntry() {
+    public void onEntryStarted() {
         mCurrentEntry = new VCardEntry(mVCardType, mAccount);
         mEntryStack.add(mCurrentEntry);
     }
 
     @Override
-    public void endEntry() {
+    public void onEntryEnded() {
         mCurrentEntry.consolidateFields();
         for (VCardEntryHandler entryHandler : mEntryHandlers) {
             entryHandler.onEntryCreated(mCurrentEntry);
@@ -145,94 +126,7 @@ public class VCardEntryConstructor implements VCardInterpreter {
     }
 
     @Override
-    public void startProperty() {
-        mCurrentProperty.clear();
-    }
-
-    @Override
-    public void endProperty() {
-        mCurrentEntry.addProperty(mCurrentProperty);
-    }
-
-    @Override
-    public void propertyName(String name) {
-        mCurrentProperty.setPropertyName(name);
-    }
-
-    @Override
-    public void propertyGroup(String group) {
-    }
-
-    @Override
-    public void propertyParamType(String type) {
-        if (mParamType != null) {
-            Log.e(LOG_TAG, "propertyParamType() is called more than once " +
-                    "before propertyParamValue() is called");
-        }
-        mParamType = type;
-    }
-
-    @Override
-    public void propertyParamValue(String value) {
-        if (mParamType == null) {
-            // From vCard 2.1 specification. vCard 3.0 formally does not allow this case.
-            mParamType = "TYPE";
-        }
-        if (!VCardUtils.containsOnlyAlphaDigitHyphen(value)) {
-            value = VCardUtils.convertStringCharset(
-                    value, mSourceCharset, VCardConfig.DEFAULT_IMPORT_CHARSET);
-        }
-        mCurrentProperty.addParameter(mParamType, value);
-        mParamType = null;
-    }
-
-    private String handleOneValue(String value,
-            String sourceCharset, String targetCharset, String encoding) {
-        // It is possible when some of multiple values are empty.
-        // e.g. N:;a;;; -> values are "", "a", "", "", and "".
-        if (TextUtils.isEmpty(value)) {
-            return "";
-        }
-
-        if (encoding != null) {
-            if (encoding.equals("BASE64") || encoding.equals("B")) {
-                mCurrentProperty.setPropertyBytes(Base64.decode(value.getBytes(), Base64.DEFAULT));
-                return value;
-            } else if (encoding.equals("QUOTED-PRINTABLE")) {
-                return VCardUtils.parseQuotedPrintable(
-                        value, mStrictLineBreaking, sourceCharset, targetCharset);
-            }
-            Log.w(LOG_TAG, "Unknown encoding. Fall back to default.");
-        }
-
-        // Just translate the charset of a given String from inputCharset to a system one.
-        return VCardUtils.convertStringCharset(value, sourceCharset, targetCharset);
-    }
-
-    @Override
-    public void propertyValues(List<String> values) {
-        if (values == null || values.isEmpty()) {
-            return;
-        }
-
-        final Collection<String> charsetCollection =
-                mCurrentProperty.getParameters(VCardConstants.PARAM_CHARSET);
-        final Collection<String> encodingCollection =
-                mCurrentProperty.getParameters(VCardConstants.PARAM_ENCODING);
-        final String encoding =
-            ((encodingCollection != null) ? encodingCollection.iterator().next() : null);
-
-        // String targetCharset = CharsetUtils.nameForDefaultVendor(
-        //    ((charsetCollection != null) ? charsetCollection.iterator().next() : null));
-        String targetCharset =
-            ((charsetCollection != null) ? charsetCollection.iterator().next() : null);
-        if (TextUtils.isEmpty(targetCharset)) {
-            targetCharset = VCardConfig.DEFAULT_IMPORT_CHARSET;
-        }
-
-        for (final String value : values) {
-            mCurrentProperty.addPropertyValue(
-                    handleOneValue(value, mSourceCharset, targetCharset, encoding));
-        }
+    public void onPropertyCreated(VCardProperty property) {
+        mCurrentEntry.addProperty(property);
     }
 }

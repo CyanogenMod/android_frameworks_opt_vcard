@@ -15,19 +15,44 @@
  */
 package com.android.vcard.tests;
 
+import com.android.vcard.VCardConfig;
 import com.android.vcard.VCardConstants;
 import com.android.vcard.VCardEntry;
+import com.android.vcard.VCardEntry.AndroidCustomData;
+import com.android.vcard.VCardEntry.AnniversaryData;
+import com.android.vcard.VCardEntry.BirthdayData;
+import com.android.vcard.VCardEntry.EmailData;
+import com.android.vcard.VCardEntry.EntryElement;
+import com.android.vcard.VCardEntry.EntryLabel;
+import com.android.vcard.VCardEntry.ImData;
+import com.android.vcard.VCardEntry.NameData;
+import com.android.vcard.VCardEntry.NicknameData;
+import com.android.vcard.VCardEntry.NoteData;
+import com.android.vcard.VCardEntry.OrganizationData;
+import com.android.vcard.VCardEntry.PhoneData;
+import com.android.vcard.VCardEntry.PhotoData;
+import com.android.vcard.VCardEntry.PostalData;
+import com.android.vcard.VCardEntry.SipData;
 import com.android.vcard.VCardEntryConstructor;
 import com.android.vcard.VCardEntryHandler;
 import com.android.vcard.VCardInterpreter;
+import com.android.vcard.VCardProperty;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
+import android.provider.ContactsContract.CommonDataKinds.Email;
+import android.provider.ContactsContract.CommonDataKinds.Im;
+import android.provider.ContactsContract.CommonDataKinds.Organization;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
+import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.test.AndroidTestCase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class VCardEntryTests extends AndroidTestCase {
     private class MockVCardEntryHandler implements VCardEntryHandler {
@@ -83,26 +108,26 @@ public class VCardEntryTests extends AndroidTestCase {
         MockVCardEntryHandler entryHandler = new MockVCardEntryHandler();
         entryConstructor.addEntryHandler(entryHandler);
 
-        entryConstructor.start();
-        entryConstructor.startEntry();
-        entryConstructor.startProperty();
-        entryConstructor.propertyName(VCardConstants.PROPERTY_N);
-        entryConstructor.propertyValues(Arrays.asList("test1"));
-        entryConstructor.endProperty();
+        entryConstructor.onVCardStarted();
+        entryConstructor.onEntryStarted();
+        VCardProperty property = new VCardProperty();
+        property.setName(VCardConstants.PROPERTY_N);
+        property.setValues("test1");
+        entryConstructor.onPropertyCreated(property);
 
-        entryConstructor.startEntry();  // begin nest
-        entryConstructor.startProperty();
-        entryConstructor.propertyName(VCardConstants.PROPERTY_N);
-        entryConstructor.propertyValues(Arrays.asList("test2"));
-        entryConstructor.endProperty();
-        entryConstructor.endEntry();  // end nest
+        entryConstructor.onEntryStarted();  // begin nest
+        property = new VCardProperty();
+        property.setName(VCardConstants.PROPERTY_N);
+        property.setValues("test2");
+        entryConstructor.onPropertyCreated(property);
+        entryConstructor.onEntryEnded();  // end nest
 
-        entryConstructor.startProperty();
-        entryConstructor.propertyName(VCardConstants.PROPERTY_TEL);
-        entryConstructor.propertyValues(Arrays.asList("1"));
-        entryConstructor.endProperty();
-        entryConstructor.endEntry();
-        entryConstructor.end();
+        property = new VCardProperty();
+        property.setName(VCardConstants.PROPERTY_TEL);
+        property.setValues("1");
+        entryConstructor.onPropertyCreated(property);
+        entryConstructor.onEntryEnded();
+        entryConstructor.onVCardEnded();
 
         List<VCardEntry> entries = entryHandler.getEntries();
         assertEquals(2, entries.size());
@@ -113,7 +138,198 @@ public class VCardEntryTests extends AndroidTestCase {
         List<VCardEntry.PhoneData> phoneList = parent.getPhoneList();
         assertNotNull(phoneList);
         assertEquals(1, phoneList.size());
-        assertEquals("1", phoneList.get(0).data);
+        assertEquals("1", phoneList.get(0).getNumber());
+    }
+
+    private class MockEntryElementIterator implements VCardEntry.EntryElementIterator {
+        private boolean mStartCalled;
+        private boolean mEndCalled;
+        private EntryLabel mLabel;
+        private final Map<EntryLabel, EntryElement> mExpectedElements =
+                new HashMap<EntryLabel, EntryElement>();
+
+        public void addExpectedElement(EntryElement elem) {
+            mExpectedElements.put(elem.getEntryLabel(), elem);
+        }
+
+        @Override
+        public void onIterationStarted() {
+            assertFalse(mStartCalled);
+            assertFalse(mEndCalled);
+            assertNull(mLabel);
+            mStartCalled = true;
+        }
+
+        @Override
+        public void onIterationEnded() {
+            assertTrue(mStartCalled);
+            assertFalse(mEndCalled);
+            assertNull(mLabel);
+            assertTrue("Expected Elements remaining: " +
+                    Arrays.toString(mExpectedElements.values().toArray()),
+                    mExpectedElements.isEmpty());
+        }
+
+        @Override
+        public void onElementGroupStarted(EntryLabel label) {
+            assertTrue(mStartCalled);
+            assertFalse(mEndCalled);
+            assertNull(mLabel);
+            mLabel = label;
+        }
+
+        @Override
+        public void onElementGroupEnded() {
+            assertTrue(mStartCalled);
+            assertFalse(mEndCalled);
+            assertNotNull(mLabel);
+            mLabel = null;
+        }
+
+        @Override
+        public boolean onElement(EntryElement elem) {
+            EntryElement expectedElem = mExpectedElements.remove(elem.getEntryLabel());
+            assertNotNull("Unexpected elem: " + elem.toString(), expectedElem);
+            assertEquals(expectedElem, elem);
+            return true;
+        }
+    }
+
+    /**
+     * Tests every element in VCardEntry is iterated by
+     * {@link VCardEntry#iterateAllData(com.android.vcard.VCardEntry.EntryElementIterator)}.
+     */
+    public void testEntryElementIterator() {
+        VCardEntry entry = new VCardEntry();
+        MockEntryElementIterator iterator = new MockEntryElementIterator();
+
+        VCardProperty property = new VCardProperty();
+        property.setName("N");
+        property.setValues("family", "given", "middle", "prefix", "suffix");
+        entry.addProperty(property);
+        NameData nameData = new NameData();
+        nameData.setFamily("family");
+        nameData.setGiven("given");
+        nameData.setMiddle("middle");
+        nameData.setPrefix("prefix");
+        nameData.setSuffix("suffix");
+        iterator.addExpectedElement(nameData);
+
+        property = new VCardProperty();
+        property.setName("TEL");
+        property.setParameter("TYPE", "HOME");
+        property.setValues("1");
+        entry.addProperty(property);
+        PhoneData phoneData = new PhoneData("1", Phone.TYPE_HOME, null, false);
+        iterator.addExpectedElement(phoneData);
+
+        property = new VCardProperty();
+        property.setName("EMAIL");
+        property.setParameter("TYPE", "WORK");
+        property.setValues("email");
+        entry.addProperty(property);
+        EmailData emailData = new EmailData("email", Email.TYPE_WORK, null, false);
+        iterator.addExpectedElement(emailData);
+
+        property = new VCardProperty();
+        property.setName("ADR");
+        property.setParameter("TYPE", "HOME");
+        property.setValues(null, null, "street");
+        entry.addProperty(property);
+        PostalData postalData = new PostalData(null, null, "street", null, null, null,
+                null, StructuredPostal.TYPE_HOME, null, false,
+                VCardConfig.VCARD_TYPE_DEFAULT);
+        iterator.addExpectedElement(postalData);
+
+        property = new VCardProperty();
+        property.setName("ORG");
+        property.setValues("organization", "depertment");
+        entry.addProperty(property);
+        OrganizationData organizationData = new OrganizationData(
+                "organization", "depertment", null, null, Organization.TYPE_WORK, false);
+        iterator.addExpectedElement(organizationData);
+
+        property = new VCardProperty();
+        property.setName("X-GOOGLE-TALK");
+        property.setParameter("TYPE", "WORK");
+        property.setValues("googletalk");
+        entry.addProperty(property);
+        ImData imData = new ImData(
+                Im.PROTOCOL_GOOGLE_TALK, null, "googletalk", Im.TYPE_WORK, false);
+        iterator.addExpectedElement(imData);
+
+        property = new VCardProperty();
+        property.setName("PHOTO");
+        property.setParameter("TYPE", "PNG");
+        byte[] photoBytes = new byte[] {1};
+        property.setByteValue(photoBytes);
+        entry.addProperty(property);
+        PhotoData photoData = new PhotoData("PNG", photoBytes, false);
+        iterator.addExpectedElement(photoData);
+
+        property = new VCardProperty();
+        property.setName("X-SIP");
+        property.setValues("sipdata");
+        entry.addProperty(property);
+        SipData sipData = new SipData("sip:sipdata", SipAddress.TYPE_OTHER, null, false);
+        iterator.addExpectedElement(sipData);
+
+        property = new VCardProperty();
+        property.setName("NICKNAME");
+        property.setValues("nickname");
+        entry.addProperty(property);
+        NicknameData nicknameData = new NicknameData("nickname");
+        iterator.addExpectedElement(nicknameData);
+
+        property = new VCardProperty();
+        property.setName("NOTE");
+        property.setValues("note");
+        entry.addProperty(property);
+        NoteData noteData = new NoteData("note");
+        iterator.addExpectedElement(noteData);
+
+        property = new VCardProperty();
+        property.setName("BDAY");
+        property.setValues("birthday");
+        entry.addProperty(property);
+        BirthdayData birthdayData = new BirthdayData("birthday");
+        iterator.addExpectedElement(birthdayData);
+
+        property = new VCardProperty();
+        property.setName("ANNIVERSARY");
+        property.setValues("anniversary");
+        entry.addProperty(property);
+        AnniversaryData anniversaryData = new AnniversaryData("anniversary");
+        iterator.addExpectedElement(anniversaryData);
+
+        property = new VCardProperty();
+        property.setName("X-ANDROID-CUSTOM");
+        property.setValues("mime;value");
+        entry.addProperty(property);
+        AndroidCustomData androidCustom = new AndroidCustomData("mime", Arrays.asList("value"));
+        iterator.addExpectedElement(androidCustom);
+
+        entry.iterateAllData(iterator);
+    }
+
+    public void testToString() {
+        VCardEntry entry = new VCardEntry();
+        VCardProperty property = new VCardProperty();
+        property.setName("N");
+        property.setValues("Family", "Given", "Middle", "Prefix", "Suffix");
+        entry.addProperty(property);
+        entry.consolidateFields();
+
+        String result = entry.toString();
+        assertNotNull(result);
+
+        assertTrue(result.contains(String.valueOf(entry.hashCode())));
+        assertTrue(result.contains(VCardEntry.EntryLabel.NAME.toString()));
+        assertTrue(result.contains("Family"));
+        assertTrue(result.contains("Given"));
+        assertTrue(result.contains("Middle"));
+        assertTrue(result.contains("Prefix"));
+        assertTrue(result.contains("Suffix"));
     }
 
     /**
@@ -121,17 +337,18 @@ public class VCardEntryTests extends AndroidTestCase {
      */
     public void testConstructInsertOperationsInsertName() {
         VCardEntry entry = new VCardEntry();
-        VCardEntry.Property property = new VCardEntry.Property();
-        property.setPropertyName("N");
-        property.addPropertyValue("Family", "Given", "Middle", "Prefix", "Suffix");
+        VCardProperty property = new VCardProperty();
+        property.setName("N");
+        property.setValues("Family", "Given", "Middle", "Prefix", "Suffix");
         entry.addProperty(property);
         entry.consolidateFields();
 
-        assertEquals("Family", entry.getFamilyName());
-        assertEquals("Given", entry.getGivenName());
-        assertEquals("Middle", entry.getMiddleName());
-        assertEquals("Prefix", entry.getPrefix());
-        assertEquals("Suffix", entry.getSuffix());
+        NameData nameData = entry.getNameData();
+        assertEquals("Family", nameData.getFamily());
+        assertEquals("Given", nameData.getGiven());
+        assertEquals("Middle", nameData.getMiddle());
+        assertEquals("Prefix", nameData.getPrefix());
+        assertEquals("Suffix", nameData.getSuffix());
 
         ContentResolver resolver = getContext().getContentResolver();
         ArrayList<ContentProviderOperation> operationList =

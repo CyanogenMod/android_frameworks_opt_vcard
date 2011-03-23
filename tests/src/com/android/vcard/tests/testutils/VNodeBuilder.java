@@ -15,20 +15,23 @@
  */
 package com.android.vcard.tests.testutils;
 
+import com.android.vcard.VCardConfig;
+import com.android.vcard.VCardInterpreter;
+import com.android.vcard.VCardProperty;
+import com.android.vcard.VCardUtils;
+
 import android.content.ContentValues;
 import android.util.Base64;
 import android.util.CharsetUtils;
 import android.util.Log;
 
-import com.android.vcard.VCardConfig;
-import com.android.vcard.VCardInterpreter;
-import com.android.vcard.VCardUtils;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -45,8 +48,6 @@ public class VNodeBuilder implements VCardInterpreter {
 
     private List<VNode> mVNodeList = new ArrayList<VNode>();
     private VNode mCurrentVNode;
-    private PropertyNode mCurrentPropNode;
-    private String mCurrentParamType;
 
     /**
      * The charset using which VParser parses the text.
@@ -75,128 +76,69 @@ public class VNodeBuilder implements VCardInterpreter {
     }
 
     @Override
-    public void start() {
+    public void onVCardStarted() {
     }
 
     @Override
-    public void end() {
+    public void onVCardEnded() {
     }
 
     @Override
-    public void startEntry() {
+    public void onEntryStarted() {
         mCurrentVNode = new VNode();
         mVNodeList.add(mCurrentVNode);
     }
 
     @Override
-    public void endEntry() {
+    public void onEntryEnded() {
         int lastIndex = mVNodeList.size() - 1;
         mVNodeList.remove(lastIndex--);
         mCurrentVNode = lastIndex >= 0 ? mVNodeList.get(lastIndex) : null;
     }
 
     @Override
-    public void startProperty() {
-        mCurrentPropNode = new PropertyNode();
-    }
-
-    @Override
-    public void endProperty() {
-        mCurrentVNode.propList.add(mCurrentPropNode);
-    }
-
-    @Override
-    public void propertyName(String name) {
-        mCurrentPropNode.propName = name;
-    }
-
-    @Override
-    public void propertyGroup(String group) {
-        mCurrentPropNode.propGroupSet.add(group);
-    }
-
-    @Override
-    public void propertyParamType(String type) {
-        mCurrentParamType = type;
-    }
-
-    @Override
-    public void propertyParamValue(String value) {
-        if (!VCardUtils.containsOnlyAlphaDigitHyphen(value)) {
-            value = VCardUtils.convertStringCharset(value,
-                    VCardConfig.DEFAULT_INTERMEDIATE_CHARSET,
-                    VCardConfig.DEFAULT_IMPORT_CHARSET);
+    public void onPropertyCreated(VCardProperty property) {
+        // TODO: remove PropertyNode.
+        PropertyNode propNode = new PropertyNode();
+        propNode.propName = property.getName();
+        List<String> groupList = property.getGroupList();
+        if (groupList != null) {
+            propNode.propGroupSet.addAll(groupList);
         }
-
-        if (mCurrentParamType == null ||
-                mCurrentParamType.equalsIgnoreCase("TYPE")) {
-            mCurrentPropNode.paramMap_TYPE.add(value);
-        } else {
-            mCurrentPropNode.paramMap.put(mCurrentParamType, value);
-        }
-
-        mCurrentParamType = null;
-    }
-
-    private String encodeString(String originalString, String targetCharset) {
-        if (mSourceCharset.equalsIgnoreCase(targetCharset)) {
-            return originalString;
-        }
-        Charset charset = Charset.forName(mSourceCharset);
-        ByteBuffer byteBuffer = charset.encode(originalString);
-        // byteBuffer.array() "may" return byte array which is larger than
-        // byteBuffer.remaining(). Here, we keep on the safe side.
-        byte[] bytes = new byte[byteBuffer.remaining()];
-        byteBuffer.get(bytes);
-        try {
-            return new String(bytes, targetCharset);
-        } catch (UnsupportedEncodingException e) {
-            Log.e(LOG_TAG, "Failed to encode: charset=" + targetCharset);
-            return null;
-        }
-    }
-
-    private String handleOneValue(String value, String targetCharset, String encoding) {
-        if (encoding != null) {
-            encoding = encoding.toUpperCase();
-            if (encoding.equals("BASE64") || encoding.equals("B")) {
-                // Assume BASE64 is used only when the number of values is 1.
-                mCurrentPropNode.propValue_bytes = Base64.decode(value.getBytes(), Base64.NO_WRAP);
-                return value;
-            } else if (encoding.equals("QUOTED-PRINTABLE")) {
-                return VCardUtils.parseQuotedPrintable(
-                        value, mStrictLineBreakParsing, mSourceCharset, targetCharset);
+        Map<String, Collection<String>> propertyParameterMap = property.getParameterMap();
+        for (String paramType : propertyParameterMap.keySet()) {
+            Collection<String> paramValueList = propertyParameterMap.get(paramType);
+            if (paramType.equalsIgnoreCase("TYPE")) {
+                propNode.paramMap_TYPE.addAll(paramValueList);
+            } else {
+                for (String paramValue : paramValueList) {
+                    propNode.paramMap.put(paramType, paramValue);
+                }
             }
-            // Unknown encoding. Fall back to default.
         }
-        return encodeString(value, targetCharset);
-    }
 
-    @Override
-    public void propertyValues(List<String> values) {
-        if (values == null || values.size() == 0) {
-            mCurrentPropNode.propValue_bytes = null;
-            mCurrentPropNode.propValue_vector.clear();
-            mCurrentPropNode.propValue_vector.add("");
-            mCurrentPropNode.propValue = "";
+        // TODO: just redundant
+
+        if (property.getRawValue() == null) {
+            propNode.propValue_bytes = null;
+            propNode.propValue_vector.clear();
+            propNode.propValue_vector.add("");
+            propNode.propValue = "";
             return;
         }
 
-        ContentValues paramMap = mCurrentPropNode.paramMap;
-
-        String targetCharset = CharsetUtils.nameForDefaultVendor(paramMap.getAsString("CHARSET"));
-        String encoding = paramMap.getAsString("ENCODING");
-
-        if (targetCharset == null || targetCharset.length() == 0) {
-            targetCharset = mTargetCharset;
+        final List<String> values = property.getValueList();
+        if (values == null || values.size() == 0) {
+            propNode.propValue_vector.clear();
+            propNode.propValue_vector.add("");
+            propNode.propValue = "";
+        } else {
+            propNode.propValue_vector.addAll(values);
+            propNode.propValue = listToString(propNode.propValue_vector);
         }
+        propNode.propValue_bytes = property.getByteValue();
 
-        for (String value : values) {
-            mCurrentPropNode.propValue_vector.add(
-                    handleOneValue(value, targetCharset, encoding));
-        }
-
-        mCurrentPropNode.propValue = listToString(mCurrentPropNode.propValue_vector);
+        mCurrentVNode.propList.add(propNode);
     }
 
     private String listToString(List<String> list){

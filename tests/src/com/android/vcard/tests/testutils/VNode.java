@@ -19,6 +19,9 @@ import java.util.ArrayList;
 
 /**
  * Previously used in main vCard handling code but now exists only for testing.
+ *
+ * TODO: remove this and relevant classes. Given we can have appropriate test cases for
+ * VCardEntry and VCardProperty, we won't need redundancy here.
  */
 public class VNode {
     public ArrayList<PropertyNode> propList = new ArrayList<PropertyNode>();

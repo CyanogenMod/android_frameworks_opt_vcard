@@ -1122,6 +1122,8 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(StructuredName.DISPLAY_NAME, "Android");
         // Type is ignored silently.
         elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.TYPE, SipAddress.TYPE_CUSTOM)
+                .put(SipAddress.LABEL, "personal")
                 .put(SipAddress.SIP_ADDRESS, "android@android.example.com");
     }
 
@@ -1139,9 +1141,11 @@ public class VCardImporterTests extends VCardTestsBase {
         elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
                 .put(StructuredName.DISPLAY_NAME, "Android");
         elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.TYPE, SipAddress.TYPE_OTHER)
                 .put(SipAddress.SIP_ADDRESS, "888");
         // "sip:" should be removed.
         elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.TYPE, SipAddress.TYPE_OTHER)
                 .put(SipAddress.SIP_ADDRESS, "90-180-360");
     }
 
@@ -1156,6 +1160,7 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Phone.TYPE, Phone.TYPE_HOME)
                 .put(Phone.NUMBER, "1");
         elem.addExpected(SipAddress.CONTENT_ITEM_TYPE)
+                .put(SipAddress.TYPE, SipAddress.TYPE_HOME)
                 .put(SipAddress.SIP_ADDRESS, "example@example.com");
     }
 
@@ -1212,5 +1217,26 @@ public class VCardImporterTests extends VCardTestsBase {
                 .addExpectedNodeWithOrder("PHOTO", null,
                         null, sPhotoByteArrayForComplicatedCase, mContentValuesForBase64V21,
                         new TypeSet("JPEG"), null);
+    }
+
+    public void testAndroidCustomPropertyV21() {
+        mVerifier.initForImportTest(V21, R.raw.v21_android_custom_prop);
+        final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected("custom_mime1")
+                .put("data1", "1").put("data2", "2").put("data3", "3").put("data4", "4")
+                .put("data5", "5").put("data6", "6").put("data7", "7").put("data8", "8")
+                .put("data9", "9").put("data10", "10").put("data11", "11").put("data12", "12")
+                .put("data13", "13").put("data14", "14").put("data15", "15");
+        // 16'th elemnt ('p') should be ignored
+        elem.addExpected("custom_mime2")
+                .put("data1", "a").put("data2", "b").put("data3", "c").put("data4", "d")
+                .put("data5", "e").put("data6", "f").put("data7", "g").put("data8", "h")
+                .put("data9", "i").put("data10", "j").put("data11", "k").put("data12", "l")
+                .put("data13", "m").put("data14", "n").put("data15", "o");
+
+        // custom_mime3 shouldn't be here, as there's no data
+
+        // Smoke test.
+        elem.addExpected("custom_mime4").put("data1", "z");
     }
 }

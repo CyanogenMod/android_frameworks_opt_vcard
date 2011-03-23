@@ -18,17 +18,17 @@ package com.android.vcard.tests;
 import com.android.vcard.VCardInterpreter;
 import com.android.vcard.VCardParser;
 import com.android.vcard.VCardParser_V21;
+import com.android.vcard.VCardProperty;
 import com.android.vcard.exception.VCardException;
 
 import android.test.AndroidTestCase;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class VCardInterpreterTests extends AndroidTestCase {
     private enum Order {
@@ -36,45 +36,23 @@ public class VCardInterpreterTests extends AndroidTestCase {
         END,
         START_ENTRY,
         END_ENTRY,
-        START_PROPERTY,
-        END_PROPERTY,
-        PROPERTY_GROUP,
-        PROPERTY_NAME,
-        PROPERTY_PARAM_TYPE,
-        PROPERTY_PARAM_VALUE,
-        PROPERTY_VALUES
+        PROPERTY_CREATED,
     }
 
     private class MockVCardInterpreter implements VCardInterpreter {
-        private final List<String> mHistory = new ArrayList<String>();
-        private final List<Object> mExpectedOrder = new ArrayList<Object>();
+        private final List<Order> mHistory = new ArrayList<Order>();
+        private final List<Order> mExpectedOrder = new ArrayList<Order>();
 
         public MockVCardInterpreter addExpectedOrder(Order order) {
             mExpectedOrder.add(order);
             return this;
         }
 
-        public MockVCardInterpreter addExpectedOrderGroup(Order... orders) {
-            mExpectedOrder.add(new HashSet<Order>(Arrays.asList(orders)));
-            return this;
-        }
-
         private void inspectOrder(Order order) {
-            mHistory.add(order.toString());
-            final Object top = mExpectedOrder.get(0);
-            if (top instanceof Set) {
-                @SuppressWarnings("unchecked")
-                Set<Order> orderSet = (Set<Order>)top;
-                assertTrue(String.format("Unexpected order: %s",
-                        Arrays.toString(mHistory.toArray(new String[0]))),
-                        orderSet.remove(order));
-                if (orderSet.isEmpty()) {
-                    mExpectedOrder.remove(0);
-                }
-            } else {
-                assertEquals(top, order);
-                mExpectedOrder.remove(0);
-            }
+            mHistory.add(order);
+            final Order top = mExpectedOrder.get(0);
+            assertEquals(top, order);
+            mExpectedOrder.remove(0);
         }
 
         public void verify() {
@@ -83,58 +61,28 @@ public class VCardInterpreterTests extends AndroidTestCase {
         }
 
         @Override
-        public void start() {
+        public void onVCardStarted() {
             inspectOrder(Order.START);
         }
 
         @Override
-        public void end() {
+        public void onVCardEnded() {
             inspectOrder(Order.END);
         }
 
         @Override
-        public void startEntry() {
+        public void onEntryStarted() {
             inspectOrder(Order.START_ENTRY);
         }
 
         @Override
-        public void endEntry() {
+        public void onEntryEnded() {
             inspectOrder(Order.END_ENTRY);
         }
 
         @Override
-        public void startProperty() {
-            inspectOrder(Order.START_PROPERTY);
-        }
-
-        @Override
-        public void endProperty() {
-            inspectOrder(Order.END_PROPERTY);
-        }
-
-        @Override
-        public void propertyGroup(String group) {
-            inspectOrder(Order.PROPERTY_GROUP);
-        }
-
-        @Override
-        public void propertyName(String name) {
-            inspectOrder(Order.PROPERTY_NAME);
-        }
-
-        @Override
-        public void propertyParamType(String type) {
-            inspectOrder(Order.PROPERTY_PARAM_TYPE);
-        }
-
-        @Override
-        public void propertyParamValue(String value) {
-            inspectOrder(Order.PROPERTY_PARAM_VALUE);
-        }
-
-        @Override
-        public void propertyValues(List<String> values) {
-            inspectOrder(Order.PROPERTY_VALUES);
+        public void onPropertyCreated(VCardProperty property) {
+            inspectOrder(Order.PROPERTY_CREATED);
         }
     }
 
@@ -144,12 +92,11 @@ public class VCardInterpreterTests extends AndroidTestCase {
         MockVCardInterpreter interpreter = new MockVCardInterpreter();
         interpreter.addExpectedOrder(Order.START)
                 .addExpectedOrder(Order.START_ENTRY)
-                .addExpectedOrder(Order.START_PROPERTY)
-                .addExpectedOrderGroup(Order.PROPERTY_NAME, Order.PROPERTY_VALUES)
-                .addExpectedOrder(Order.END_PROPERTY)
+                .addExpectedOrder(Order.PROPERTY_CREATED)
                 .addExpectedOrder(Order.END_ENTRY)
                 .addExpectedOrder(Order.END);
-        parser.parse(inputStream, interpreter);
+        parser.addInterpreter(interpreter);
+        parser.parse(inputStream);
         interpreter.verify();
     }
 
@@ -159,34 +106,21 @@ public class VCardInterpreterTests extends AndroidTestCase {
         MockVCardInterpreter interpreter = new MockVCardInterpreter();
         interpreter.addExpectedOrder(Order.START)
                 .addExpectedOrder(Order.START_ENTRY)
-                .addExpectedOrder(Order.START_PROPERTY)  // For VERSION
-                .addExpectedOrderGroup(Order.PROPERTY_NAME, Order.PROPERTY_VALUES)
-                .addExpectedOrder(Order.END_PROPERTY)
-                .addExpectedOrder(Order.START_PROPERTY)  // For N
-                .addExpectedOrderGroup(Order.PROPERTY_NAME, Order.PROPERTY_VALUES)
-                .addExpectedOrder(Order.END_PROPERTY)
+                .addExpectedOrder(Order.PROPERTY_CREATED)  // For VERSION
+                .addExpectedOrder(Order.PROPERTY_CREATED)  // For N
                 .addExpectedOrder(Order.START_ENTRY)  // First nested vCard begins
-                .addExpectedOrder(Order.START_PROPERTY)  // For VERSION
-                .addExpectedOrderGroup(Order.PROPERTY_NAME, Order.PROPERTY_VALUES)
-                .addExpectedOrder(Order.END_PROPERTY)
-                .addExpectedOrder(Order.START_PROPERTY)  // For N
-                .addExpectedOrderGroup(Order.PROPERTY_NAME, Order.PROPERTY_VALUES)
-                .addExpectedOrder(Order.END_PROPERTY)
+                .addExpectedOrder(Order.PROPERTY_CREATED)  // For VERSION
+                .addExpectedOrder(Order.PROPERTY_CREATED)  // For N
                 .addExpectedOrder(Order.END_ENTRY)  // First nested vCard ends
                 .addExpectedOrder(Order.START_ENTRY)  // Second nested vCard begins
-                .addExpectedOrder(Order.START_PROPERTY)  // For VERSION
-                .addExpectedOrderGroup(Order.PROPERTY_NAME, Order.PROPERTY_VALUES)
-                .addExpectedOrder(Order.END_PROPERTY)
-                .addExpectedOrder(Order.START_PROPERTY)  // For N
-                .addExpectedOrderGroup(Order.PROPERTY_NAME, Order.PROPERTY_VALUES)
-                .addExpectedOrder(Order.END_PROPERTY)
+                .addExpectedOrder(Order.PROPERTY_CREATED)  // For VERSION
+                .addExpectedOrder(Order.PROPERTY_CREATED)  // For N
                 .addExpectedOrder(Order.END_ENTRY)  // Second nested vCard ends
-                .addExpectedOrder(Order.START_PROPERTY)  // For TEL
-                .addExpectedOrderGroup(Order.PROPERTY_NAME, Order.PROPERTY_VALUES)
-                .addExpectedOrder(Order.END_PROPERTY)
+                .addExpectedOrder(Order.PROPERTY_CREATED)  // For TEL
                 .addExpectedOrder(Order.END_ENTRY)
                 .addExpectedOrder(Order.END);
-        parser.parse(inputStream, interpreter);
+        parser.addInterpreter(interpreter);
+        parser.parse(inputStream);
         interpreter.verify();
     }
 }

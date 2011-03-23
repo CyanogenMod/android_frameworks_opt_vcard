@@ -20,10 +20,10 @@ import com.android.vcard.exception.VCardException;
 import java.io.IOException;
 import java.io.InputStream;
 
-public interface VCardParser {
+public abstract class VCardParser {
     /**
      * <p>
-     * Parses the given stream and send the vCard data into VCardBuilderBase object.
+     * Parses the given stream and send the vCard data into {@link VCardInterpreter}.
      * </p>.
      * <p>
      * Note that vCard 2.1 specification allows "CHARSET" parameter, and some career sets
@@ -37,11 +37,20 @@ public interface VCardParser {
      * </p>
      *
      * @param is The source to parse.
-     * @param interepreter A {@link VCardInterpreter} object which used to construct data.
+     * @param interpreter A {@link VCardInterpreter} object which used to construct data.
      * @throws IOException, VCardException
+     * @deprecated use {@link #addInterpreter(VCardInterpreter)} and
+     * {@link #parse(InputStream)}
      */
-    public void parse(InputStream is, VCardInterpreter interepreter)
-            throws IOException, VCardException;
+    @Deprecated
+    public void parse(InputStream is, VCardInterpreter interpreter)
+            throws IOException, VCardException {
+        addInterpreter(interpreter);
+        parse(is);
+    }
+
+    public abstract void addInterpreter(VCardInterpreter interpreter);
+    public abstract void parse(InputStream is) throws IOException, VCardException;
 
     /**
      * <p>
@@ -51,5 +60,5 @@ public interface VCardParser {
      * Actual cancel is done after parsing the current vcard.
      * </p>
      */
-    public void cancel();
+    public abstract void cancel();
 }

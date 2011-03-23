@@ -15,8 +15,6 @@
  */
 package com.android.vcard;
 
-import java.util.List;
-
 /**
  * The class which just counts the number of vCard entries in the specified input.
  */
@@ -28,47 +26,23 @@ public class VCardEntryCounter implements VCardInterpreter {
     }
 
     @Override
-    public void start() {
+    public void onVCardStarted() {
     }
 
     @Override
-    public void end() {
+    public void onVCardEnded() {
     }
 
     @Override
-    public void startEntry() {
+    public void onEntryStarted() {
     }
 
     @Override
-    public void endEntry() {
+    public void onEntryEnded() {
         mCount++;
     }
 
     @Override
-    public void startProperty() {
-    }
-
-    @Override
-    public void endProperty() {
-    }
-
-    @Override
-    public void propertyGroup(String group) {
-    }
-
-    @Override
-    public void propertyName(String name) {
-    }
-
-    @Override
-    public void propertyParamType(String type) {
-    }
-
-    @Override
-    public void propertyParamValue(String value) {
-    }
-
-    @Override
-    public void propertyValues(List<String> values) {
+    public void onPropertyCreated(VCardProperty property) {
     }
 }

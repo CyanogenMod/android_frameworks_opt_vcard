@@ -283,10 +283,10 @@ public class VCardUtils {
         return sKnownImPropNameMap_ItoS.get(protocol);
     }
 
-    public static String[] sortNameElements(final int vcardType,
+    public static String[] sortNameElements(final int nameOrder,
             final String familyName, final String middleName, final String givenName) {
         final String[] list = new String[3];
-        final int nameOrderType = VCardConfig.getNameOrderType(vcardType);
+        final int nameOrderType = VCardConfig.getNameOrderType(nameOrder);
         switch (nameOrderType) {
             case VCardConfig.NAME_ORDER_JAPANESE: {
                 if (containsOnlyPrintableAscii(familyName) &&
@@ -325,65 +325,17 @@ public class VCardUtils {
         }
     }
 
-    /**
-     * <p>
-     * Inserts postal data into the builder object.
-     * </p>
-     * <p>
-     * Note that the data structure of ContactsContract is different from that defined in vCard.
-     * So some conversion may be performed in this method.
-     * </p>
-     */
-    public static void insertStructuredPostalDataUsingContactsStruct(int vcardType,
-            final ContentProviderOperation.Builder builder,
-            final VCardEntry.PostalData postalData) {
-        builder.withValueBackReference(StructuredPostal.RAW_CONTACT_ID, 0);
-        builder.withValue(Data.MIMETYPE, StructuredPostal.CONTENT_ITEM_TYPE);
-
-        builder.withValue(StructuredPostal.TYPE, postalData.type);
-        if (postalData.type == StructuredPostal.TYPE_CUSTOM) {
-            builder.withValue(StructuredPostal.LABEL, postalData.label);
-        }
-
-        final String streetString;
-        if (TextUtils.isEmpty(postalData.street)) {
-            if (TextUtils.isEmpty(postalData.extendedAddress)) {
-                streetString = null;
-            } else {
-                streetString = postalData.extendedAddress;
-            }
-        } else {
-            if (TextUtils.isEmpty(postalData.extendedAddress)) {
-                streetString = postalData.street;
-            } else {
-                streetString = postalData.street + " " + postalData.extendedAddress;
-            }
-        }
-        builder.withValue(StructuredPostal.POBOX, postalData.pobox);
-        builder.withValue(StructuredPostal.STREET, streetString);
-        builder.withValue(StructuredPostal.CITY, postalData.localty);
-        builder.withValue(StructuredPostal.REGION, postalData.region);
-        builder.withValue(StructuredPostal.POSTCODE, postalData.postalCode);
-        builder.withValue(StructuredPostal.COUNTRY, postalData.country);
-
-        builder.withValue(StructuredPostal.FORMATTED_ADDRESS,
-                postalData.getFormattedAddress(vcardType));
-        if (postalData.isPrimary) {
-            builder.withValue(Data.IS_PRIMARY, 1);
-        }
-    }
-
-    public static String constructNameFromElements(final int vcardType,
+    public static String constructNameFromElements(final int nameOrder,
             final String familyName, final String middleName, final String givenName) {
-        return constructNameFromElements(vcardType, familyName, middleName, givenName,
+        return constructNameFromElements(nameOrder, familyName, middleName, givenName,
                 null, null);
     }
 
-    public static String constructNameFromElements(final int vcardType,
+    public static String constructNameFromElements(final int nameOrder,
             final String familyName, final String middleName, final String givenName,
             final String prefix, final String suffix) {
         final StringBuilder builder = new StringBuilder();
-        final String[] nameList = sortNameElements(vcardType, familyName, middleName, givenName);
+        final String[] nameList = sortNameElements(nameOrder, familyName, middleName, givenName);
         boolean first = true;
         if (!TextUtils.isEmpty(prefix)) {
             first = false;
