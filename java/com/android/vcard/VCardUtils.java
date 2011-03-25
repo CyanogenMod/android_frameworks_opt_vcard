@@ -336,8 +336,8 @@ public class VCardUtils {
      */
     public static void insertStructuredPostalDataUsingContactsStruct(int vcardType,
             final ContentProviderOperation.Builder builder,
-            final VCardEntry.PostalData postalData) {
-        builder.withValueBackReference(StructuredPostal.RAW_CONTACT_ID, 0);
+            final VCardEntry.PostalData postalData, int backReferenceIndex) {
+        builder.withValueBackReference(StructuredPostal.RAW_CONTACT_ID, backReferenceIndex);
         builder.withValue(Data.MIMETYPE, StructuredPostal.CONTENT_ITEM_TYPE);
 
         builder.withValue(StructuredPostal.TYPE, postalData.type);
