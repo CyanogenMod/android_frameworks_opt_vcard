@@ -21,24 +21,59 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public abstract class VCardParser {
+
     /**
-     * <p>
-     * Parses the given stream and send the vCard data into {@link VCardInterpreter}.
-     * </p>.
-     * <p>
-     * Note that vCard 2.1 specification allows "CHARSET" parameter, and some career sets
-     * local encoding to it. For example, Japanese phone career uses Shift_JIS, which is
-     * formally allowed in vCard 2.1, but not allowed in vCard 3.0. In vCard 2.1,
-     * In some exreme case, it is allowed for vCard to have different charsets in one vCard.
-     * </p>
-     * <p>
-     * We recommend you use {@link VCardSourceDetector} and detect which kind of source the
-     * vCard comes from and explicitly specify a charset using the result.
-     * </p>
+     * Registers one {@link VCardInterpreter} instance, which receives events along with
+     * vCard parsing.
+     *
+     * @param interpreter
+     */
+    public abstract void addInterpreter(VCardInterpreter interpreter);
+
+    /**
+     * <p>Parses a whole InputStream as a vCard file and lets registered {@link VCardInterpreter}
+     * instances handle callbacks.</p>
+     *
+     * <p>This method reads a whole InputStream. If you just want to parse one vCard entry inside
+     * a vCard file with multiple entries, try {@link #parseOne(InputStream)}.</p>
      *
      * @param is The source to parse.
-     * @param interpreter A {@link VCardInterpreter} object which used to construct data.
      * @throws IOException, VCardException
+     */
+    public abstract void parse(InputStream is) throws IOException, VCardException;
+
+    /**
+     * <p>Parses the first vCard entry in InputStream and lets registered {@link VCardInterpreter}
+     * instances handle callbacks.</p>
+     *
+     * <p>This method finishes itself when the first entry ended.</p>
+     *
+     * <p>Note that, registered {@link VCardInterpreter} may still see multiple
+     * {@link VCardInterpreter#onEntryStarted()} / {@link VCardInterpreter#onEntryEnded()} calls
+     * even with this method.</p>
+     *
+     * <p>This happens when the first entry contains nested vCards, which is allowed in vCard 2.1.
+     * See the following example.</p>
+     *
+     * <code>
+     * BEGIN:VCARD
+     * N:a
+     * BEGIN:VCARD
+     * N:b
+     * END:VCARD
+     * END:VCARD
+     * </code>
+     *
+     * <p>With this vCard, registered interpreters will grab two
+     * {@link VCardInterpreter#onEntryStarted()} and {@link VCardInterpreter#onEntryEnded()}
+     * calls. Callers should handle the situation by themselves.</p>
+     *
+     * @param is  The source to parse.
+     * @throws IOException, VCardException
+     */
+    public abstract void parseOne(InputStream is) throws IOException, VCardException;
+
+    /**
      * @deprecated use {@link #addInterpreter(VCardInterpreter)} and
      * {@link #parse(InputStream)}
      */
@@ -48,9 +83,6 @@ public abstract class VCardParser {
         addInterpreter(interpreter);
         parse(is);
     }
-
-    public abstract void addInterpreter(VCardInterpreter interpreter);
-    public abstract void parse(InputStream is) throws IOException, VCardException;
 
     /**
      * <p>

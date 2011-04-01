@@ -31,7 +31,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -163,26 +162,6 @@ import java.util.Set;
     }
 
     /**
-     * <p>
-     * Parses the file at the given position.
-     * </p>
-     */
-    // <pre class="prettyprint">vcard_file = [wsls] vcard [wsls]</pre>
-    protected void parseVCardFile() throws IOException, VCardException {
-        while (true) {
-            synchronized (this) {
-                if (mCanceled) {
-                    Log.i(LOG_TAG, "Cancel request has come. exitting parse operation.");
-                    break;
-                }
-            }
-            if (!parseOneVCard()) {
-                break;
-            }
-        }
-    }
-
-    /**
      * @return true when a given property name is a valid property name.
      */
     protected boolean isValidPropertyName(final String propertyName) {
@@ -230,6 +209,7 @@ import java.util.Set;
      *         items *CRLF
      *         "END" [ws] ":" [ws] "VCARD"
      * </code>
+     * @return False when reaching end of file.
      */
     private boolean parseOneVCard() throws IOException, VCardException {
         // reset for this entire vCard.
@@ -940,7 +920,38 @@ import java.util.Set;
         for (VCardInterpreter interpreter : mInterpreterList) {
             interpreter.onVCardStarted();
         }
-        parseVCardFile();
+
+        // vcard_file = [wsls] vcard [wsls]
+        while (true) {
+            synchronized (this) {
+                if (mCanceled) {
+                    Log.i(LOG_TAG, "Cancel request has come. exitting parse operation.");
+                    break;
+                }
+            }
+            if (!parseOneVCard()) {
+                break;
+            }
+        }
+
+        for (VCardInterpreter interpreter : mInterpreterList) {
+            interpreter.onVCardEnded();
+        }
+    }
+
+    public void parseOne(InputStream is) throws IOException, VCardException {
+        if (is == null) {
+            throw new NullPointerException("InputStream must not be null.");
+        }
+
+        final InputStreamReader tmpReader = new InputStreamReader(is, mIntermediateCharset);
+        mReader = new CustomBufferedReader(tmpReader);
+
+        final long start = System.currentTimeMillis();
+        for (VCardInterpreter interpreter : mInterpreterList) {
+            interpreter.onVCardStarted();
+        }
+        parseOneVCard();
         for (VCardInterpreter interpreter : mInterpreterList) {
             interpreter.onVCardEnded();
         }

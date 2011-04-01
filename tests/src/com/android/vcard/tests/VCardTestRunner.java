@@ -28,7 +28,7 @@ public class VCardTestRunner extends InstrumentationTestRunner {
     public TestSuite getAllTests() {
         TestSuite suite = new InstrumentationTestSuite(this);
         suite.addTestSuite(VCardEntryTests.class);
-        suite.addTestSuite(VCardInterpreterTests.class);
+        suite.addTestSuite(VCardParserTests.class);
         suite.addTestSuite(VCardUtilsTests.class);
         suite.addTestSuite(VCardTestUtilsTests.class);
         suite.addTestSuite(VCardImporterTests.class);
