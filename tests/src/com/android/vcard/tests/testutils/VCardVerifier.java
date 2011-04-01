@@ -19,7 +19,6 @@ import com.android.vcard.VCardComposer;
 import com.android.vcard.VCardConfig;
 import com.android.vcard.VCardEntryConstructor;
 import com.android.vcard.VCardInterpreter;
-import com.android.vcard.VCardInterpreterCollection;
 import com.android.vcard.VCardParser;
 import com.android.vcard.VCardUtils;
 import com.android.vcard.exception.VCardException;
@@ -233,30 +232,20 @@ public class VCardVerifier {
      * Used both from {@link #verifyForImportTest()} and from {@link #verifyForExportTest()}.
      */
     private void verifyWithInputStream(InputStream is) throws IOException {
-        final VCardInterpreter interpreter;
-        if (mContentValuesVerifier != null) {
-            final VCardEntryConstructor constructor = new VCardEntryConstructor(mVCardType);
-            constructor.addEntryHandler(mContentValuesVerifier);
-            if (mPropertyNodesVerifier != null) {
-                interpreter = new VCardInterpreterCollection(Arrays.asList(
-                        mPropertyNodesVerifier, constructor));
-            } else {
-                interpreter = constructor;
-            }
-        } else {
-            if (mPropertyNodesVerifier != null) {
-                interpreter = mPropertyNodesVerifier;
-            } else {
-                interpreter = null;
-            }
-        }
-
         try {
             // Note: we must not specify charset toward vCard parsers. This code checks whether
             // those parsers are able to encode given binary without any extra information for
             // charset.
             final VCardParser parser = VCardUtils.getAppropriateParser(mVCardType);
-            parser.parse(is, interpreter);
+            if (mContentValuesVerifier != null) {
+                final VCardEntryConstructor constructor = new VCardEntryConstructor(mVCardType);
+                constructor.addEntryHandler(mContentValuesVerifier);
+                parser.addInterpreter(constructor);
+            }
+            if (mPropertyNodesVerifier != null) {
+                parser.addInterpreter(mPropertyNodesVerifier);
+            }
+            parser.parse(is);
         } catch (VCardException e) {
             Log.e(LOG_TAG, "VCardException", e);
             AndroidTestCase.fail("Unexpected VCardException: " + e.getMessage());
