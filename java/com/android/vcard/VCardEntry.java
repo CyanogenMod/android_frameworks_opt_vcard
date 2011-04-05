@@ -131,7 +131,7 @@ public class VCardEntry {
         private String mPhoneticMiddle;
 
         // For "SORT-STRING" in vCard 3.0.
-        public String sortString;
+        private String mSortString;
 
         /**
          * Not in vCard but for {@link StructuredName#DISPLAY_NAME}. This field
@@ -197,7 +197,7 @@ public class VCardEntry {
             // SORT-STRING is used only when phonetic names aren't specified in
             // the original vCard.
             if (!phoneticNameSpecified) {
-                builder.withValue(StructuredName.PHONETIC_GIVEN_NAME, sortString);
+                builder.withValue(StructuredName.PHONETIC_GIVEN_NAME, mSortString);
             }
 
             builder.withValue(StructuredName.DISPLAY_NAME, displayName);
@@ -210,7 +210,7 @@ public class VCardEntry {
                     && TextUtils.isEmpty(mGiven) && TextUtils.isEmpty(mPrefix)
                     && TextUtils.isEmpty(mSuffix) && TextUtils.isEmpty(mFormatted)
                     && TextUtils.isEmpty(mPhoneticFamily) && TextUtils.isEmpty(mPhoneticMiddle)
-                    && TextUtils.isEmpty(mPhoneticGiven) && TextUtils.isEmpty(sortString));
+                    && TextUtils.isEmpty(mPhoneticGiven) && TextUtils.isEmpty(mSortString));
         }
 
         @Override
@@ -231,8 +231,20 @@ public class VCardEntry {
                     && TextUtils.equals(mFormatted, nameData.mFormatted)
                     && TextUtils.equals(mPhoneticFamily, nameData.mPhoneticFamily)
                     && TextUtils.equals(mPhoneticMiddle, nameData.mPhoneticMiddle)
-                    && TextUtils.equals(mPhoneticGiven, nameData.mPhoneticGiven) && TextUtils
-                    .equals(sortString, nameData.sortString));
+                    && TextUtils.equals(mPhoneticGiven, nameData.mPhoneticGiven)
+                    && TextUtils.equals(mSortString, nameData.mSortString));
+        }
+
+        @Override
+        public int hashCode() {
+            final String[] hashTargets = new String[] {mFamily, mMiddle, mGiven, mPrefix, mSuffix,
+                    mFormatted, mPhoneticFamily, mPhoneticMiddle,
+                    mPhoneticGiven, mSortString};
+            int hash = 0;
+            for (String hashTarget : hashTargets) {
+                hash = hash * 31 + (hashTarget != null ? hashTarget.hashCode() : 0);
+            }
+            return hash;
         }
 
         @Override
@@ -268,6 +280,10 @@ public class VCardEntry {
 
         public String getFormatted() {
             return mFormatted;
+        }
+
+        public String getSortString() {
+            return mSortString;
         }
 
         /** @hide Just for testing. */
@@ -336,6 +352,15 @@ public class VCardEntry {
                     && TextUtils.equals(mNumber, phoneData.mNumber)
                     && TextUtils.equals(mLabel, phoneData.mLabel)
                     && (mIsPrimary == phoneData.mIsPrimary));
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = mType;
+            hash = hash * 31 + (mNumber != null ? mNumber.hashCode() : 0);
+            hash = hash * 31 + (mLabel != null ? mLabel.hashCode() : 0);
+            hash = hash * 31 + (mIsPrimary ? 1231 : 1237);
+            return hash;
         }
 
         @Override
@@ -417,6 +442,15 @@ public class VCardEntry {
                     && TextUtils.equals(mAddress, emailData.mAddress)
                     && TextUtils.equals(mLabel, emailData.mLabel)
                     && (mIsPrimary == emailData.mIsPrimary));
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = mType;
+            hash = hash * 31 + (mAddress != null ? mAddress.hashCode() : 0);
+            hash = hash * 31 + (mLabel != null ? mLabel.hashCode() : 0);
+            hash = hash * 31 + (mIsPrimary ? 1231 : 1237);
+            return hash;
         }
 
         @Override
@@ -593,10 +627,13 @@ public class VCardEntry {
 
         @Override
         public boolean isEmpty() {
-            return (TextUtils.isEmpty(mPobox) && TextUtils.isEmpty(mExtendedAddress)
-                    && TextUtils.isEmpty(mStreet) && TextUtils.isEmpty(mLocalty)
-                    && TextUtils.isEmpty(mRegion) && TextUtils.isEmpty(mPostalCode) && TextUtils
-                    .isEmpty(mCountry));
+            return (TextUtils.isEmpty(mPobox)
+                    && TextUtils.isEmpty(mExtendedAddress)
+                    && TextUtils.isEmpty(mStreet)
+                    && TextUtils.isEmpty(mLocalty)
+                    && TextUtils.isEmpty(mRegion)
+                    && TextUtils.isEmpty(mPostalCode)
+                    && TextUtils.isEmpty(mCountry));
         }
 
         @Override
@@ -610,7 +647,8 @@ public class VCardEntry {
             final PostalData postalData = (PostalData) obj;
             return (mType == postalData.mType)
                     && (mType == StructuredPostal.TYPE_CUSTOM ? TextUtils.equals(mLabel,
-                            postalData.mLabel) : true) && (mIsPrimary == postalData.mIsPrimary)
+                            postalData.mLabel) : true)
+                    && (mIsPrimary == postalData.mIsPrimary)
                     && TextUtils.equals(mPobox, postalData.mPobox)
                     && TextUtils.equals(mExtendedAddress, postalData.mExtendedAddress)
                     && TextUtils.equals(mStreet, postalData.mStreet)
@@ -618,6 +656,20 @@ public class VCardEntry {
                     && TextUtils.equals(mRegion, postalData.mRegion)
                     && TextUtils.equals(mPostalCode, postalData.mPostalCode)
                     && TextUtils.equals(mCountry, postalData.mCountry);
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = mType;
+            hash = hash * 31 + (mLabel != null ? mLabel.hashCode() : 0);
+            hash = hash * 31 + (mIsPrimary ? 1231 : 1237);
+
+            final String[] hashTargets = new String[] {mPobox, mExtendedAddress, mStreet,
+                    mLocalty, mRegion, mPostalCode, mCountry};
+            for (String hashTarget : hashTargets) {
+                hash = hash * 31 + (hashTarget != null ? hashTarget.hashCode() : 0);
+            }
+            return hash;
         }
 
         @Override
@@ -768,6 +820,16 @@ public class VCardEntry {
         }
 
         @Override
+        public int hashCode() {
+            int hash = mType;
+            hash = hash * 31 + (mOrganizationName != null ? mOrganizationName.hashCode() : 0);
+            hash = hash * 31 + (mDepartmentName != null ? mDepartmentName.hashCode() : 0);
+            hash = hash * 31 + (mTitle != null ? mTitle.hashCode() : 0);
+            hash = hash * 31 + (mIsPrimary ? 1231 : 1237);
+            return hash;
+        }
+
+        @Override
         public String toString() {
             return String.format(
                     "type: %d, organization: %s, department: %s, title: %s, isPrimary: %s", mType,
@@ -853,10 +915,21 @@ public class VCardEntry {
                 return false;
             }
             ImData imData = (ImData) obj;
-            return (mType == imData.mType && mProtocol == imData.mProtocol
+            return (mType == imData.mType
+                    && mProtocol == imData.mProtocol
                     && TextUtils.equals(mCustomProtocol, imData.mCustomProtocol)
                     && TextUtils.equals(mAddress, imData.mAddress)
                     && (mIsPrimary == imData.mIsPrimary));
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = mType;
+            hash = hash * 31 + mProtocol;
+            hash = hash * 31 + (mCustomProtocol != null ? mCustomProtocol.hashCode() : 0);
+            hash = hash * 31 + (mAddress != null ? mAddress.hashCode() : 0);
+            hash = hash * 31 + (mIsPrimary ? 1231 : 1237);
+            return hash;
         }
 
         @Override
@@ -906,6 +979,8 @@ public class VCardEntry {
         // TODO: make this private. Currently the app outside this class refers to this.
         public final byte[] photoBytes;
 
+        private Integer mHashCode = null;
+
         public PhotoData(String format, byte[] photoBytes, boolean isPrimary) {
             mFormat = format;
             this.photoBytes = photoBytes;
@@ -943,6 +1018,25 @@ public class VCardEntry {
             return (TextUtils.equals(mFormat, photoData.mFormat)
                     && Arrays.equals(photoBytes, photoData.photoBytes)
                     && (mIsPrimary == photoData.mIsPrimary));
+        }
+
+        @Override
+        public int hashCode() {
+            if (mHashCode != null) {
+                return mHashCode;
+            }
+
+            int hash = mFormat != null ? mFormat.hashCode() : 0;
+            hash = hash * 31;
+            if (photoBytes != null) {
+                for (byte b : photoBytes) {
+                    hash += b;
+                }
+            }
+
+            hash = hash * 31 + (mIsPrimary ? 1231 : 1237);
+            mHashCode = hash;
+            return hash;
         }
 
         @Override
@@ -1003,6 +1097,11 @@ public class VCardEntry {
         }
 
         @Override
+        public int hashCode() {
+            return mNickname != null ? mNickname.hashCode() : 0;
+        }
+
+        @Override
         public String toString() {
             return "nickname: " + mNickname;
         }
@@ -1050,6 +1149,11 @@ public class VCardEntry {
             }
             NoteData noteData = (NoteData) obj;
             return TextUtils.equals(mNote, noteData.mNote);
+        }
+
+        @Override
+        public int hashCode() {
+            return mNote != null ? mNote.hashCode() : 0;
         }
 
         @Override
@@ -1106,6 +1210,11 @@ public class VCardEntry {
         }
 
         @Override
+        public int hashCode() {
+            return mWebsite != null ? mWebsite.hashCode() : 0;
+        }
+
+        @Override
         public String toString() {
             return "website: " + mWebsite;
         }
@@ -1157,6 +1266,11 @@ public class VCardEntry {
         }
 
         @Override
+        public int hashCode() {
+            return mBirthday != null ? mBirthday.hashCode() : 0;
+        }
+
+        @Override
         public String toString() {
             return "birthday: " + mBirthday;
         }
@@ -1205,6 +1319,11 @@ public class VCardEntry {
             }
             AnniversaryData anniversaryData = (AnniversaryData) obj;
             return TextUtils.equals(mAnniversary, anniversaryData.mAnniversary);
+        }
+
+        @Override
+        public int hashCode() {
+            return mAnniversary != null ? mAnniversary.hashCode() : 0;
         }
 
         @Override
@@ -1274,7 +1393,19 @@ public class VCardEntry {
                 return false;
             }
             SipData sipData = (SipData) obj;
-            return TextUtils.equals(mAddress, sipData.mAddress);
+            return (mType == sipData.mType
+                    && TextUtils.equals(mLabel, sipData.mLabel)
+                    && TextUtils.equals(mAddress, sipData.mAddress)
+                    && (mIsPrimary == sipData.mIsPrimary));
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = mType;
+            hash = hash * 31 + (mLabel != null ? mLabel.hashCode() : 0);
+            hash = hash * 31 + (mAddress != null ? mAddress.hashCode() : 0);
+            hash = hash * 31 + (mIsPrimary ? 1231 : 1237);
+            return hash;
         }
 
         @Override
@@ -1377,6 +1508,17 @@ public class VCardEntry {
                 }
                 return true;
             }
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = mMimeType != null ? mMimeType.hashCode() : 0;
+            if (mDataList != null) {
+                for (String data : mDataList) {
+                    hash = hash * 31 + (data != null ? data.hashCode() : 0);
+                }
+            }
+            return hash;
         }
 
         @Override
@@ -1990,7 +2132,7 @@ public class VCardEntry {
         } else if (propertyName.equals(VCardConstants.PROPERTY_N)) {
             handleNProperty(propertyValueList, paramMap);
         } else if (propertyName.equals(VCardConstants.PROPERTY_SORT_STRING)) {
-            mNameData.sortString = propValue;
+            mNameData.mSortString = propValue;
         } else if (propertyName.equals(VCardConstants.PROPERTY_NICKNAME)
                 || propertyName.equals(VCardConstants.ImportOnly.PROPERTY_X_NICKNAME)) {
             addNickName(propValue);
