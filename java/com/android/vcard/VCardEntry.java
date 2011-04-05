@@ -976,14 +976,13 @@ public class VCardEntry {
         private final String mFormat;
         private final boolean mIsPrimary;
 
-        // TODO: make this private. Currently the app outside this class refers to this.
-        public final byte[] photoBytes;
+        private final byte[] mBytes;
 
         private Integer mHashCode = null;
 
         public PhotoData(String format, byte[] photoBytes, boolean isPrimary) {
             mFormat = format;
-            this.photoBytes = photoBytes;
+            mBytes = photoBytes;
             mIsPrimary = isPrimary;
         }
 
@@ -994,7 +993,7 @@ public class VCardEntry {
                     .newInsert(Data.CONTENT_URI);
             builder.withValueBackReference(Photo.RAW_CONTACT_ID, backReferenceIndex);
             builder.withValue(Data.MIMETYPE, Photo.CONTENT_ITEM_TYPE);
-            builder.withValue(Photo.PHOTO, photoBytes);
+            builder.withValue(Photo.PHOTO, mBytes);
             if (mIsPrimary) {
                 builder.withValue(Photo.IS_PRIMARY, 1);
             }
@@ -1003,7 +1002,7 @@ public class VCardEntry {
 
         @Override
         public boolean isEmpty() {
-            return photoBytes == null || photoBytes.length == 0;
+            return mBytes == null || mBytes.length == 0;
         }
 
         @Override
@@ -1016,7 +1015,7 @@ public class VCardEntry {
             }
             PhotoData photoData = (PhotoData) obj;
             return (TextUtils.equals(mFormat, photoData.mFormat)
-                    && Arrays.equals(photoBytes, photoData.photoBytes)
+                    && Arrays.equals(mBytes, photoData.mBytes)
                     && (mIsPrimary == photoData.mIsPrimary));
         }
 
@@ -1028,8 +1027,8 @@ public class VCardEntry {
 
             int hash = mFormat != null ? mFormat.hashCode() : 0;
             hash = hash * 31;
-            if (photoBytes != null) {
-                for (byte b : photoBytes) {
+            if (mBytes != null) {
+                for (byte b : mBytes) {
                     hash += b;
                 }
             }
@@ -1041,7 +1040,7 @@ public class VCardEntry {
 
         @Override
         public String toString() {
-            return String.format("format: %s: size: %d, isPrimary: %s", mFormat, photoBytes.length,
+            return String.format("format: %s: size: %d, isPrimary: %s", mFormat, mBytes.length,
                     mIsPrimary);
         }
 
@@ -1055,7 +1054,7 @@ public class VCardEntry {
         }
 
         public byte[] getBytes() {
-            return photoBytes;
+            return mBytes;
         }
 
         public boolean isPrimary() {
