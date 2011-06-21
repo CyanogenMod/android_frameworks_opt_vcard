@@ -41,6 +41,7 @@ import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.RawContactsEntity;
+import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -362,11 +363,12 @@ public class VCardComposer {
     public boolean init(final Uri contentUri, final String[] projection,
             final String selection, final String[] selectionArgs,
             final String sortOrder, Uri contentUriForRawContactsEntity) {
-        if (!Contacts.CONTENT_URI.equals(contentUri)) {
+        if (!ContactsContract.AUTHORITY.equals(contentUri.getAuthority())) {
             if (DEBUG) Log.d(LOG_TAG, "Unexpected contentUri: " + contentUri);
             mErrorReason = FAILURE_REASON_UNSUPPORTED_URI;
             return false;
         }
+
         if (!initInterFirstPart(contentUriForRawContactsEntity)) {
             return false;
         }
@@ -413,7 +415,6 @@ public class VCardComposer {
         mCursorSuppliedFromOutside = false;
         mCursor = mContentResolver.query(
                 contentUri, projection, selection, selectionArgs, sortOrder);
-
         if (mCursor == null) {
             Log.e(LOG_TAG, String.format("Cursor became null unexpectedly"));
             mErrorReason = FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO;
