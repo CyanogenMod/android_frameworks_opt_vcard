@@ -19,8 +19,8 @@ package com.android.vcard.tests;
 import com.android.vcard.VCardConfig;
 import com.android.vcard.tests.testutils.ContactEntry;
 import com.android.vcard.tests.testutils.PropertyNodesVerifierElem;
-import com.android.vcard.tests.testutils.VCardTestsBase;
 import com.android.vcard.tests.testutils.PropertyNodesVerifierElem.TypeSet;
+import com.android.vcard.tests.testutils.VCardTestsBase;
 
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
@@ -1209,8 +1209,8 @@ public class VCardExporterTests extends VCardTestsBase {
         ContactEntry entry = mVerifier.addInputEntry();
         entry.addContentValues(Phone.CONTENT_ITEM_TYPE)
                 .put(Phone.TYPE, Phone.TYPE_HOME)
-                .put(Phone.NUMBER, "111-222-3333 (Miami)\n444-5555-666 (Tokyo);"
-                        + "777-888-9999 (Chicago);111-222-3333 (Miami)");
+                .put(Phone.NUMBER, "111-222-3333 (Miami)\n444-5555-666 (Tokyo)\n"
+                        + "777-888-9999 (Chicago)\n111-222-3333 (Miami)");
         mVerifier.addPropertyNodesVerifierElemWithEmptyName()
                 .addExpectedNode("TEL", "111-222-3333", new TypeSet("HOME"))
                 .addExpectedNode("TEL", "444-555-5666", new TypeSet("HOME"))
@@ -1290,6 +1290,22 @@ public class VCardExporterTests extends VCardTestsBase {
                 .addExpected("IMPP:sip:android@example.com");
         mVerifier.addPropertyNodesVerifierElemWithEmptyName()
                 .addExpectedNode("IMPP", "sip:android@example.com");
+    }
+
+    public void testPauseAndWaitConversionV30() {
+        mVerifier.initForExportTest(V30);
+        final ContactEntry entry = mVerifier.addInputEntry();
+        // Insert numbers with PAUSE (',' internally, 'p' for outside) and
+        // WAIT (';' internally, 'w' for outside)
+        entry.addContentValues(Phone.CONTENT_ITEM_TYPE)
+                .put(Phone.TYPE, Phone.TYPE_HOME)
+                .put(Phone.NUMBER, "111,222;333");
+        mVerifier.addLineVerifierElem()
+                .addExpected("N:")
+                .addExpected("FN:")
+                .addExpected("TEL;TYPE=HOME:111p222w333");
+        mVerifier.addPropertyNodesVerifierElemWithEmptyName()
+                .addExpectedNode("TEL", "111p222w333", new TypeSet("HOME"));
     }
 
     public void testSipAddressV40() {

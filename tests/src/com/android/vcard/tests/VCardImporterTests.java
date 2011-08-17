@@ -1239,4 +1239,26 @@ public class VCardImporterTests extends VCardTestsBase {
         // Smoke test.
         elem.addExpected("custom_mime4").put("data1", "z");
     }
+
+    public void testPauseWaitV30_Parse() {
+        mVerifier.initForImportTest(V30, R.raw.v30_pause_wait);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("FN", "Pause Wait")
+                .addExpectedNodeWithOrder("N", "Pause;Wait;;;",
+                        Arrays.asList("Pause", "Wait", "", "", ""))
+                .addExpectedNodeWithOrder("TEL", "p1234p5678w9");
+     }
+
+    public void testPauseWaitV30() {
+        mVerifier.initForImportTest(V30, R.raw.v30_pause_wait);
+        final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();
+        elem.addExpected(StructuredName.CONTENT_ITEM_TYPE)
+                .put(StructuredName.FAMILY_NAME, "Pause")
+                .put(StructuredName.GIVEN_NAME, "Wait")
+                .put(StructuredName.DISPLAY_NAME, "Pause Wait");
+        // See PhoneNumberUtils in Android SDK.
+        elem.addExpected(Phone.CONTENT_ITEM_TYPE)
+                .put(Phone.TYPE, Phone.TYPE_HOME)
+                .put(Phone.NUMBER, ",1234,5678;9");
+    }
 }

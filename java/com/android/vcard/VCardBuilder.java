@@ -31,6 +31,7 @@ import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
+import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
@@ -846,17 +847,39 @@ public class VCardBuilder {
                         appendTelLine(type, label, phoneNumber, isPrimary);
                     }
                 } else {
-                    final List<String> phoneNumberList = splitAndTrimPhoneNumbers(phoneNumber);
+                    final List<String> phoneNumberList = splitPhoneNumbers(phoneNumber);
                     if (phoneNumberList.isEmpty()) {
                         continue;
                     }
                     phoneLineExists = true;
                     for (String actualPhoneNumber : phoneNumberList) {
                         if (!phoneSet.contains(actualPhoneNumber)) {
-                            final int phoneFormat = VCardUtils.getPhoneNumberFormat(mVCardType);
-                            String formatted =
-                                    PhoneNumberUtilsPort.formatNumber(
-                                            actualPhoneNumber, phoneFormat);
+                            // 'p' and 'w' are the standard characters for pause and wait
+                            // (see RFC 3601)
+                            // so use those when exporting phone numbers via vCard.
+                            String numberWithControlSequence = actualPhoneNumber
+                                    .replace(PhoneNumberUtils.PAUSE, 'p')
+                                    .replace(PhoneNumberUtils.WAIT, 'w');
+                            String formatted;
+                            // TODO: remove this code and relevant test cases. vCard and any other
+                            // codes using it shouldn't rely on the formatter here.
+                            if (TextUtils.equals(numberWithControlSequence, actualPhoneNumber)) {
+                                StringBuilder digitsOnlyBuilder = new StringBuilder();
+                                final int length = actualPhoneNumber.length();
+                                for (int i = 0; i < length; i++) {
+                                    final char ch = actualPhoneNumber.charAt(i);
+                                    if (Character.isDigit(ch) || ch == '+') {
+                                        digitsOnlyBuilder.append(ch);
+                                    }
+                                }
+                                final int phoneFormat =
+                                        VCardUtils.getPhoneNumberFormat(mVCardType);
+                                formatted = PhoneNumberUtilsPort.formatNumber(
+                                        digitsOnlyBuilder.toString(), phoneFormat);
+                            } else {
+                                // Be conservative.
+                                formatted = numberWithControlSequence;
+                            }
 
                             // In vCard 4.0, value type must be "a single URI value",
                             // not just a phone number. (Based on vCard 4.0 rev.13)
@@ -909,24 +932,23 @@ public class VCardBuilder {
      * Do not call this method when trimming is inappropriate for its receivers.
      * </p>
      */
-    private List<String> splitAndTrimPhoneNumbers(final String phoneNumber) {
+    private List<String> splitPhoneNumbers(final String phoneNumber) {
         final List<String> phoneList = new ArrayList<String>();
 
         StringBuilder builder = new StringBuilder();
         final int length = phoneNumber.length();
         for (int i = 0; i < length; i++) {
             final char ch = phoneNumber.charAt(i);
-            if (Character.isDigit(ch) || ch == '+') {
-                builder.append(ch);
-            } else if ((ch == ';' || ch == '\n') && builder.length() > 0) {
+            if (ch == '\n' && builder.length() > 0) {
                 phoneList.add(builder.toString());
                 builder = new StringBuilder();
+            } else {
+                builder.append(ch);
             }
         }
         if (builder.length() > 0) {
             phoneList.add(builder.toString());
         }
-
         return phoneList;
     }
 

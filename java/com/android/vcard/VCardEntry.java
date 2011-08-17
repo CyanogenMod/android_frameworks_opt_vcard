@@ -39,6 +39,7 @@ import android.provider.ContactsContract.CommonDataKinds.Website;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
+import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -1766,21 +1767,37 @@ public class VCardEntry {
             mPhoneList = new ArrayList<PhoneData>();
         }
         final StringBuilder builder = new StringBuilder();
-        final String trimed = data.trim();
+        final String trimmed = data.trim();
         final String formattedNumber;
         if (type == Phone.TYPE_PAGER || VCardConfig.refrainPhoneNumberFormatting(mVCardType)) {
-            formattedNumber = trimed;
+            formattedNumber = trimmed;
         } else {
-            final int length = trimed.length();
+            // TODO: from the view of vCard spec these auto conversions should be removed.
+            // Note that some other codes (like the phone number formatter) or modules expect this
+            // auto conversion (bug 5178723), so just omitting this code won't be preferable enough
+            // (bug 4177894)
+            boolean hasPauseOrWait = false;
+            final int length = trimmed.length();
             for (int i = 0; i < length; i++) {
-                char ch = trimed.charAt(i);
-                if (('0' <= ch && ch <= '9') || (i == 0 && ch == '+')) {
+                char ch = trimmed.charAt(i);
+                // See RFC 3601 and docs for PhoneNumberUtils for more info.
+                if (ch == 'p' || ch == 'P') {
+                    builder.append(PhoneNumberUtils.PAUSE);
+                    hasPauseOrWait = true;
+                } else if (ch == 'w' || ch == 'W') {
+                    builder.append(PhoneNumberUtils.WAIT);
+                    hasPauseOrWait = true;
+                } else if (('0' <= ch && ch <= '9') || (i == 0 && ch == '+')) {
                     builder.append(ch);
                 }
             }
-
-            final int formattingType = VCardUtils.getPhoneNumberFormat(mVCardType);
-            formattedNumber = PhoneNumberUtilsPort.formatNumber(builder.toString(), formattingType);
+            if (!hasPauseOrWait) {
+                final int formattingType = VCardUtils.getPhoneNumberFormat(mVCardType);
+                formattedNumber = PhoneNumberUtilsPort.formatNumber(
+                        builder.toString(), formattingType);
+            } else {
+                formattedNumber = builder.toString();
+            }
         }
         PhoneData phoneData = new PhoneData(formattedNumber, type, label, isPrimary);
         mPhoneList.add(phoneData);
