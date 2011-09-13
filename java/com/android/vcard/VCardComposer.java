@@ -324,6 +324,26 @@ public class VCardComposer {
     }
 
     /**
+     * @param contentUri Uri for obtaining the list of contactId. Used with
+     * {@link ContentResolver#query(Uri, String[], String, String[], String)}
+     * @param selection selection used with
+     * {@link ContentResolver#query(Uri, String[], String, String[], String)}
+     * @param selectionArgs selectionArgs used with
+     * {@link ContentResolver#query(Uri, String[], String, String[], String)}
+     * @param sortOrder sortOrder used with
+     * {@link ContentResolver#query(Uri, String[], String, String[], String)}
+     * @param contentUriForRawContactsEntity Uri for obtaining entries relevant to each
+     * contactId.
+     * Note that this is an unstable interface, may be deleted in the future.
+     */
+    public boolean init(final Uri contentUri, final String selection,
+            final String[] selectionArgs, final String sortOrder,
+            final Uri contentUriForRawContactsEntity) {
+        return init(contentUri, sContactsProjection, selection, selectionArgs, sortOrder,
+                contentUriForRawContactsEntity);
+    }
+
+    /**
      * A variant of init(). Currently just for testing. Use other variants for init().
      *
      * First we'll create {@link Cursor} for the list of contactId.
