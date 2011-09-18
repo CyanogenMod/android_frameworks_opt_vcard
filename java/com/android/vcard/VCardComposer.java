@@ -557,6 +557,24 @@ public class VCardComposer {
         return buildVCard(contentValuesListMap);
     }
 
+    private VCardPhoneNumberTranslationCallback mPhoneTranslationCallback;
+    /**
+     * <p>
+     * Set a callback for phone number formatting. It will be called every time when this object
+     * receives a phone number for printing.
+     * </p>
+     * <p>
+     * When this is set {@link VCardConfig#FLAG_REFRAIN_PHONE_NUMBER_FORMATTING} will be ignored
+     * and the callback should be responsible for everything about phone number formatting.
+     * </p>
+     * <p>
+     * Caution: This interface will change. Please don't use without any strong reason.
+     * </p>
+     */
+    public void setPhoneNumberTranslationCallback(VCardPhoneNumberTranslationCallback callback) {
+        mPhoneTranslationCallback = callback;
+    }
+
     /**
      * Builds and returns vCard using given map, whose key is CONTENT_ITEM_TYPE defined in
      * {ContactsContract}. Developers can override this method to customize the output.
@@ -569,7 +587,8 @@ public class VCardComposer {
             final VCardBuilder builder = new VCardBuilder(mVCardType, mCharset);
             builder.appendNameProperties(contentValuesListMap.get(StructuredName.CONTENT_ITEM_TYPE))
                     .appendNickNames(contentValuesListMap.get(Nickname.CONTENT_ITEM_TYPE))
-                    .appendPhones(contentValuesListMap.get(Phone.CONTENT_ITEM_TYPE))
+                    .appendPhones(contentValuesListMap.get(Phone.CONTENT_ITEM_TYPE),
+                            mPhoneTranslationCallback)
                     .appendEmails(contentValuesListMap.get(Email.CONTENT_ITEM_TYPE))
                     .appendPostals(contentValuesListMap.get(StructuredPostal.CONTENT_ITEM_TYPE))
                     .appendOrganizations(contentValuesListMap.get(Organization.CONTENT_ITEM_TYPE))

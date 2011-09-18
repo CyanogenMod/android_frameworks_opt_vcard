@@ -818,7 +818,8 @@ public class VCardBuilder {
         return this;
     }
 
-    public VCardBuilder appendPhones(final List<ContentValues> contentValuesList) {
+    public VCardBuilder appendPhones(final List<ContentValues> contentValuesList,
+            VCardPhoneNumberTranslationCallback translationCallback) {
         boolean phoneLineExists = false;
         if (contentValuesList != null) {
             Set<String> phoneSet = new HashSet<String>();
@@ -836,11 +837,20 @@ public class VCardBuilder {
                     continue;
                 }
 
-                // PAGER number needs unformatted "phone number".
-                // TODO: It would be better to have this logic as optional.
                 final int type = (typeAsObject != null ? typeAsObject : DEFAULT_PHONE_TYPE);
-                if (type == Phone.TYPE_PAGER ||
+                // Note: We prioritize this callback over FLAG_REFRAIN_PHONE_NUMBER_FORMATTING
+                // intentionally. In the future the flag will be replaced by callback
+                // mechanism entirely.
+                if (translationCallback != null) {
+                    phoneNumber = translationCallback.onValueReceived(
+                            phoneNumber, type, label, isPrimary);
+                    if (!phoneSet.contains(phoneNumber)) {
+                        phoneSet.add(phoneNumber);
+                        appendTelLine(type, label, phoneNumber, isPrimary);
+                    }
+                } else if (type == Phone.TYPE_PAGER ||
                         VCardConfig.refrainPhoneNumberFormatting(mVCardType)) {
+                    // Note: PAGER number needs unformatted "phone number".
                     phoneLineExists = true;
                     if (!phoneSet.contains(phoneNumber)) {
                         phoneSet.add(phoneNumber);

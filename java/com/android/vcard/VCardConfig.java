@@ -231,6 +231,9 @@ public class VCardConfig {
      * This flag disables that formatting, affecting both importer and exporter.
      * If the user is aware of some side effects due to the implicit formatting, use this flag.
      * </p>
+     * <p>
+     * Caution: this flag will be removed in the future, replaced by some richer functionality.
+     * </p>
      */
     public static final int FLAG_REFRAIN_PHONE_NUMBER_FORMATTING = 0x02000000;
 
