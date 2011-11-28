@@ -462,7 +462,7 @@ public class VCardImporterTests extends VCardTestsBase {
                 .addExpectedNodeWithOrder("N", ";A;B\\;C\\;;D;:E;\\\\;",
                         Arrays.asList("", "A;B\\", "C\\;", "D", ":E", "\\\\", ""))
                 .addExpectedNodeWithOrder("FN", "A;B\\C\\;D:E\\\\");
-        
+
     }
 
     /**
@@ -635,9 +635,9 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Phone.TYPE, Phone.TYPE_CUSTOM)
                 .put(Phone.LABEL, "VIDEO")
                 .put(Phone.NUMBER, "032-222-2222");
+        // vCard's VOICE type should become OTHER type on Android devices.
         elem.addExpected(Phone.CONTENT_ITEM_TYPE)
-                .put(Phone.TYPE, Phone.TYPE_CUSTOM)
-                .put(Phone.LABEL, "VOICE")
+                .put(Phone.TYPE, Phone.TYPE_OTHER)
                 .put(Phone.NUMBER, "033-333-3333");
         elem.addExpected(StructuredPostal.CONTENT_ITEM_TYPE)
                 .put(StructuredPostal.TYPE, StructuredPostal.TYPE_WORK)
@@ -724,8 +724,7 @@ public class VCardImporterTests extends VCardTestsBase {
                 .put(Organization.DEPARTMENT, "Handset  Alliance")
                 .put(Organization.TYPE, Organization.TYPE_WORK);
         elem.addExpected(Phone.CONTENT_ITEM_TYPE)
-                .put(Phone.TYPE, Phone.TYPE_CUSTOM)
-                .put(Phone.LABEL, "VOICE")
+                .put(Phone.TYPE, Phone.TYPE_OTHER)
                 .put(Phone.NUMBER, "030-000-0000")
                 .put(Phone.IS_PRIMARY, 1);
     }
@@ -760,8 +759,7 @@ public class VCardImporterTests extends VCardTestsBase {
         elem.addExpected(Phone.CONTENT_ITEM_TYPE)
                 // Phone number formatting is different.
                 .put(Phone.NUMBER, (japanese ? "03-0000-0000" : "030-000-0000"))
-                .put(Phone.TYPE, Phone.TYPE_CUSTOM)
-                .put(Phone.LABEL, "VOICE")
+                .put(Phone.TYPE, Phone.TYPE_OTHER)
                 .put(Phone.IS_PRIMARY, 1);
     }
 

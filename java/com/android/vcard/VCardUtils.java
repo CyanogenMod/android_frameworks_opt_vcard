@@ -153,6 +153,8 @@ public class VCardUtils {
                 Phone.TYPE_TTY_TDD);
         sKnownPhoneTypeMap_StoI.put(VCardConstants.PARAM_PHONE_EXTRA_TYPE_ASSISTANT,
                 Phone.TYPE_ASSISTANT);
+        // OTHER (default in Android) should correspond to VOICE (default in vCard).
+        sKnownPhoneTypeMap_StoI.put(VCardConstants.PARAM_TYPE_VOICE, Phone.TYPE_OTHER);
 
         sPhoneTypesUnknownToContactsSet = new HashSet<String>();
         sPhoneTypesUnknownToContactsSet.add(VCardConstants.PARAM_TYPE_MODEM);
@@ -223,7 +225,13 @@ public class VCardUtils {
                     final Integer tmp = sKnownPhoneTypeMap_StoI.get(labelCandidate.toUpperCase());
                     if (tmp != null) {
                         final int typeCandidate = tmp;
-                        // TYPE_PAGER is prefered when the number contains @ surronded by
+                        // 1. If a type isn't specified yet, we'll choose the new type candidate.
+                        // 2. If the current type is default one (OTHER) or custom one, we'll
+                        // prefer more specific types specified in the vCard. Note that OTHER and
+                        // the other different types may appear simultaneously here, since vCard
+                        // allow to have VOICE and HOME/WORK in one line.
+                        // e.g. "TEL;WORK;VOICE:1" -> WORK + OTHER -> Type should be WORK
+                        // 3. TYPE_PAGER is prefered when the number contains @ surronded by
                         // a pager number and a domain name.
                         // e.g.
                         // o 1111@domain.com
@@ -233,7 +241,8 @@ public class VCardUtils {
                         if ((typeCandidate == Phone.TYPE_PAGER
                                 && 0 < indexOfAt && indexOfAt < number.length() - 1)
                                 || type < 0
-                                || type == Phone.TYPE_CUSTOM) {
+                                || type == Phone.TYPE_CUSTOM
+                                || type == Phone.TYPE_OTHER) {
                             type = tmp;
                         }
                     } else if (type < 0) {
