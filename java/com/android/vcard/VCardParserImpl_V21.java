@@ -15,15 +15,15 @@
  */
 package com.android.vcard;
 
+import android.text.TextUtils;
+import android.util.Base64;
+import android.util.Log;
+
 import com.android.vcard.exception.VCardAgentNotSupportedException;
 import com.android.vcard.exception.VCardException;
 import com.android.vcard.exception.VCardInvalidCommentLineException;
 import com.android.vcard.exception.VCardInvalidLineException;
 import com.android.vcard.exception.VCardVersionException;
-
-import android.text.TextUtils;
-import android.util.Base64;
-import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -789,14 +789,29 @@ import java.util.Set;
             }
 
             // vCard 2.1 requires two spaces at the end of BASE64 strings, but some vCard doesn't
-            // have them. We try to detect those cases using semi-colon, given BASE64 doesn't
-            // contain it. Specifically BASE64 doesn't have semi-colon in it, so we should be able
-            // to detect the case safely.
-            if (line.contains(":")) {
-                if (getKnownPropertyNameSet().contains(
-                        line.substring(0, line.indexOf(":")).toUpperCase())) {
+            // have them. We try to detect those cases using colon and semi-colon, given BASE64
+            // does not contain it.
+            // E.g.
+            //      TEL;TYPE=WORK:+5555555
+            // or
+            //      END:VCARD
+            int colonIndex = line.indexOf(":");
+            int semiColonIndex = line.indexOf(";");
+            if (colonIndex > -1 || semiColonIndex > -1) {
+                // Find the minimum index that is greater than -1.
+                final int minIndex;
+                if (colonIndex == -1) {
+                    minIndex = semiColonIndex;
+                } else if (semiColonIndex == -1) {
+                    minIndex = colonIndex;
+                } else {
+                    minIndex = Math.min(colonIndex, semiColonIndex);
+                }
+
+                if (getKnownPropertyNameSet().contains(line.substring(0, minIndex).toUpperCase())) {
                     Log.w(LOG_TAG, "Found a next property during parsing a BASE64 string, " +
-                            "which must not contain semi-colon. Treat the line as next property.");
+                            "which must not contain semi-colon or colon. Treat the line as next "
+                            + "property.");
                     Log.w(LOG_TAG, "Problematic line: " + line.trim());
                     break;
                 }

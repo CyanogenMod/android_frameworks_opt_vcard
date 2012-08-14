@@ -15,12 +15,6 @@
  */
 package com.android.vcard.tests;
 
-import com.android.vcard.VCardConfig;
-import com.android.vcard.tests.testutils.ContentValuesVerifier;
-import com.android.vcard.tests.testutils.ContentValuesVerifierElem;
-import com.android.vcard.tests.testutils.PropertyNodesVerifierElem.TypeSet;
-import com.android.vcard.tests.testutils.VCardTestsBase;
-
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
@@ -35,6 +29,12 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.provider.ContactsContract.CommonDataKinds.Website;
 import android.provider.ContactsContract.Data;
+
+import com.android.vcard.VCardConfig;
+import com.android.vcard.tests.testutils.ContentValuesVerifier;
+import com.android.vcard.tests.testutils.ContentValuesVerifierElem;
+import com.android.vcard.tests.testutils.PropertyNodesVerifierElem.TypeSet;
+import com.android.vcard.tests.testutils.VCardTestsBase;
 
 import java.util.Arrays;
 
@@ -1215,6 +1215,20 @@ public class VCardImporterTests extends VCardTestsBase {
                 .addExpectedNodeWithOrder("PHOTO", null,
                         null, sPhotoByteArrayForComplicatedCase, mContentValuesForBase64V21,
                         new TypeSet("JPEG"), null);
+    }
+
+    public void testBase64Without2CrLfForBlackBerry_Parse() {
+        mVerifier.initForImportTest(V21, R.raw.v21_blackberry_photo);
+        mVerifier.addPropertyNodesVerifierElem()
+                .addExpectedNodeWithOrder("FN", "fullname")
+                .addExpectedNodeWithOrder("N", "name")
+                .addExpectedNodeWithOrder("PHOTO", null,
+                        null, sPhotoByteArrayForComplicatedCase, mContentValuesForBase64V21,
+                        null, null)
+                .addExpectedNodeWithOrder("TEL", "+5555555", new TypeSet("WORK"))
+                .addExpectedNodeWithOrder("TEL", "+5555556", new TypeSet("CELL"))
+                .addExpectedNodeWithOrder("EMAIL", "forrestgump@walladalla.com",
+                        new TypeSet("INTERNET"));
     }
 
     public void testAndroidCustomPropertyV21() {
