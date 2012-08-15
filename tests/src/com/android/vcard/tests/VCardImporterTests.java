@@ -1231,6 +1231,13 @@ public class VCardImporterTests extends VCardTestsBase {
                         new TypeSet("INTERNET"));
     }
 
+    public void testMalformedBase64PhotoThrowsVCardException() {
+        mVerifier.initForImportTest(V21, R.raw.v21_malformed_photo);
+
+        String expectedMsgContent = "qgEPAAIAAAAHAAAAugEQAAIAAAAG:ASDF==";
+        mVerifier.addVCardExceptionVerifier(expectedMsgContent);
+    }
+
     public void testAndroidCustomPropertyV21() {
         mVerifier.initForImportTest(V21, R.raw.v21_android_custom_prop);
         final ContentValuesVerifierElem elem = mVerifier.addContentValuesVerifierElem();

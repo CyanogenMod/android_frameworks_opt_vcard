@@ -638,7 +638,12 @@ import java.util.Set;
             // It is very rare, but some BASE64 data may be so big that
             // OutOfMemoryError occurs. To ignore such cases, use try-catch.
             try {
-                property.setByteValue(Base64.decode(getBase64(propertyRawValue), Base64.DEFAULT));
+                final String base64Property = getBase64(propertyRawValue);
+                try {
+                    property.setByteValue(Base64.decode(base64Property, Base64.DEFAULT));
+                } catch (IllegalArgumentException e) {
+                    throw new VCardException("Decode error on base64 photo: " + propertyRawValue);
+                }
                 for (VCardInterpreter interpreter : mInterpreterList) {
                     interpreter.onPropertyCreated(property);
                 }

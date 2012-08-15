@@ -15,14 +15,6 @@
  */
 package com.android.vcard.tests.testutils;
 
-import com.android.vcard.VCardComposer;
-import com.android.vcard.VCardConfig;
-import com.android.vcard.VCardEntryConstructor;
-import com.android.vcard.VCardInterpreter;
-import com.android.vcard.VCardParser;
-import com.android.vcard.VCardUtils;
-import com.android.vcard.exception.VCardException;
-
 import android.content.ContentResolver;
 import android.content.EntityIterator;
 import android.database.Cursor;
@@ -32,13 +24,19 @@ import android.test.mock.MockContext;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.android.vcard.VCardComposer;
+import com.android.vcard.VCardConfig;
+import com.android.vcard.VCardEntryConstructor;
+import com.android.vcard.VCardParser;
+import com.android.vcard.VCardUtils;
+import com.android.vcard.exception.VCardException;
+
 import junit.framework.TestCase;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 /**
  * <p>
@@ -92,6 +90,8 @@ public class VCardVerifier {
     private boolean mInitialized;
     private boolean mVerified = false;
     private String mCharset;
+
+    private String mExceptionContents;
 
     // Called by VCardTestsBase
     public VCardVerifier(AndroidTestCase androidTestCase) {
@@ -225,6 +225,10 @@ public class VCardVerifier {
         return mContentValuesVerifier.addElem(mAndroidTestCase);
     }
 
+    public void addVCardExceptionVerifier(String contents) {
+        mExceptionContents = contents;
+    }
+
     /**
      * Sets up sub-verifiers correctly and tries to parse vCard as {@link InputStream}.
      * Errors around InputStream must be handled outside this method.
@@ -246,9 +250,17 @@ public class VCardVerifier {
                 parser.addInterpreter(mPropertyNodesVerifier);
             }
             parser.parse(is);
+            if (mExceptionContents != null) {
+                // exception contents exists, we expect an exception to occur.
+                AndroidTestCase.fail();
+            }
         } catch (VCardException e) {
-            Log.e(LOG_TAG, "VCardException", e);
-            AndroidTestCase.fail("Unexpected VCardException: " + e.getMessage());
+            if (mExceptionContents != null) {
+                AndroidTestCase.assertTrue(e.getMessage().contains(mExceptionContents));
+            } else {
+                Log.e(LOG_TAG, "VCardException", e);
+                AndroidTestCase.fail("Unexpected VCardException: " + e.getMessage());
+            }
         }
     }
 
