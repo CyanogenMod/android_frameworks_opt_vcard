@@ -584,41 +584,7 @@ import java.util.Set;
         if (propertyNameUpper.equals(VCardConstants.PROPERTY_ADR)
                 || propertyNameUpper.equals(VCardConstants.PROPERTY_ORG)
                 || propertyNameUpper.equals(VCardConstants.PROPERTY_N)) {
-            List<String> encodedValueList = new ArrayList<String>();
-
-            // vCard 2.1 does not allow QUOTED-PRINTABLE here, but some softwares/devices emit
-            // such data.
-            if (mCurrentEncoding.equalsIgnoreCase(VCardConstants.PARAM_ENCODING_QP)) {
-                // First we retrieve Quoted-Printable String from vCard entry, which may include
-                // multiple lines.
-                final String quotedPrintablePart = getQuotedPrintablePart(propertyRawValue);
-
-                // "Raw value" from the view of users should contain all part of QP string.
-                // TODO: add test for this handling
-                property.setRawValue(quotedPrintablePart);
-
-                // We split Quoted-Printable String using semi-colon before decoding it, as
-                // the Quoted-Printable may have semi-colon, which confuses splitter.
-                final List<String> quotedPrintableValueList =
-                        VCardUtils.constructListFromValue(quotedPrintablePart, getVersion());
-                for (String quotedPrintableValue : quotedPrintableValueList) {
-                    String encoded = VCardUtils.parseQuotedPrintable(quotedPrintableValue,
-                            false, sourceCharset, targetCharset);
-                    encodedValueList.add(encoded);
-                }
-            } else {
-                final List<String> rawValueList =
-                    VCardUtils.constructListFromValue(propertyRawValue, getVersion());
-                for (String rawValue : rawValueList) {
-                    encodedValueList.add(VCardUtils.convertStringCharset(
-                            rawValue, sourceCharset, targetCharset));
-                }
-            }
-
-            property.setValues(encodedValueList);
-            for (VCardInterpreter interpreter : mInterpreterList) {
-                interpreter.onPropertyCreated(property);
-            }
+            handleAdrOrgN(property, propertyRawValue, sourceCharset, targetCharset);
             return;
         }
 
@@ -723,6 +689,46 @@ import java.util.Set;
         }
     }
 
+    private void handleAdrOrgN(VCardProperty property, String propertyRawValue,
+            String sourceCharset, String targetCharset) throws VCardException, IOException {
+        List<String> encodedValueList = new ArrayList<String>();
+
+        // vCard 2.1 does not allow QUOTED-PRINTABLE here, but some softwares/devices emit
+        // such data.
+        if (mCurrentEncoding.equalsIgnoreCase(VCardConstants.PARAM_ENCODING_QP)) {
+            // First we retrieve Quoted-Printable String from vCard entry, which may include
+            // multiple lines.
+            final String quotedPrintablePart = getQuotedPrintablePart(propertyRawValue);
+
+            // "Raw value" from the view of users should contain all part of QP string.
+            // TODO: add test for this handling
+            property.setRawValue(quotedPrintablePart);
+
+            // We split Quoted-Printable String using semi-colon before decoding it, as
+            // the Quoted-Printable may have semi-colon, which confuses splitter.
+            final List<String> quotedPrintableValueList =
+                    VCardUtils.constructListFromValue(quotedPrintablePart, getVersion());
+            for (String quotedPrintableValue : quotedPrintableValueList) {
+                String encoded = VCardUtils.parseQuotedPrintable(quotedPrintableValue,
+                        false, sourceCharset, targetCharset);
+                encodedValueList.add(encoded);
+            }
+        } else {
+            final String propertyValue = getPotentialMultiline(propertyRawValue);
+            final List<String> rawValueList =
+                    VCardUtils.constructListFromValue(propertyValue, getVersion());
+            for (String rawValue : rawValueList) {
+                encodedValueList.add(VCardUtils.convertStringCharset(
+                        rawValue, sourceCharset, targetCharset));
+            }
+        }
+
+        property.setValues(encodedValueList);
+        for (VCardInterpreter interpreter : mInterpreterList) {
+            interpreter.onPropertyCreated(property);
+        }
+    }
+
     /**
      * <p>
      * Parses and returns Quoted-Printable.
@@ -783,6 +789,40 @@ import java.util.Set;
         }
     }
 
+    /**
+     * Given the first line of a property, checks consecutive lines after it and builds a new
+     * multi-line value if it exists.
+     *
+     * @param firstString The first line of the property.
+     * @return A new property, potentially built from multiple lines.
+     * @throws IOException
+     */
+    private String getPotentialMultiline(String firstString) throws IOException {
+        final StringBuilder builder = new StringBuilder();
+        builder.append(firstString);
+
+        while (true) {
+            final String line = peekLine();
+            if (line == null || line.length() == 0) {
+                break;
+            }
+
+            final String propertyName = getPropertyNameUpperCase(line);
+            if (propertyName != null) {
+                break;
+            }
+
+            // vCard 2.1 does not allow multi-line of adr but microsoft vcards may have it.
+            // We will consider the next line to be a part of a multi-line value if it does not
+            // contain a property name (i.e. a colon or semi-colon).
+            // Consume the line.
+            getLine();
+            builder.append(" ").append(line);
+        }
+
+        return builder.toString();
+    }
+
     protected String getBase64(String firstString) throws IOException, VCardException {
         final StringBuilder builder = new StringBuilder();
         builder.append(firstString);
@@ -800,26 +840,13 @@ import java.util.Set;
             //      TEL;TYPE=WORK:+5555555
             // or
             //      END:VCARD
-            int colonIndex = line.indexOf(":");
-            int semiColonIndex = line.indexOf(";");
-            if (colonIndex > -1 || semiColonIndex > -1) {
-                // Find the minimum index that is greater than -1.
-                final int minIndex;
-                if (colonIndex == -1) {
-                    minIndex = semiColonIndex;
-                } else if (semiColonIndex == -1) {
-                    minIndex = colonIndex;
-                } else {
-                    minIndex = Math.min(colonIndex, semiColonIndex);
-                }
-
-                if (getKnownPropertyNameSet().contains(line.substring(0, minIndex).toUpperCase())) {
-                    Log.w(LOG_TAG, "Found a next property during parsing a BASE64 string, " +
-                            "which must not contain semi-colon or colon. Treat the line as next "
-                            + "property.");
-                    Log.w(LOG_TAG, "Problematic line: " + line.trim());
-                    break;
-                }
+            String propertyName = getPropertyNameUpperCase(line);
+            if (getKnownPropertyNameSet().contains(propertyName)) {
+                Log.w(LOG_TAG, "Found a next property during parsing a BASE64 string, " +
+                        "which must not contain semi-colon or colon. Treat the line as next "
+                        + "property.");
+                Log.w(LOG_TAG, "Problematic line: " + line.trim());
+                break;
             }
 
             // Consume the line.
@@ -832,6 +859,38 @@ import java.util.Set;
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Extracts the property name portion of a given vCard line.
+     * <p>
+     * Properties must contain a colon.
+     * <p>
+     * E.g.
+     *      TEL;TYPE=WORK:+5555555  // returns "TEL"
+     *      END:VCARD // returns "END"
+     *      TEL; // returns null
+     *
+     * @param line The vCard line.
+     * @return The property name portion. {@literal null} if no property name found.
+     */
+    private String getPropertyNameUpperCase(String line) {
+        final int colonIndex = line.indexOf(":");
+        if (colonIndex > -1) {
+            final int semiColonIndex = line.indexOf(";");
+
+            // Find the minimum index that is greater than -1.
+            final int minIndex;
+            if (colonIndex == -1) {
+                minIndex = semiColonIndex;
+            } else if (semiColonIndex == -1) {
+                minIndex = colonIndex;
+            } else {
+                minIndex = Math.min(colonIndex, semiColonIndex);
+            }
+            return line.substring(0, minIndex).toUpperCase();
+        }
+        return null;
     }
 
     /*
