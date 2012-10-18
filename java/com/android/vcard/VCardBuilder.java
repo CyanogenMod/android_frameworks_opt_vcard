@@ -538,9 +538,15 @@ public class VCardBuilder {
 
             // N
             buildSinglePartNameField(VCardConstants.PROPERTY_N, displayName);
+            mBuilder.append(VCARD_ITEM_SEPARATOR);
+            mBuilder.append(VCARD_ITEM_SEPARATOR);
+            mBuilder.append(VCARD_ITEM_SEPARATOR);
+            mBuilder.append(VCARD_ITEM_SEPARATOR);
+            mBuilder.append(VCARD_END_OF_LINE);
 
             // FN
             buildSinglePartNameField(VCardConstants.PROPERTY_FN, displayName);
+            mBuilder.append(VCARD_END_OF_LINE);
 
         } else if (VCardConfig.isVersion30(mVCardType)) {
             appendLine(VCardConstants.PROPERTY_N, "");
@@ -576,11 +582,6 @@ public class VCardBuilder {
         }
         mBuilder.append(VCARD_DATA_SEPARATOR);
         mBuilder.append(encodedPart);
-        mBuilder.append(VCARD_ITEM_SEPARATOR);
-        mBuilder.append(VCARD_ITEM_SEPARATOR);
-        mBuilder.append(VCARD_ITEM_SEPARATOR);
-        mBuilder.append(VCARD_ITEM_SEPARATOR);
-        mBuilder.append(VCARD_END_OF_LINE);
     }
 
     /**
