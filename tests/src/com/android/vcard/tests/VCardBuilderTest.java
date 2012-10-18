@@ -44,9 +44,9 @@ public class VCardBuilderTest extends TestCase {
         final String actual = builder.toString();
 
         final String expectedCommon = ";CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:" +
-                "=E0=A4=A8=E0=A5=87;;;;";
+                "=E0=A4=A8=E0=A5=87";
 
-        final String expectedName = "N" + expectedCommon;
+        final String expectedName = "N" + expectedCommon + ";;;;";
         final String expectedFullName = "FN" + expectedCommon;
 
         assertTrue("Actual value:\n" + actual + " expected to contain\n" + expectedName +

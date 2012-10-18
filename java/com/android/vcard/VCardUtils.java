@@ -15,17 +15,14 @@
  */
 package com.android.vcard;
 
-import com.android.vcard.exception.VCardException;
-
-import android.content.ContentProviderOperation;
-import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.CommonDataKinds.Im;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
-import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.telephony.PhoneNumberUtils;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.android.vcard.exception.VCardException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -691,6 +688,30 @@ public class VCardUtils {
 
         for (final String value : values) {
             if (!TextUtils.isEmpty(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks to see if a string looks like it could be an android generated quoted printable.
+     *
+     * Identification of quoted printable is not 100% reliable since it's just ascii.  But given
+     * the high number and exact location of generated = signs, there is a high likely-hood that
+     * it would be.
+     *
+     * @return True if it appears like android quoted printable.  False otherwise.
+     */
+    public static boolean appearsLikeAndroidVCardQuotedPrintable(String value) {
+
+        // Quoted printable is always in multiple of 3s. With optional 1 '=' at end.
+        final int remainder = (value.length() % 3);
+        if (value.length() < 2 || (remainder != 1 && remainder != 0)) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i += 3) {
+            if (value.charAt(i) != '=') {
                 return false;
             }
         }

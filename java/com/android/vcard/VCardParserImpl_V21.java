@@ -589,7 +589,14 @@ import java.util.Set;
         }
 
         final String upperEncoding = mCurrentEncoding.toUpperCase();
-        if (upperEncoding.equals(VCardConstants.PARAM_ENCODING_QP)) {
+        if (upperEncoding.equals(VCardConstants.PARAM_ENCODING_QP) ||
+                // If encoding attribute is missing, then attempt to detect QP encoding.
+                // This is to handle a bug where the android exporter was creating FN properties
+                // with missing encoding.  b/7292017
+                (propertyNameUpper.equals(VCardConstants.PROPERTY_FN) &&
+                        property.getParameters(VCardConstants.PARAM_ENCODING) == null &&
+                        VCardUtils.appearsLikeAndroidVCardQuotedPrintable(propertyRawValue))
+                ) {
             final String quotedPrintablePart = getQuotedPrintablePart(propertyRawValue);
             final String propertyEncodedValue =
                     VCardUtils.parseQuotedPrintable(quotedPrintablePart,
