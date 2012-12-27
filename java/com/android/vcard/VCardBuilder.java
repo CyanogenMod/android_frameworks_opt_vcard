@@ -236,6 +236,15 @@ public class VCardBuilder {
         }
     }
 
+    private String getDisplayName(final ContentValues contentValues) {
+        if ((mVCardType & VCardConfig.FLAG_USE_ALTERNATIVE_NAME_ORDERING) != 0) {
+            if (contentValues.containsKey(StructuredName.DISPLAY_NAME_ALTERNATIVE)) {
+                return contentValues.getAsString(StructuredName.DISPLAY_NAME_ALTERNATIVE);
+            }
+        }
+        return contentValues.getAsString(StructuredName.DISPLAY_NAME);
+    }
+
     private boolean containsNonEmptyName(final ContentValues contentValues) {
         final String familyName = contentValues.getAsString(StructuredName.FAMILY_NAME);
         final String middleName = contentValues.getAsString(StructuredName.MIDDLE_NAME);
@@ -248,7 +257,7 @@ public class VCardBuilder {
                 contentValues.getAsString(StructuredName.PHONETIC_MIDDLE_NAME);
         final String phoneticGivenName =
                 contentValues.getAsString(StructuredName.PHONETIC_GIVEN_NAME);
-        final String displayName = contentValues.getAsString(StructuredName.DISPLAY_NAME);
+        final String displayName = getDisplayName(contentValues);
         return !(TextUtils.isEmpty(familyName) && TextUtils.isEmpty(middleName) &&
                 TextUtils.isEmpty(givenName) && TextUtils.isEmpty(prefix) &&
                 TextUtils.isEmpty(suffix) && TextUtils.isEmpty(phoneticFamilyName) &&
@@ -328,7 +337,7 @@ public class VCardBuilder {
         final String givenName = contentValues.getAsString(StructuredName.GIVEN_NAME);
         final String prefix = contentValues.getAsString(StructuredName.PREFIX);
         final String suffix = contentValues.getAsString(StructuredName.SUFFIX);
-        final String formattedName = contentValues.getAsString(StructuredName.DISPLAY_NAME);
+        final String formattedName = getDisplayName(contentValues);
         if (TextUtils.isEmpty(familyName)
                 && TextUtils.isEmpty(givenName)
                 && TextUtils.isEmpty(middleName)
@@ -386,8 +395,7 @@ public class VCardBuilder {
             Log.w(LOG_TAG, "DISPLAY_NAME is empty.");
 
             final String escaped = escapeCharacters(VCardUtils.constructNameFromElements(
-                    VCardConfig.getNameOrderType(mVCardType),
-                    familyName, middleName, givenName, prefix, suffix));
+                    mVCardType, familyName, middleName, givenName, prefix, suffix));
             appendLine(VCardConstants.PROPERTY_FN, escaped);
         } else {
             final String escapedFormatted = escapeCharacters(formattedName);
@@ -432,7 +440,7 @@ public class VCardBuilder {
         final String givenName = contentValues.getAsString(StructuredName.GIVEN_NAME);
         final String prefix = contentValues.getAsString(StructuredName.PREFIX);
         final String suffix = contentValues.getAsString(StructuredName.SUFFIX);
-        final String displayName = contentValues.getAsString(StructuredName.DISPLAY_NAME);
+        final String displayName = getDisplayName(contentValues);
 
         if (!TextUtils.isEmpty(familyName) || !TextUtils.isEmpty(givenName)) {
             final boolean reallyAppendCharsetParameterToName =
@@ -450,8 +458,7 @@ public class VCardBuilder {
                 formattedName = displayName;
             } else {
                 formattedName = VCardUtils.constructNameFromElements(
-                        VCardConfig.getNameOrderType(mVCardType),
-                        familyName, middleName, givenName, prefix, suffix);
+                        mVCardType, familyName, middleName, givenName, prefix, suffix);
             }
             final boolean reallyAppendCharsetParameterToFN =
                     shouldAppendCharsetParam(formattedName);

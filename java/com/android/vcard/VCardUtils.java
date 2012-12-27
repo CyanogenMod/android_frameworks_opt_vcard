@@ -311,15 +311,33 @@ public class VCardUtils {
                 break;
             }
             case VCardConfig.NAME_ORDER_EUROPE: {
-                list[0] = middleName;
-                list[1] = givenName;
-                list[2] = familyName;
+                if ((nameOrder & VCardConfig.FLAG_USE_ALTERNATIVE_NAME_ORDERING) != 0) {
+                    list[0] = familyName;
+                    if (!TextUtils.isEmpty(middleName) || !TextUtils.isEmpty(givenName)) {
+                        list[0] += ",";
+                    }
+                    list[1] = middleName;
+                    list[2] = givenName;
+                } else {
+                    list[0] = middleName;
+                    list[1] = givenName;
+                    list[2] = familyName;
+                }
                 break;
             }
             default: {
-                list[0] = givenName;
-                list[1] = middleName;
-                list[2] = familyName;
+                if ((nameOrder & VCardConfig.FLAG_USE_ALTERNATIVE_NAME_ORDERING) != 0) {
+                    list[0] = familyName;
+                    if (!TextUtils.isEmpty(middleName) || !TextUtils.isEmpty(givenName)) {
+                        list[0] += ",";
+                    }
+                    list[1] = givenName;
+                    list[2] = middleName;
+                } else {
+                    list[0] = givenName;
+                    list[1] = middleName;
+                    list[2] = familyName;
+                }
                 break;
             }
         }

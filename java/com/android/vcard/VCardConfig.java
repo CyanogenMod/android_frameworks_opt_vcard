@@ -239,6 +239,18 @@ public class VCardConfig {
 
     /**
      * <P>
+     * The flag indicating that alternative name ordering should be used.
+     * </p>
+     * <p>
+     * Depending on the current locale, different name orderings may be common. E.g. for
+     * western locales, the standard name ordering is 'Given name Last name', while the
+     * alternative name ordering is 'Last name, Given name'.
+     * </p>
+     */
+    public static final int FLAG_USE_ALTERNATIVE_NAME_ORDERING = 0x01000000;
+
+    /**
+     * <P>
      * The flag asking exporter to refrain image export.
      * </P>
      * @hide will be deleted in the near future.
