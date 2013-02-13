@@ -15,8 +15,6 @@
  */
 package com.android.vcard;
 
-import com.android.vcard.VCardUtils.PhoneNumberUtilsPort;
-
 import android.content.ContentValues;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Event;
@@ -35,6 +33,8 @@ import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+
+import com.android.vcard.VCardUtils.PhoneNumberUtilsPort;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -85,7 +85,7 @@ public class VCardBuilder {
     private static final String VCARD_DATA_PUBLIC = "PUBLIC";
 
     private static final String VCARD_PARAM_SEPARATOR = ";";
-    private static final String VCARD_END_OF_LINE = "\r\n";
+    public static final String VCARD_END_OF_LINE = "\r\n";
     private static final String VCARD_DATA_SEPARATOR = ":";
     private static final String VCARD_ITEM_SEPARATOR = ";";
     private static final String VCARD_WS = " ";
@@ -542,26 +542,9 @@ public class VCardBuilder {
             mBuilder.append(encodedFormattedname);
             mBuilder.append(VCARD_END_OF_LINE);
         } else if (!TextUtils.isEmpty(displayName)) {
-            final boolean reallyUseQuotedPrintableToDisplayName =
-                (!mRefrainsQPToNameProperties &&
-                        !VCardUtils.containsOnlyNonCrLfPrintableAscii(displayName));
-            final String encodedDisplayName =
-                    reallyUseQuotedPrintableToDisplayName ?
-                            encodeQuotedPrintable(displayName) :
-                                escapeCharacters(displayName);
 
             // N
-            mBuilder.append(VCardConstants.PROPERTY_N);
-            if (shouldAppendCharsetParam(displayName)) {
-                mBuilder.append(VCARD_PARAM_SEPARATOR);
-                mBuilder.append(mVCardCharsetParameter);
-            }
-            if (reallyUseQuotedPrintableToDisplayName) {
-                mBuilder.append(VCARD_PARAM_SEPARATOR);
-                mBuilder.append(VCARD_PARAM_ENCODING_QP);
-            }
-            mBuilder.append(VCARD_DATA_SEPARATOR);
-            mBuilder.append(encodedDisplayName);
+            buildSinglePartNameField(VCardConstants.PROPERTY_N, displayName);
             mBuilder.append(VCARD_ITEM_SEPARATOR);
             mBuilder.append(VCARD_ITEM_SEPARATOR);
             mBuilder.append(VCARD_ITEM_SEPARATOR);
@@ -569,18 +552,9 @@ public class VCardBuilder {
             mBuilder.append(VCARD_END_OF_LINE);
 
             // FN
-            mBuilder.append(VCardConstants.PROPERTY_FN);
-
-            // Note: "CHARSET" param is not allowed in vCard 3.0, but we may add it
-            //       when it would be useful or necessary for external importers,
-            //       assuming the external importer allows this vioration of the spec.
-            if (shouldAppendCharsetParam(displayName)) {
-                mBuilder.append(VCARD_PARAM_SEPARATOR);
-                mBuilder.append(mVCardCharsetParameter);
-            }
-            mBuilder.append(VCARD_DATA_SEPARATOR);
-            mBuilder.append(encodedDisplayName);
+            buildSinglePartNameField(VCardConstants.PROPERTY_FN, displayName);
             mBuilder.append(VCARD_END_OF_LINE);
+
         } else if (VCardConfig.isVersion30(mVCardType)) {
             appendLine(VCardConstants.PROPERTY_N, "");
             appendLine(VCardConstants.PROPERTY_FN, "");
@@ -590,6 +564,31 @@ public class VCardBuilder {
 
         appendPhoneticNameFields(contentValues);
         return this;
+    }
+
+    private void buildSinglePartNameField(String property, String part) {
+        final boolean reallyUseQuotedPrintable =
+                (!mRefrainsQPToNameProperties &&
+                        !VCardUtils.containsOnlyNonCrLfPrintableAscii(part));
+        final String encodedPart = reallyUseQuotedPrintable ?
+                encodeQuotedPrintable(part) :
+                escapeCharacters(part);
+
+        mBuilder.append(property);
+
+        // Note: "CHARSET" param is not allowed in vCard 3.0, but we may add it
+        //       when it would be useful or necessary for external importers,
+        //       assuming the external importer allows this vioration of the spec.
+        if (shouldAppendCharsetParam(part)) {
+            mBuilder.append(VCARD_PARAM_SEPARATOR);
+            mBuilder.append(mVCardCharsetParameter);
+        }
+        if (reallyUseQuotedPrintable) {
+            mBuilder.append(VCARD_PARAM_SEPARATOR);
+            mBuilder.append(VCARD_PARAM_ENCODING_QP);
+        }
+        mBuilder.append(VCARD_DATA_SEPARATOR);
+        mBuilder.append(encodedPart);
     }
 
     /**

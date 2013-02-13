@@ -117,4 +117,28 @@ public class VCardUtilsTests extends TestCase {
         assertEquals("\"Already quoted\"",
                 VCardUtils.toStringAsV30ParamValue("\"Already quoted\"\""));
     }
+
+    public void testAppearsLikeAndroidVCardQuotedPrintableByLength() {
+        assertFalse(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("="));
+        assertFalse(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=1"));
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12"));
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12="));
+        assertFalse(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12=1"));
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12=12"));
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12=12="));
+    }
+
+    public void testAppearsLikeAndroidVCardQuotedPrintableByContent() {
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("==="));
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("===="));
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("======="));
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12=12="));
+        assertTrue(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12=34="));
+
+        assertFalse(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=123"));
+        assertFalse(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=123="));
+        assertFalse(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("_12="));
+        assertFalse(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12_"));
+        assertFalse(VCardUtils.appearsLikeAndroidVCardQuotedPrintable("=12=34_56="));
+    }
 }

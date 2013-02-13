@@ -508,7 +508,7 @@ import java.util.Set;
                 pencodingval.startsWith("X-")) {
             propertyData.addParameter(VCardConstants.PARAM_ENCODING, pencodingval);
             // Update encoding right away, as this is needed to understanding other params.
-            mCurrentEncoding = pencodingval;
+            mCurrentEncoding = pencodingval.toUpperCase();
         } else {
             throw new VCardException("Unknown encoding \"" + pencodingval + "\"");
         }
@@ -588,8 +588,14 @@ import java.util.Set;
             return;
         }
 
-        final String upperEncoding = mCurrentEncoding.toUpperCase();
-        if (upperEncoding.equals(VCardConstants.PARAM_ENCODING_QP)) {
+        if (mCurrentEncoding.equals(VCardConstants.PARAM_ENCODING_QP) ||
+                // If encoding attribute is missing, then attempt to detect QP encoding.
+                // This is to handle a bug where the android exporter was creating FN properties
+                // with missing encoding.  b/7292017
+                (propertyNameUpper.equals(VCardConstants.PROPERTY_FN) &&
+                        property.getParameters(VCardConstants.PARAM_ENCODING) == null &&
+                        VCardUtils.appearsLikeAndroidVCardQuotedPrintable(propertyRawValue))
+                ) {
             final String quotedPrintablePart = getQuotedPrintablePart(propertyRawValue);
             final String propertyEncodedValue =
                     VCardUtils.parseQuotedPrintable(quotedPrintablePart,
@@ -599,8 +605,8 @@ import java.util.Set;
             for (VCardInterpreter interpreter : mInterpreterList) {
                 interpreter.onPropertyCreated(property);
             }
-        } else if (upperEncoding.equals(VCardConstants.PARAM_ENCODING_BASE64)
-                || upperEncoding.equals(VCardConstants.PARAM_ENCODING_B)) {
+        } else if (mCurrentEncoding.equals(VCardConstants.PARAM_ENCODING_BASE64)
+                || mCurrentEncoding.equals(VCardConstants.PARAM_ENCODING_B)) {
             // It is very rare, but some BASE64 data may be so big that
             // OutOfMemoryError occurs. To ignore such cases, use try-catch.
             try {
@@ -620,8 +626,8 @@ import java.util.Set;
                 }
             }
         } else {
-            if (!(upperEncoding.equals("7BIT") || upperEncoding.equals("8BIT") ||
-                    upperEncoding.startsWith("X-"))) {
+            if (!(mCurrentEncoding.equals("7BIT") || mCurrentEncoding.equals("8BIT") ||
+                    mCurrentEncoding.startsWith("X-"))) {
                 Log.w(LOG_TAG,
                         String.format("The encoding \"%s\" is unsupported by vCard %s",
                                 mCurrentEncoding, getVersionString()));
@@ -695,7 +701,7 @@ import java.util.Set;
 
         // vCard 2.1 does not allow QUOTED-PRINTABLE here, but some softwares/devices emit
         // such data.
-        if (mCurrentEncoding.equalsIgnoreCase(VCardConstants.PARAM_ENCODING_QP)) {
+        if (mCurrentEncoding.equals(VCardConstants.PARAM_ENCODING_QP)) {
             // First we retrieve Quoted-Printable String from vCard entry, which may include
             // multiple lines.
             final String quotedPrintablePart = getQuotedPrintablePart(propertyRawValue);
