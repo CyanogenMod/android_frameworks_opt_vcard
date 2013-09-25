@@ -22,7 +22,6 @@ import com.android.vcard.VCardUtils;
 
 import android.content.ContentValues;
 import android.util.Base64;
-import android.util.CharsetUtils;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
