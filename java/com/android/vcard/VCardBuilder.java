@@ -165,35 +165,9 @@ public class VCardBuilder {
                 if (TextUtils.isEmpty(charset)) {
                     mCharset = SHIFT_JIS;
                 } else {
-                    /*try {
-                        charset = CharsetUtils.charsetForVendor(charset).name();
-                    } catch (UnsupportedCharsetException e) {
-                        Log.i(LOG_TAG,
-                                "Career-specific \"" + charset + "\" was not found (as usual). "
-                                + "Use it as is.");
-                    }*/
                     mCharset = charset;
                 }
             } else {
-                /*if (mIsDoCoMo) {
-                    try {
-                        charset = CharsetUtils.charsetForVendor(SHIFT_JIS, "docomo").name();
-                    } catch (UnsupportedCharsetException e) {
-                        Log.e(LOG_TAG,
-                                "DoCoMo-specific SHIFT_JIS was not found. "
-                                + "Use SHIFT_JIS as is.");
-                        charset = SHIFT_JIS;
-                    }
-                } else {
-                    try {
-                        charset = CharsetUtils.charsetForVendor(SHIFT_JIS).name();
-                    } catch (UnsupportedCharsetException e) {
-                        Log.e(LOG_TAG,
-                                "Career-specific SHIFT_JIS was not found. "
-                                + "Use SHIFT_JIS as is.");
-                        charset = SHIFT_JIS;
-                    }
-                }*/
                 mCharset = charset;
             }
             mVCardCharsetParameter = "CHARSET=" + SHIFT_JIS;
@@ -205,14 +179,6 @@ public class VCardBuilder {
                 mCharset = VCardConfig.DEFAULT_EXPORT_CHARSET;
                 mVCardCharsetParameter = "CHARSET=" + VCardConfig.DEFAULT_EXPORT_CHARSET;
             } else {
-                /*
-                try {
-                    charset = CharsetUtils.charsetForVendor(charset).name();
-                } catch (UnsupportedCharsetException e) {
-                    Log.i(LOG_TAG,
-                            "Career-specific \"" + charset + "\" was not found (as usual). "
-                            + "Use it as is.");
-                }*/
                 mCharset = charset;
                 mVCardCharsetParameter = "CHARSET=" + charset;
             }

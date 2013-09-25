@@ -213,27 +213,7 @@ public class VCardComposer {
                 VCardConfig.isVersion30(vcardType) && UTF_8.equalsIgnoreCase(charset));
 
         if (mIsDoCoMo || shouldAppendCharsetParam) {
-            // TODO: clean up once we're sure CharsetUtils are really unnecessary any more.
             if (SHIFT_JIS.equalsIgnoreCase(charset)) {
-                /*if (mIsDoCoMo) {
-                    try {
-                        charset = CharsetUtils.charsetForVendor(SHIFT_JIS, "docomo").name();
-                    } catch (UnsupportedCharsetException e) {
-                        Log.e(LOG_TAG,
-                                "DoCoMo-specific SHIFT_JIS was not found. "
-                                + "Use SHIFT_JIS as is.");
-                        charset = SHIFT_JIS;
-                    }
-                } else {
-                    try {
-                        charset = CharsetUtils.charsetForVendor(SHIFT_JIS).name();
-                    } catch (UnsupportedCharsetException e) {
-                        // Log.e(LOG_TAG,
-                        // "Career-specific SHIFT_JIS was not found. "
-                        // + "Use SHIFT_JIS as is.");
-                        charset = SHIFT_JIS;
-                    }
-                }*/
                 mCharset = charset;
             } else {
                 /* Log.w(LOG_TAG,
@@ -242,14 +222,6 @@ public class VCardComposer {
                 if (TextUtils.isEmpty(charset)) {
                     mCharset = SHIFT_JIS;
                 } else {
-                    /*
-                    try {
-                        charset = CharsetUtils.charsetForVendor(charset).name();
-                    } catch (UnsupportedCharsetException e) {
-                        Log.i(LOG_TAG,
-                                "Career-specific \"" + charset + "\" was not found (as usual). "
-                                + "Use it as is.");
-                    }*/
                     mCharset = charset;
                 }
             }
@@ -257,13 +229,6 @@ public class VCardComposer {
             if (TextUtils.isEmpty(charset)) {
                 mCharset = UTF_8;
             } else {
-                /*try {
-                    charset = CharsetUtils.charsetForVendor(charset).name();
-                } catch (UnsupportedCharsetException e) {
-                    Log.i(LOG_TAG,
-                            "Career-specific \"" + charset + "\" was not found (as usual). "
-                            + "Use it as is.");
-                }*/
                 mCharset = charset;
             }
         }
