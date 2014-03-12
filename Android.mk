@@ -22,5 +22,16 @@ LOCAL_SRC_FILES := $(call all-java-files-under, java)
 
 include $(BUILD_STATIC_JAVA_LIBRARY)
 
+# Build JAR
+include $(CLEAR_VARS)
+
+# 2.3
+LOCAL_SDK_VERSION := 9
+
+LOCAL_MODULE:= vcard
+LOCAL_SRC_FILES := $(call all-java-files-under, java)
+
+include $(BUILD_JAVA_LIBRARY)
+
 # Build the test package.
 include $(call all-makefiles-under, $(LOCAL_PATH))
