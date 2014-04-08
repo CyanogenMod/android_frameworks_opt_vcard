@@ -847,7 +847,8 @@ import java.util.Set;
             // or
             //      END:VCARD
             String propertyName = getPropertyNameUpperCase(line);
-            if (getKnownPropertyNameSet().contains(propertyName)) {
+            if (getKnownPropertyNameSet().contains(propertyName) ||
+                    VCardConstants.PROPERTY_X_ANDROID_CUSTOM.equals(propertyName)) {
                 Log.w(LOG_TAG, "Found a next property during parsing a BASE64 string, " +
                         "which must not contain semi-colon or colon. Treat the line as next "
                         + "property.");
