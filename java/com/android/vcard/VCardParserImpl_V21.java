@@ -450,7 +450,7 @@ import java.util.Set;
             } else if (paramName.equals("VALUE")) {
                 handleValue(propertyData, paramValue);
             } else if (paramName.equals("ENCODING")) {
-                handleEncoding(propertyData, paramValue);
+                handleEncoding(propertyData, paramValue.toUpperCase());
             } else if (paramName.equals("CHARSET")) {
                 handleCharset(propertyData, paramValue);
             } else if (paramName.equals("LANGUAGE")) {
@@ -862,7 +862,10 @@ import java.util.Set;
             if (line.length() == 0) {
                 break;
             }
-            builder.append(line);
+            // Trim off any extraneous whitespace to handle 2.1 implementations
+            // that use 3.0 style line continuations. This is safe because space
+            // isn't a Base64 encoding value.
+            builder.append(line.trim());
         }
 
         return builder.toString();

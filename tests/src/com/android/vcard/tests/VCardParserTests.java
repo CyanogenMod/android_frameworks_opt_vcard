@@ -18,6 +18,7 @@ package com.android.vcard.tests;
 import com.android.vcard.VCardInterpreter;
 import com.android.vcard.VCardParser;
 import com.android.vcard.VCardParser_V21;
+import com.android.vcard.VCardParser_V30;
 import com.android.vcard.VCardProperty;
 import com.android.vcard.exception.VCardException;
 
@@ -125,6 +126,38 @@ public class VCardParserTests extends AndroidTestCase {
                     .addExpectedOrder(Order.PROPERTY_CREATED)  // For N
                     .addExpectedOrder(Order.END_ENTRY)  // Second nested vCard ends
                     .addExpectedOrder(Order.PROPERTY_CREATED)  // For TEL
+                    .addExpectedOrder(Order.END_ENTRY)
+                    .addExpectedOrder(Order.END);
+            parser.addInterpreter(interpreter);
+            parser.parse(inputStream);
+            interpreter.verify();
+        } finally {
+            inputStream.close();
+        }
+    }
+
+    /**
+     * Test vCard containing v3.0 line continuations and with non-standard
+     * line terminators \r\r\n coming from iOS 6.1.3. Tests to make sure the
+     * parser correctly skips the extra line terminators and still
+     * successfully concatenates the multi-line block.
+     */
+    public void testIosMultiline() throws IOException, VCardException {
+        InputStream inputStream = getContext().getResources().openRawResource(R.raw.v30_ios_613_multiline);
+        try {
+            VCardParser parser = new VCardParser_V30();
+            MockVCardInterpreter interpreter = new MockVCardInterpreter();
+            interpreter.addExpectedOrder(Order.START)
+                    .addExpectedOrder(Order.START_ENTRY)
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For VERSION
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For N
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For FN
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For ORG
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For item1
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For TEL
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For item2
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For item3
+                    .addExpectedOrder(Order.PROPERTY_CREATED)  // For PHOTO
                     .addExpectedOrder(Order.END_ENTRY)
                     .addExpectedOrder(Order.END);
             parser.addInterpreter(interpreter);

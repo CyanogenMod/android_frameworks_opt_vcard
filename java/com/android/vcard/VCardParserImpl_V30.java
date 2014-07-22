@@ -78,64 +78,41 @@ import java.util.Set;
     protected String getNonEmptyLine() throws IOException, VCardException {
         String line;
         StringBuilder builder = null;
-        while (true) {
-            line = mReader.readLine();
-            if (line == null) {
-                if (builder != null) {
-                    return builder.toString();
-                } else if (mPreviousLine != null) {
-                    String ret = mPreviousLine;
-                    mPreviousLine = null;
-                    return ret;
-                }
-                throw new VCardException("Reached end of buffer.");
-            } else if (line.length() == 0) {
-                if (builder != null) {
-                    return builder.toString();
-                } else if (mPreviousLine != null) {
-                    String ret = mPreviousLine;
-                    mPreviousLine = null;
-                    return ret;
-                }
+        while ((line = mReader.readLine()) != null) {
+            // Skip empty lines in order to accomodate implementations that
+            // send line termination variations such as \r\r\n.
+            if (line.length() == 0) {
+                continue;
             } else if (line.charAt(0) == ' ' || line.charAt(0) == '\t') {
-                if (builder != null) {
-                    // See Section 5.8.1 of RFC 2425 (MIME-DIR document).
-                    // Following is the excerpts from it.
-                    //
-                    // DESCRIPTION:This is a long description that exists on a long line.
-                    //
-                    // Can be represented as:
-                    //
-                    // DESCRIPTION:This is a long description
-                    //  that exists on a long line.
-                    //
-                    // It could also be represented as:
-                    //
-                    // DESCRIPTION:This is a long descrip
-                    //  tion that exists o
-                    //  n a long line.
-                    builder.append(line.substring(1));
-                } else if (mPreviousLine != null) {
+                // RFC 2425 describes line continuation as \r\n followed by
+                // a single ' ' or '\t' whitespace character.
+                if (builder == null) {
                     builder = new StringBuilder();
+                }
+                if (mPreviousLine != null) {
                     builder.append(mPreviousLine);
                     mPreviousLine = null;
-                    builder.append(line.substring(1));
-                } else {
-                    throw new VCardException("Space exists at the beginning of the line");
                 }
+                builder.append(line.substring(1));
             } else {
-                if (mPreviousLine == null) {
-                    mPreviousLine = line;
-                    if (builder != null) {
-                        return builder.toString();
-                    }
-                } else {
-                    String ret = mPreviousLine;
-                    mPreviousLine = line;
-                    return ret;
+                if (builder != null || mPreviousLine != null) {
+                    break;
                 }
+                mPreviousLine = line;
             }
         }
+
+        String ret = null;
+        if (builder != null) {
+            ret = builder.toString();
+        } else if (mPreviousLine != null) {
+            ret = mPreviousLine;
+        }
+        mPreviousLine = line;
+        if (ret == null) {
+            throw new VCardException("Reached end of buffer.");
+        }
+        return ret;
     }
 
     /*
@@ -313,30 +290,16 @@ import java.util.Set;
     }
 
     /**
-     * vCard 3.0 does not require two CRLF at the last of BASE64 data.
-     * It only requires that data should be MIME-encoded.
+     * This is only called from handlePropertyValue(), which has already
+     * read the first line of this property. With v3.0, the getNonEmptyLine()
+     * routine has already concatenated all following continuation lines.
+     * The routine is implemented in the V21 parser to concatenate v2.1 style
+     * data blocks, but is unnecessary here.
      */
     @Override
     protected String getBase64(final String firstString)
             throws IOException, VCardException {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(firstString);
-
-        while (true) {
-            final String line = getLine();
-            if (line == null) {
-                throw new VCardException("File ended during parsing BASE64 binary");
-            }
-            if (line.length() == 0) {
-                break;
-            } else if (!line.startsWith(" ") && !line.startsWith("\t")) {
-                mPreviousLine = line;
-                break;
-            }
-            builder.append(line);
-        }
-
-        return builder.toString();
+        return firstString;
     }
 
     /**
