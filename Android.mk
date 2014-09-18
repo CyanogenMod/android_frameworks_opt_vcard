@@ -26,7 +26,7 @@ include $(BUILD_STATIC_JAVA_LIBRARY)
 include $(CLEAR_VARS)
 
 # 2.3
-LOCAL_SDK_VERSION := 9
+LOCAL_SDK_VERSION := 11
 
 LOCAL_MODULE:= vcard
 LOCAL_SRC_FILES := $(call all-java-files-under, java)
